@@ -14,8 +14,8 @@
 
   var main = document.getElementById("main");
   var tabs = document.getElementById("tabs");
-  var signoutBtn = document.getElementById("signout-btn");
-  var profileBtn = document.getElementById("profile-btn");
+  var settingsBtn = document.getElementById("settings-btn");
+  var settingsMenu = document.getElementById("settings-menu");
   var banner = document.getElementById("setup-banner");
   var toastEl = document.getElementById("toast");
 
@@ -80,10 +80,16 @@
   }
 
   // ---- auth views -------------------------------------------------------
+  function closeMenu() {
+    settingsMenu.hidden = true;
+    settingsBtn.setAttribute("aria-expanded", "false");
+    settingsBtn.classList.remove("active");
+  }
+
   function renderSignedOut() {
     tabs.hidden = true;
-    signoutBtn.hidden = true;
-    profileBtn.hidden = true;
+    settingsBtn.hidden = true;
+    closeMenu();
     var configured = LH.available;
     main.innerHTML = "";
     var card = el(
@@ -142,24 +148,9 @@
   }
 
   // ---- signed-in shell --------------------------------------------------
-  function renderAvatar() {
-    var p = state.profile || {};
-    var name = p.displayName || (state.user && state.user.email) || "?";
-    var initials = name.trim().charAt(0).toUpperCase() || "?";
-    if (p.photoURL) {
-      profileBtn.innerHTML =
-        '<img src="' + esc(p.photoURL) + '" alt="" referrerpolicy="no-referrer" />';
-    } else {
-      profileBtn.textContent = initials;
-    }
-    profileBtn.classList.toggle("active", state.view === "profile");
-  }
-
   function renderSignedIn() {
     tabs.hidden = false;
-    signoutBtn.hidden = false;
-    profileBtn.hidden = false;
-    renderAvatar();
+    settingsBtn.hidden = false;
     Array.prototype.forEach.call(tabs.querySelectorAll(".tab"), function (t) {
       t.classList.toggle("active", t.dataset.view === state.view);
     });
@@ -431,7 +422,6 @@
       if (state.unsub.profile) state.unsub.profile();
       state.unsub.profile = LH.watchUser(state.user.uid, function (doc) {
         state.profile = doc;
-        if (state.user) renderAvatar();
         if (state.view === "profile") renderProfile();
       });
     }
@@ -443,12 +433,28 @@
     state.view = t.dataset.view;
     renderSignedIn();
   });
-  profileBtn.addEventListener("click", function () {
-    state.view = "profile";
-    renderSignedIn();
+
+  // Gear menu: toggle, act on items, and close when clicking elsewhere.
+  settingsBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    var open = settingsMenu.hidden;
+    settingsMenu.hidden = !open;
+    settingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    settingsBtn.classList.toggle("active", open);
   });
-  signoutBtn.addEventListener("click", function () {
-    LH.signOut();
+  settingsMenu.addEventListener("click", function (e) {
+    var item = e.target.closest(".menu-item");
+    if (!item) return;
+    closeMenu();
+    if (item.dataset.action === "profile") {
+      state.view = "profile";
+      renderSignedIn();
+    } else if (item.dataset.action === "signout") {
+      LH.signOut();
+    }
+  });
+  document.addEventListener("click", function () {
+    if (!settingsMenu.hidden) closeMenu();
   });
 
   function start() {
