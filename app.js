@@ -23,7 +23,8 @@
     profile: null, // Firestore user doc
     view: "discover",
     sessions: [],
-    unsub: { sessions: null, profile: null },
+    viewingCoachUid: null, // which coach's profile is open
+    unsub: { sessions: null, profile: null, coaches: null },
   };
 
   // ---- helpers ----------------------------------------------------------
@@ -144,12 +145,17 @@
     tabs.hidden = false;
     profileBtn.hidden = false;
     profileBtn.classList.toggle("active", state.view === "profile");
+    var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
     Array.prototype.forEach.call(tabs.querySelectorAll(".tab"), function (t) {
-      t.classList.toggle("active", t.dataset.view === state.view);
+      var active = t.dataset.view === state.view || (t.dataset.view === "coaching" && isCoaching);
+      t.classList.toggle("active", active);
     });
     if (state.view === "discover") renderDiscover();
     else if (state.view === "create") renderCreate();
     else if (state.view === "coaching") renderCoaching();
+    else if (state.view === "coaches") renderCoachList();
+    else if (state.view === "coach-edit") renderCoachEdit();
+    else if (state.view === "coach-view") renderCoachDetail(state.viewingCoachUid);
     else if (state.view === "profile") renderProfile();
   }
 
@@ -162,12 +168,27 @@
           '<p class="muted">Level up your game with lessons and drills.</p></div>'
       )
     );
-    var items = [
-      ["🎯", "Find a coach", "Browse local coaches by skill focus and availability."],
+
+    // Find a coach — clickable, opens the coach directory.
+    var findCard = el(
+      '<article class="card coach-card is-clickable" id="find-coach" role="button" tabindex="0">' +
+        '<div class="coach-icon">🎯</div>' +
+        "<div><h3>Find a coach</h3>" +
+        '<p class="muted">Browse coaches and view their profiles.</p></div>' +
+        '<span class="chevron">›</span>' +
+        "</article>"
+    );
+    findCard.addEventListener("click", function () {
+      state.view = "coaches";
+      renderSignedIn();
+    });
+    wrap.appendChild(findCard);
+
+    // Still-planned items.
+    [
       ["📅", "Book a lesson", "Schedule 1-on-1 or small-group sessions."],
       ["📚", "Drills &amp; tips", "A library of drills to sharpen your dinks, serves, and strategy."],
-    ];
-    items.forEach(function (it) {
+    ].forEach(function (it) {
       wrap.appendChild(
         el(
           '<article class="card coach-card">' +
@@ -180,6 +201,220 @@
       );
     });
     main.appendChild(wrap);
+  }
+
+  // ---- coach directory ----
+  function coachAvatar(c, cls) {
+    if (c.photoDataUrl || c.photoURL) {
+      return '<span class="' + cls + '"><img src="' + esc(c.photoDataUrl || c.photoURL) + '" alt="" referrerpolicy="no-referrer" /></span>';
+    }
+    var init = (c.displayName || "?").trim().charAt(0).toUpperCase() || "?";
+    return '<span class="' + cls + '">' + esc(init) + "</span>";
+  }
+
+  function coachListItem(c) {
+    var bio = c.coachBio ? String(c.coachBio) : "";
+    if (bio.length > 90) bio = bio.slice(0, 90) + "…";
+    return (
+      '<article class="card coach-list-item is-clickable" role="button" tabindex="0" data-uid="' + esc(c.uid) + '">' +
+      coachAvatar(c, "coach-list-avatar") +
+      '<div class="coach-list-body"><h3>' + esc(c.displayName || "Coach") + "</h3>" +
+      (c.skillLevel ? '<span class="pill">' + esc(c.skillLevel) + "</span>" : "") +
+      (bio ? '<p class="muted">' + esc(bio) + "</p>" : "") +
+      "</div><span class=\"chevron\">›</span></article>"
+    );
+  }
+
+  function renderCoachList() {
+    main.innerHTML = "";
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el(
+        '<div class="view-head"><button class="link-back" id="back" type="button">‹ Coaching</button>' +
+          "<h2>Find a Coach</h2>" +
+          '<p class="muted">Tap a coach to view their profile.</p></div>'
+      )
+    );
+    var isCoach = !!(state.profile && state.profile.isCoach);
+    var cta = el(
+      '<button class="btn-primary" id="edit-coach" type="button">' +
+        (isCoach ? "Edit your coach profile" : "Become a coach") +
+        "</button>"
+    );
+    wrap.appendChild(cta);
+    var listEl = el('<div class="stack" id="coach-list"><div class="muted" style="text-align:center;padding:20px">Loading coaches…</div></div>');
+    wrap.appendChild(listEl);
+    main.appendChild(wrap);
+
+    wrap.querySelector("#back").addEventListener("click", function () {
+      state.view = "coaching";
+      renderSignedIn();
+    });
+    cta.addEventListener("click", function () {
+      state.view = "coach-edit";
+      renderSignedIn();
+    });
+
+    if (state.unsub.coaches) state.unsub.coaches();
+    state.unsub.coaches = LH.watchCoaches(function (list) {
+      if (!list.length) {
+        listEl.innerHTML =
+          '<div class="empty">No coaches listed yet. Be the first — tap <strong>Become a coach</strong> above.</div>';
+        return;
+      }
+      list.sort(function (a, b) {
+        return (a.displayName || "").localeCompare(b.displayName || "");
+      });
+      listEl.innerHTML = list.map(coachListItem).join("");
+    });
+    listEl.addEventListener("click", function (e) {
+      var item = e.target.closest("[data-uid]");
+      if (!item) return;
+      state.viewingCoachUid = item.dataset.uid;
+      state.view = "coach-view";
+      renderSignedIn();
+    });
+  }
+
+  function renderCoachDetail(uid) {
+    main.innerHTML = "";
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el(
+        '<div class="view-head"><button class="link-back" id="back" type="button">‹ Coaches</button></div>'
+      )
+    );
+    var card = el('<section class="card"><p class="muted">Loading…</p></section>');
+    wrap.appendChild(card);
+    main.appendChild(wrap);
+
+    wrap.querySelector("#back").addEventListener("click", function () {
+      state.view = "coaches";
+      renderSignedIn();
+    });
+
+    if (!uid) {
+      card.innerHTML = '<p class="muted">Coach not found.</p>';
+      return;
+    }
+    LH.getUserOnce(uid)
+      .then(function (c) {
+        if (!c) {
+          card.innerHTML = '<p class="muted">Coach not found.</p>';
+          return;
+        }
+        card.classList.add("stack", "profile-card");
+        card.innerHTML =
+          '<div class="profile-hero">' +
+          coachAvatar(c, "avatar-preview") +
+          '<div class="identity-name">' + esc(c.displayName || "Coach") + "</div>" +
+          (c.skillLevel ? '<div class="identity-skill">' + esc(c.skillLevel) + "</div>" : "") +
+          "</div>" +
+          (c.coachSpecialties ? metaRow("Specialties", c.coachSpecialties) : "") +
+          (c.coachExperience ? metaRow("Experience", c.coachExperience) : "") +
+          (c.coachRate ? metaRow("Rate", c.coachRate) : "") +
+          (c.favCourt ? metaRow("Home court", c.favCourt) : "") +
+          (c.coachBio
+            ? '<div class="coach-bio"><h3>About</h3><p>' + esc(c.coachBio).replace(/\n/g, "<br>") + "</p></div>"
+            : "") +
+          '<button class="btn-primary" id="book" type="button">Request a lesson</button>';
+        card.querySelector("#book").addEventListener("click", function () {
+          toast("Booking is coming soon — reach out to your coach directly for now.");
+        });
+      })
+      .catch(function () {
+        card.innerHTML = '<p class="muted">Could not load this coach.</p>';
+      });
+  }
+
+  function metaRow(label, val) {
+    return (
+      '<div class="meta-row"><span class="meta-label">' + esc(label) + "</span>" +
+      '<span class="meta-val">' + esc(val) + "</span></div>"
+    );
+  }
+
+  function renderCoachEdit() {
+    main.innerHTML = "";
+    var p = state.profile || {};
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el('<div class="view-head"><button class="link-back" id="back" type="button">‹ Coaches</button><h2>Your Coach Profile</h2><p class="muted">Add a bio so students can get to know you.</p></div>')
+    );
+    var card = el(
+      '<section class="card stack profile-card">' +
+        '<div class="profile-hero">' +
+        coachAvatar(p, "avatar-preview") +
+        '<div class="identity-name">' + esc(p.displayName || "Your name") + "</div>" +
+        (p.skillLevel ? '<div class="identity-skill">' + esc(p.skillLevel) + "</div>" : "") +
+        "</div>" +
+        '<p class="muted" style="text-align:center;margin-top:-4px">Your photo and name come from your <strong>Profile</strong>.</p>' +
+        '<div class="field"><label>Biography</label>' +
+        '<textarea id="c-bio" rows="5" placeholder="Tell students about your playing background, coaching style, and what you help with…">' + esc(p.coachBio || "") + "</textarea></div>" +
+        '<div class="field"><label>Specialties</label>' +
+        '<input id="c-spec" type="text" placeholder="e.g. Dinking, 3rd-shot drops, strategy" value="' + esc(p.coachSpecialties || "") + '" /></div>' +
+        '<div class="field"><label>Experience</label>' +
+        '<input id="c-exp" type="text" placeholder="e.g. 5 years coaching" value="' + esc(p.coachExperience || "") + '" /></div>' +
+        '<div class="field"><label>Rate</label>' +
+        '<input id="c-rate" type="text" placeholder="e.g. $40 / hour" value="' + esc(p.coachRate || "") + '" /></div>' +
+        '<button class="btn-primary" id="save-coach" type="button">' + (p.isCoach ? "Save coach profile" : "Publish coach profile") + "</button>" +
+        '<p class="save-status" id="coach-status" hidden></p>' +
+        (p.isCoach ? '<button class="btn-signout" id="unlist" type="button">Remove me from the coach list</button>' : "") +
+        "</section>"
+    );
+    wrap.appendChild(card);
+    main.appendChild(wrap);
+
+    wrap.querySelector("#back").addEventListener("click", function () {
+      state.view = "coaches";
+      renderSignedIn();
+    });
+
+    var statusEl = card.querySelector("#coach-status");
+    function setStatus(msg, kind) {
+      statusEl.hidden = false;
+      statusEl.textContent = msg;
+      statusEl.className = "save-status" + (kind ? " " + kind : "");
+    }
+
+    function writeCoach(fields, okMsg) {
+      var u = LH.currentUser() || state.user;
+      if (!u) return setStatus("You're not signed in.", "err");
+      setStatus("Saving…", "");
+      firebase
+        .firestore()
+        .collection("users")
+        .doc(u.uid)
+        .set(fields, { merge: true })
+        .then(function () {
+          setStatus(okMsg, "ok");
+        })
+        .catch(function (err) {
+          setStatus("Couldn't save — " + (err && (err.code || err.message) ? err.code || err.message : "error"), "err");
+        });
+    }
+
+    card.querySelector("#save-coach").addEventListener("click", function () {
+      var bio = card.querySelector("#c-bio").value.trim();
+      if (!bio) return setStatus("Please add a short bio so students know who you are.", "err");
+      writeCoach(
+        {
+          isCoach: true,
+          coachBio: bio,
+          coachSpecialties: card.querySelector("#c-spec").value.trim() || null,
+          coachExperience: card.querySelector("#c-exp").value.trim() || null,
+          coachRate: card.querySelector("#c-rate").value.trim() || null,
+        },
+        "Saved ✓ — you're now listed as a coach."
+      );
+    });
+
+    var unlist = card.querySelector("#unlist");
+    if (unlist) {
+      unlist.addEventListener("click", function () {
+        writeCoach({ isCoach: false }, "Removed — you're no longer listed as a coach.");
+      });
+    }
   }
 
   function renderDiscover() {

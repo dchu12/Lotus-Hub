@@ -126,6 +126,36 @@
     );
   }
 
+  // One-time read of any user's public profile (used for a coach's detail page).
+  function getUserOnce(uid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    return userDoc(uid)
+      .get()
+      .then(function (s) {
+        return s.exists ? Object.assign({ uid: s.id }, s.data()) : null;
+      });
+  }
+
+  // Realtime list of users who have opted in as coaches.
+  function watchCoaches(cb) {
+    if (!ready) return function () {};
+    return db
+      .collection("users")
+      .where("isCoach", "==", true)
+      .onSnapshot(
+        function (qs) {
+          var out = [];
+          qs.forEach(function (d) {
+            out.push(Object.assign({ uid: d.id }, d.data()));
+          });
+          cb(out);
+        },
+        function () {
+          cb([]);
+        }
+      );
+  }
+
   // ---- Sessions (open play) --------------------------------------------
   function sessionsCol() {
     return db.collection("sessions");
@@ -293,6 +323,8 @@
     signInWithGoogle: signInWithGoogle,
     signOut: signOut,
     watchUser: watchUser,
+    getUserOnce: getUserOnce,
+    watchCoaches: watchCoaches,
     watchUpcomingSessions: watchUpcomingSessions,
     createSession: createSession,
     watchRsvps: watchRsvps,
