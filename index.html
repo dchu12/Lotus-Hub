@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>Lotus Hub</title>
+  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="favicon-64.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div class="brand">
+        <h1 class="wordmark" aria-label="Lotus Hub"><img class="brand-logo" src="logo.png" alt="" width="30" height="30" /> Lotus Hub</h1>
+        <div class="brand-actions">
+          <button class="btn-ghost" id="signout-btn" hidden>Sign out</button>
+        </div>
+      </div>
+      <nav class="tabs" id="tabs" hidden>
+        <button class="tab active" data-view="discover">Open Play</button>
+        <button class="tab" data-view="create">Host</button>
+        <button class="tab" data-view="profile">Profile</button>
+      </nav>
+    </header>
+
+    <div id="setup-banner" class="banner" hidden></div>
+
+    <main id="main"><!-- rendered by app.js --></main>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast" class="toast" hidden></div>
+
+  <!-- Firebase SDK (compat). App shows a setup screen if config/keys are missing. -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js?v=1"></script>
+  <script src="firebase.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>

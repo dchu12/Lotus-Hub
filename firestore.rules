@@ -1,0 +1,45 @@
+rules_version = '2';
+// Lotus Hub — Firestore security rules.
+// Paste these into Firebase console → Firestore → Rules (or deploy via CLI).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+
+    // Profiles: anyone signed in can read (to show names/ratings on rosters);
+    // only the owner can write their own doc.
+    // NOTE: duprId / rating fields are written server-side by Cloud Functions
+    // using the Admin SDK, which bypasses these rules. Clients must not be
+    // trusted to set their own rating — tighten with a field check before launch.
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow write: if isSelf(uid);
+    }
+
+    // Sessions: readable by any signed-in user; created by any signed-in user
+    // (must set themselves as organizer); only the organizer can edit/delete.
+    // attendeeCount is updated by RSVP transactions, so updates are allowed for
+    // signed-in users but should be locked down further before launch.
+    match /sessions/{sessionId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.organizerUid == request.auth.uid;
+      allow update: if signedIn();
+      allow delete: if signedIn() && resource.data.organizerUid == request.auth.uid;
+
+      // RSVPs: you can only create/edit/delete your OWN rsvp doc; anyone signed
+      // in can read the roster.
+      match /rsvps/{uid} {
+        allow read: if signedIn();
+        allow write: if isSelf(uid);
+      }
+    }
+
+    // Matches are created/validated server-side (Cloud Functions) before being
+    // pushed to DUPR — clients get read-only access.
+    match /matches/{matchId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+  }
+}
