@@ -132,7 +132,7 @@ input:disabled { background: #f2eeeb; color: var(--muted); cursor: not-allowed; 
 
 /* live identity preview under avatar */
 .profile-hero { flex-direction: column; align-items: center; gap: 8px; }
-.identity-name { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+.identity-name { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; color: var(--brand); }
 .identity-name.is-empty { color: #c3bab6; font-weight: 700; }
 .identity-skill {
   font-size: 0.74rem; font-weight: 800; letter-spacing: 0.02em;
@@ -153,8 +153,8 @@ input:disabled { background: #f2eeeb; color: var(--muted); cursor: not-allowed; 
 .seg:hover { color: var(--ink); }
 .seg.active { background: var(--brand); color: #fff; box-shadow: var(--shadow-sm); }
 
-/* temporary diagnostic line */
-.debug-line { margin: 4px 0 0; font-size: 0.72rem; color: var(--muted); font-family: ui-monospace, Menlo, Consolas, monospace; word-break: break-all; }
+/* profile title in brand red */
+.profile-card h2 { color: var(--brand); }
 
 /* inline save status */
 .save-status { margin: -4px 0 2px; font-size: 0.86rem; font-weight: 600; }
