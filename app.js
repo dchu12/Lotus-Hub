@@ -356,43 +356,141 @@
     });
   }
 
+  // Resize/crop an image File to a square dataURL (keeps Firestore docs small).
+  function resizeImage(file, size) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = function () {
+        reject(new Error("Could not read image."));
+      };
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = function () {
+          reject(new Error("Could not load image."));
+        };
+        img.onload = function () {
+          var canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          var ctx = canvas.getContext("2d");
+          // cover-crop to a centered square
+          var s = Math.min(img.width, img.height);
+          var sx = (img.width - s) / 2;
+          var sy = (img.height - s) / 2;
+          ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function avatarInner(p) {
+    if (p.photoDataUrl || p.photoURL) {
+      return '<img src="' + esc(p.photoDataUrl || p.photoURL) + '" alt="" referrerpolicy="no-referrer" />';
+    }
+    var name = p.displayName || (state.user && state.user.email) || "?";
+    return esc(name.trim().charAt(0).toUpperCase() || "?");
+  }
+
+  function skillOptions(selected) {
+    var opts = ["Beginner", "Intermediate", "Advanced"];
+    var html = '<option value="">Select…</option>';
+    opts.forEach(function (o) {
+      html += '<option value="' + o + '"' + (selected === o ? " selected" : "") + ">" + o + "</option>";
+    });
+    return html;
+  }
+
   function renderProfile() {
     main.innerHTML = "";
     var p = state.profile || {};
     var linked = !!p.duprLinked;
+    var duprValue = linked && p.homeRatingDoubles != null ? String(p.homeRatingDoubles) : "";
     var card = el(
       '<section class="card stack">' +
         "<h2>Profile</h2>" +
+        '<div class="avatar-row">' +
+        '<div class="avatar-preview" id="avatar-preview">' + avatarInner(p) + "</div>" +
+        "<div>" +
+        '<button class="btn-ghost" id="upload-btn" type="button">' +
+        (p.photoDataUrl || p.photoURL ? "Change photo" : "Upload photo") +
+        "</button>" +
+        '<input type="file" id="photo-input" accept="image/*" hidden />' +
+        '<p class="muted">Shown as a circle on your profile.</p>' +
+        "</div></div>" +
         '<div class="field"><label>Name</label>' +
         '<input id="p-name" type="text" value="' + esc(p.displayName || "") + '" /></div>' +
-        '<button class="btn-ghost" id="save-name">Save name</button>' +
+        '<div class="field"><label>Skill level</label>' +
+        '<select id="p-skill">' + skillOptions(p.skillLevel) + "</select></div>" +
+        '<div class="field"><label>Favourite court?</label>' +
+        '<input id="p-court" type="text" placeholder="e.g. Riverside Courts" value="' + esc(p.favCourt || "") + '" /></div>' +
+        '<div class="field"><label>Favourite paddle?</label>' +
+        '<input id="p-paddle" type="text" placeholder="e.g. Selkirk Vanguard" value="' + esc(p.favPaddle || "") + '" /></div>' +
+        '<button class="btn-primary" id="save-profile" type="button">Save profile</button>' +
         '<div class="dupr-box">' +
         "<h3>DUPR rating</h3>" +
+        '<div class="field"><label>Rating</label>' +
+        '<input id="p-dupr" type="text" value="' + esc(duprValue) + '"' +
+        (linked ? "" : " disabled") +
+        ' placeholder="Connect DUPR to see your rating" /></div>' +
         (linked
-          ? '<p class="muted">Linked ✓ · Doubles ' +
-            (p.homeRatingDoubles != null ? p.homeRatingDoubles : "—") +
-            " · Singles " +
-            (p.homeRatingSingles != null ? p.homeRatingSingles : "—") +
-            "</p>"
-          : '<p class="muted">Not linked yet. Connecting your DUPR account lets your ' +
-            "open-play results update your official rating.</p>" +
-            '<button class="btn-primary" id="link-dupr">Connect DUPR</button>') +
+          ? '<p class="muted">Linked ✓ · updates automatically from your matches.</p>'
+          : '<p class="muted">Connect your DUPR account so open-play results update your official rating.</p>' +
+            '<button class="btn-primary" id="link-dupr" type="button">Connect DUPR</button>') +
         "</div>" +
         "</section>"
     );
     main.appendChild(card);
 
-    card.querySelector("#save-name").addEventListener("click", function () {
+    // ---- photo upload ----
+    var photoInput = card.querySelector("#photo-input");
+    card.querySelector("#upload-btn").addEventListener("click", function () {
+      photoInput.click();
+    });
+    photoInput.addEventListener("change", function () {
+      var file = photoInput.files && photoInput.files[0];
+      if (!file) return;
+      var u = LH.currentUser();
+      if (!u) return;
+      resizeImage(file, 256)
+        .then(function (dataUrl) {
+          card.querySelector("#avatar-preview").innerHTML =
+            '<img src="' + dataUrl + '" alt="" />';
+          return firebase
+            .firestore()
+            .collection("users")
+            .doc(u.uid)
+            .set({ photoDataUrl: dataUrl }, { merge: true });
+        })
+        .then(function () {
+          toast("Photo updated.");
+        })
+        .catch(function (err) {
+          toast(err.message || "Could not update photo.");
+        });
+    });
+
+    // ---- save profile fields ----
+    card.querySelector("#save-profile").addEventListener("click", function () {
       var name = card.querySelector("#p-name").value.trim();
       if (!name) return toast("Name can't be empty.");
-      // Re-run ensure by writing through the wrapper's user doc.
       var u = LH.currentUser();
       if (!u) return;
       firebase
         .firestore()
         .collection("users")
         .doc(u.uid)
-        .set({ displayName: name }, { merge: true })
+        .set(
+          {
+            displayName: name,
+            skillLevel: card.querySelector("#p-skill").value || null,
+            favCourt: card.querySelector("#p-court").value.trim() || null,
+            favPaddle: card.querySelector("#p-paddle").value.trim() || null,
+          },
+          { merge: true }
+        )
         .then(function () {
           toast("Saved.");
         })
