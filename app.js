@@ -15,6 +15,7 @@
   var main = document.getElementById("main");
   var tabs = document.getElementById("tabs");
   var signoutBtn = document.getElementById("signout-btn");
+  var profileBtn = document.getElementById("profile-btn");
   var banner = document.getElementById("setup-banner");
   var toastEl = document.getElementById("toast");
 
@@ -82,6 +83,7 @@
   function renderSignedOut() {
     tabs.hidden = true;
     signoutBtn.hidden = true;
+    profileBtn.hidden = true;
     var configured = LH.available;
     main.innerHTML = "";
     var card = el(
@@ -140,15 +142,60 @@
   }
 
   // ---- signed-in shell --------------------------------------------------
+  function renderAvatar() {
+    var p = state.profile || {};
+    var name = p.displayName || (state.user && state.user.email) || "?";
+    var initials = name.trim().charAt(0).toUpperCase() || "?";
+    if (p.photoURL) {
+      profileBtn.innerHTML =
+        '<img src="' + esc(p.photoURL) + '" alt="" referrerpolicy="no-referrer" />';
+    } else {
+      profileBtn.textContent = initials;
+    }
+    profileBtn.classList.toggle("active", state.view === "profile");
+  }
+
   function renderSignedIn() {
     tabs.hidden = false;
     signoutBtn.hidden = false;
+    profileBtn.hidden = false;
+    renderAvatar();
     Array.prototype.forEach.call(tabs.querySelectorAll(".tab"), function (t) {
       t.classList.toggle("active", t.dataset.view === state.view);
     });
     if (state.view === "discover") renderDiscover();
     else if (state.view === "create") renderCreate();
+    else if (state.view === "coaching") renderCoaching();
     else if (state.view === "profile") renderProfile();
+  }
+
+  function renderCoaching() {
+    main.innerHTML = "";
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el(
+        '<div class="view-head"><h2>Coaching</h2>' +
+          '<p class="muted">Level up your game with lessons and drills.</p></div>'
+      )
+    );
+    var items = [
+      ["🎯", "Find a coach", "Browse local coaches by skill focus and availability."],
+      ["📅", "Book a lesson", "Schedule 1-on-1 or small-group sessions."],
+      ["📚", "Drills &amp; tips", "A library of drills to sharpen your dinks, serves, and strategy."],
+    ];
+    items.forEach(function (it) {
+      wrap.appendChild(
+        el(
+          '<article class="card coach-card">' +
+            '<div class="coach-icon">' + it[0] + "</div>" +
+            "<div><h3>" + it[1] + "</h3>" +
+            '<p class="muted">' + it[2] + "</p></div>" +
+            '<span class="pill">Coming soon</span>' +
+            "</article>"
+        )
+      );
+    });
+    main.appendChild(wrap);
   }
 
   function renderDiscover() {
@@ -384,6 +431,7 @@
       if (state.unsub.profile) state.unsub.profile();
       state.unsub.profile = LH.watchUser(state.user.uid, function (doc) {
         state.profile = doc;
+        if (state.user) renderAvatar();
         if (state.view === "profile") renderProfile();
       });
     }
@@ -393,6 +441,10 @@
     var t = e.target.closest(".tab");
     if (!t) return;
     state.view = t.dataset.view;
+    renderSignedIn();
+  });
+  profileBtn.addEventListener("click", function () {
+    state.view = "profile";
     renderSignedIn();
   });
   signoutBtn.addEventListener("click", function () {

@@ -1,11 +1,11 @@
 /* sw.js — minimal service worker so Lotus Hub is installable as a PWA.
  * Caches the app shell; network-first for everything else so Firebase stays live. */
-var CACHE = "lotus-hub-v2";
+var CACHE = "lotus-hub-v3";
 var SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=2",
-  "./app.js?v=1",
+  "./styles.css?v=3",
+  "./app.js?v=3",
   "./firebase.js?v=1",
   "./firebase-config.js?v=1",
   "./manifest.json",
