@@ -1,24 +1,19 @@
 /* firebase-config.js — Firebase project config for Lotus Hub.
  *
- * ⚠️ PASTE YOUR OWN NEW FIREBASE PROJECT'S CONFIG BELOW.
+ * This points at the app's own dedicated Firebase project (`lots-hub`), separate
+ * from any other app. These web config values are PUBLIC identifiers, not secrets —
+ * safe to commit. Real security comes from firestore.rules and Firebase Auth.
  *
- * This is a brand-new, separate Firebase project — NOT the Yosan / payday-budget
- * project. Create it at https://console.firebase.google.com:
- *   1. Add project (e.g. "lotus-hub")
- *   2. Build → Authentication → enable Email/Password and Google
- *   3. Build → Firestore Database → create (test mode; rules are in firestore.rules)
- *   4. Project settings ⚙ → Your apps → Web app </> → copy the config object here
- *
- * These web config values are PUBLIC identifiers, not secrets — safe to commit.
- * Real security comes from firestore.rules and Firebase Auth, not from hiding these.
+ * To change projects, replace the values below with the config from
+ * Firebase console → ⚙ Project settings → Your apps → Web app.
  */
 window.FIREBASE_CONFIG = {
-  apiKey: "PASTE_YOUR_API_KEY",
-  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-  projectId: "PASTE_YOUR_PROJECT_ID",
-  storageBucket: "PASTE_YOUR_PROJECT.firebasestorage.app",
-  messagingSenderId: "PASTE_YOUR_SENDER_ID",
-  appId: "PASTE_YOUR_APP_ID",
+  apiKey: "AIzaSyC9b-VCWEG3K1yf7WZee6uo4az95VItJqc",
+  authDomain: "lots-hub.firebaseapp.com",
+  projectId: "lots-hub",
+  storageBucket: "lots-hub.firebasestorage.app",
+  messagingSenderId: "409895305585",
+  appId: "1:409895305585:web:30e93ab6598ddd389e36d0",
 };
 
 // True once real values are filled in — the app uses this to show a setup banner.
