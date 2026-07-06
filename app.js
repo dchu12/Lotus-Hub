@@ -480,8 +480,8 @@
     photoInput.addEventListener("change", function () {
       var file = photoInput.files && photoInput.files[0];
       if (!file) return;
-      var u = LH.currentUser();
-      if (!u) return;
+      var u = LH.currentUser() || state.user;
+      if (!u) return toast("You're not signed in. Please sign in again.");
       resizeImage(file, 256)
         .then(function (dataUrl) {
           card.querySelector("#avatar-preview").innerHTML =
@@ -542,7 +542,7 @@
         var name = card.querySelector("#p-name").value.trim();
         if (!name) return setStatus("Name can't be empty.", "err");
         if (!LH.ready) return setStatus("Not connected to the database yet — try again in a moment.", "err");
-        var u = LH.currentUser();
+        var u = LH.currentUser() || state.user;
         if (!u) return setStatus("You're not signed in. Please sign in again.", "err");
         setStatus("Saving…", "");
         firebase
