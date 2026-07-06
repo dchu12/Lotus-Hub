@@ -447,6 +447,7 @@
         '<div class="input-wrap"><span class="lead" aria-hidden="true">🏓</span>' +
         '<input class="has-icon" id="p-paddle" type="text" placeholder="e.g. Selkirk Vanguard" value="' + esc(p.favPaddle || "") + '" /></div></div>' +
         '<button class="btn-primary" id="save-profile" type="button">Save profile</button>' +
+        '<p class="save-status" id="save-status" hidden></p>' +
         '<div class="dupr-box">' +
         '<div class="dupr-head"><h3>DUPR rating</h3>' +
         '<span class="chip ' + (linked ? "chip-ok" : "chip-muted") + '">' +
@@ -530,31 +531,45 @@
     }
 
     // ---- save profile fields ----
+    var statusEl = card.querySelector("#save-status");
+    function setStatus(msg, kind) {
+      statusEl.hidden = false;
+      statusEl.textContent = msg;
+      statusEl.className = "save-status" + (kind ? " " + kind : "");
+    }
     card.querySelector("#save-profile").addEventListener("click", function () {
-      var name = card.querySelector("#p-name").value.trim();
-      if (!name) return toast("Name can't be empty.");
-      var u = LH.currentUser();
-      if (!u) return;
-      firebase
-        .firestore()
-        .collection("users")
-        .doc(u.uid)
-        .set(
-          {
-            displayName: name,
-            skillLevel: selectedSkill(),
-            favCourt: card.querySelector("#p-court").value.trim() || null,
-            favPaddle: card.querySelector("#p-paddle").value.trim() || null,
-          },
-          { merge: true }
-        )
-        .then(function () {
-          toast("Saved.");
-        })
-        .catch(function (err) {
-          console.error("Profile save failed:", err);
-          toast("Could not save: " + (err && (err.message || err.code) ? err.message || err.code : "unknown error"));
-        });
+      try {
+        var name = card.querySelector("#p-name").value.trim();
+        if (!name) return setStatus("Name can't be empty.", "err");
+        if (!LH.ready) return setStatus("Not connected to the database yet — try again in a moment.", "err");
+        var u = LH.currentUser();
+        if (!u) return setStatus("You're not signed in. Please sign in again.", "err");
+        setStatus("Saving…", "");
+        firebase
+          .firestore()
+          .collection("users")
+          .doc(u.uid)
+          .set(
+            {
+              displayName: name,
+              skillLevel: selectedSkill(),
+              favCourt: card.querySelector("#p-court").value.trim() || null,
+              favPaddle: card.querySelector("#p-paddle").value.trim() || null,
+            },
+            { merge: true }
+          )
+          .then(function () {
+            setStatus("Saved ✓", "ok");
+            toast("Saved.");
+          })
+          .catch(function (err) {
+            console.error("Profile save failed:", err);
+            setStatus("Couldn't save — " + (err && (err.code || err.message) ? err.code || err.message : "unknown error"), "err");
+          });
+      } catch (e) {
+        console.error("Profile save threw:", e);
+        setStatus("Couldn't save — " + (e && e.message ? e.message : "unexpected error"), "err");
+      }
     });
 
     var linkBtn = card.querySelector("#link-dupr");

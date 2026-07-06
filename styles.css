@@ -149,6 +149,11 @@ input:disabled { background: #f2eeeb; color: var(--muted); cursor: not-allowed; 
 .seg:hover { color: var(--ink); }
 .seg.active { background: var(--brand); color: #fff; box-shadow: var(--shadow-sm); }
 
+/* inline save status */
+.save-status { margin: -4px 0 2px; font-size: 0.86rem; font-weight: 600; }
+.save-status.ok { color: #1a7f43; }
+.save-status.err { color: var(--danger); }
+
 /* sign-out button (bottom of profile) */
 .btn-signout {
   width: 100%; border: 1.5px solid var(--line-strong); background: #fff;
