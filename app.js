@@ -12,6 +12,8 @@
 (function () {
   "use strict";
 
+  var APP_VERSION = "v13";
+
   var main = document.getElementById("main");
   var tabs = document.getElementById("tabs");
   var profileBtn = document.getElementById("profile-btn");
@@ -462,9 +464,23 @@
             '<button class="btn-primary" id="link-dupr" type="button">Connect DUPR</button>') +
         "</div>" +
         '<button class="btn-signout" id="signout-btn" type="button">Sign out</button>' +
+        '<p class="debug-line" id="debug-line"></p>' +
         "</section>"
     );
     main.appendChild(card);
+
+    // Temporary diagnostic readout of the real auth state.
+    (function () {
+      var au = LH.currentUser();
+      var su = state.user;
+      card.querySelector("#debug-line").textContent =
+        "diag " + APP_VERSION +
+        " · sdk=" + (typeof firebase !== "undefined" ? "1" : "0") +
+        " · ready=" + (LH.ready ? "1" : "0") +
+        " · authUser=" + (au ? au.uid.slice(0, 6) : "null") +
+        " · stateUser=" + (su ? su.uid.slice(0, 6) : "null") +
+        " · email=" + ((au && au.email) || (su && su.email) || "none");
+    })();
 
     card.querySelector("#signout-btn").addEventListener("click", function () {
       // Reload to a clean state afterward so a stale/invalid session can't leave

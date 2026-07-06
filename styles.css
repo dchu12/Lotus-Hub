@@ -149,6 +149,9 @@ input:disabled { background: #f2eeeb; color: var(--muted); cursor: not-allowed; 
 .seg:hover { color: var(--ink); }
 .seg.active { background: var(--brand); color: #fff; box-shadow: var(--shadow-sm); }
 
+/* temporary diagnostic line */
+.debug-line { margin: 4px 0 0; font-size: 0.72rem; color: var(--muted); font-family: ui-monospace, Menlo, Consolas, monospace; word-break: break-all; }
+
 /* inline save status */
 .save-status { margin: -4px 0 2px; font-size: 0.86rem; font-weight: 600; }
 .save-status.ok { color: #1a7f43; }
