@@ -82,28 +82,36 @@
     return db.collection("users").doc(uid);
   }
 
-  // Create the profile doc on first sign-in; merge so we never clobber DUPR fields.
+  // Create the profile doc on first sign-in. On later sign-ins, ONLY fill in
+  // fields that are missing — never clobber values the user has saved (name,
+  // photo, skill, court, paddle, DUPR).
   function ensureUserDoc(user, displayName) {
     if (!user) return Promise.resolve(null);
     var ref = userDoc(user.uid);
     return ref.get().then(function (snap) {
-      var base = {
-        uid: user.uid,
-        email: user.email || null,
-        displayName: displayName || user.displayName || (user.email || "Player").split("@")[0],
-        photoURL: user.photoURL || null,
-      };
       if (!snap.exists) {
-        base.duprLinked = false;
-        base.duprId = null;
-        base.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        var base = {
+          uid: user.uid,
+          email: user.email || null,
+          displayName: displayName || user.displayName || (user.email || "Player").split("@")[0],
+          photoURL: user.photoURL || null,
+          duprLinked: false,
+          duprId: null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
         return ref.set(base).then(function () {
           return base;
         });
       }
-      // Keep displayName/photo fresh but don't overwrite DUPR fields.
-      return ref.set(base, { merge: true }).then(function () {
-        return Object.assign({}, snap.data(), base);
+      var data = snap.data();
+      var patch = {};
+      if (displayName) patch.displayName = displayName; // explicit sign-up name wins
+      else if (!data.displayName) patch.displayName = user.displayName || (user.email || "Player").split("@")[0];
+      if (!data.email && user.email) patch.email = user.email;
+      if (data.photoURL == null && user.photoURL) patch.photoURL = user.photoURL;
+      if (!Object.keys(patch).length) return data;
+      return ref.set(patch, { merge: true }).then(function () {
+        return Object.assign({}, data, patch);
       });
     });
   }

@@ -495,7 +495,8 @@
           toast("Photo updated.");
         })
         .catch(function (err) {
-          toast(err.message || "Could not update photo.");
+          console.error("Photo save failed:", err);
+          toast("Could not update photo: " + (err && (err.message || err.code) ? err.message || err.code : "unknown error"));
         });
     });
 
@@ -550,8 +551,9 @@
         .then(function () {
           toast("Saved.");
         })
-        .catch(function () {
-          toast("Could not save.");
+        .catch(function (err) {
+          console.error("Profile save failed:", err);
+          toast("Could not save: " + (err && (err.message || err.code) ? err.message || err.code : "unknown error"));
         });
     });
 
@@ -575,8 +577,10 @@
     if (state.user) {
       if (state.unsub.profile) state.unsub.profile();
       state.unsub.profile = LH.watchUser(state.user.uid, function (doc) {
+        // Keep the cached profile fresh, but don't re-render the profile form
+        // while it's open — that would wipe fields the user is mid-editing.
+        // The form is rebuilt from state.profile each time it's opened.
         state.profile = doc;
-        if (state.view === "profile") renderProfile();
       });
     }
   }
