@@ -662,12 +662,13 @@
     var duprValue = linked && p.homeRatingDoubles != null ? String(p.homeRatingDoubles) : "";
     var card = el(
       '<section class="card stack profile-card">' +
-        "<h2>Player's Profile</h2>" +
         '<div class="profile-hero">' +
-        '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + "</div>" +
-        '<input type="file" id="photo-input" accept="image/*" hidden />' +
         '<div class="identity-name' + (p.displayName ? "" : " is-empty") + '" id="name-preview">' +
         esc(p.displayName || "Your name") + "</div>" +
+        '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + "</div>" +
+        '<input type="file" id="photo-input" accept="image/*" hidden />' +
+        '<div class="identity-dupr' + (linked && duprValue ? "" : " is-muted") + '">' +
+        (linked && duprValue ? "DUPR " + esc(duprValue) : "DUPR · not connected") + "</div>" +
         '<div class="identity-skill" id="skill-preview"' + (p.skillLevel ? "" : " hidden") + ">" +
         esc(p.skillLevel || "") + "</div>" +
         "</div>" +
@@ -675,6 +676,10 @@
         '<input id="p-name" type="text" placeholder="Your name" value="' + esc(p.displayName || "") + '" /></div>' +
         '<div class="field"><label>Pickleball Skill Level</label>' +
         segmentedSkill(p.skillLevel) + "</div>" +
+        '<div class="field"><label>Country</label>' +
+        '<input id="p-country" type="text" placeholder="e.g. Canada 🇨🇦" value="' + esc(p.country || "") + '" /></div>' +
+        '<div class="field"><label>Ethnicity</label>' +
+        '<input id="p-ethnicity" type="text" placeholder="e.g. China 🇨🇳" value="' + esc(p.ethnicity || "") + '" /></div>' +
         '<div class="field"><label>Favourite court?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">📍</span>' +
         '<input class="has-icon" id="p-court" type="text" placeholder="e.g. Pickleplex Downsview" value="' + esc(p.favCourt || "") + '" /></div></div>' +
@@ -793,6 +798,8 @@
             {
               displayName: name,
               skillLevel: selectedSkill(),
+              country: card.querySelector("#p-country").value.trim() || null,
+              ethnicity: card.querySelector("#p-ethnicity").value.trim() || null,
               favCourt: card.querySelector("#p-court").value.trim() || null,
               favPaddle: card.querySelector("#p-paddle").value.trim() || null,
             },
