@@ -467,7 +467,12 @@
     main.appendChild(card);
 
     card.querySelector("#signout-btn").addEventListener("click", function () {
-      LH.signOut();
+      // Reload to a clean state afterward so a stale/invalid session can't leave
+      // the app stuck showing a signed-in view with no real Firebase user.
+      function reload() {
+        window.location.reload();
+      }
+      LH.signOut().then(reload, reload);
     });
 
     // ---- photo upload ----

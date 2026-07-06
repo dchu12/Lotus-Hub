@@ -74,7 +74,7 @@
   }
 
   function signOut() {
-    return ready ? auth.signOut() : Promise.resolve();
+    return ready && auth ? auth.signOut() : Promise.resolve();
   }
 
   // ---- Users ------------------------------------------------------------
