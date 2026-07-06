@@ -14,8 +14,7 @@
 
   var main = document.getElementById("main");
   var tabs = document.getElementById("tabs");
-  var settingsBtn = document.getElementById("settings-btn");
-  var settingsMenu = document.getElementById("settings-menu");
+  var profileBtn = document.getElementById("profile-btn");
   var banner = document.getElementById("setup-banner");
   var toastEl = document.getElementById("toast");
 
@@ -80,16 +79,9 @@
   }
 
   // ---- auth views -------------------------------------------------------
-  function closeMenu() {
-    settingsMenu.hidden = true;
-    settingsBtn.setAttribute("aria-expanded", "false");
-    settingsBtn.classList.remove("active");
-  }
-
   function renderSignedOut() {
     tabs.hidden = true;
-    settingsBtn.hidden = true;
-    closeMenu();
+    profileBtn.hidden = true;
     var configured = LH.available;
     main.innerHTML = "";
     var card = el(
@@ -150,7 +142,8 @@
   // ---- signed-in shell --------------------------------------------------
   function renderSignedIn() {
     tabs.hidden = false;
-    settingsBtn.hidden = false;
+    profileBtn.hidden = false;
+    profileBtn.classList.toggle("active", state.view === "profile");
     Array.prototype.forEach.call(tabs.querySelectorAll(".tab"), function (t) {
       t.classList.toggle("active", t.dataset.view === state.view);
     });
@@ -248,16 +241,7 @@
       if (rosterOpen && !unsubRoster) {
         unsubRoster = LH.watchRsvps(s.id, function (list) {
           rosterEl.innerHTML = list.length
-            ? list
-                .map(function (r) {
-                  return (
-                    "<li>" +
-                    esc(r.displayName) +
-                    (r.rating != null ? ' <span class="muted">' + r.rating + "</span>" : "") +
-                    "</li>"
-                  );
-                })
-                .join("")
+            ? list.map(rosterItem).join("")
             : '<li class="muted">No one yet — be first!</li>';
         });
       }
@@ -283,6 +267,8 @@
             : LH.join(s.id, {
                 displayName: (state.profile && state.profile.displayName) || "Player",
                 rating: state.profile ? state.profile.homeRatingDoubles : null,
+                photoDataUrl: state.profile ? state.profile.photoDataUrl || state.profile.photoURL : null,
+                skillLevel: state.profile ? state.profile.skillLevel : null,
               });
         action
           .then(function (res) {
@@ -399,13 +385,39 @@
     return '<span class="avatar-initial">' + esc(name.trim().charAt(0).toUpperCase() || "?") + "</span>";
   }
 
-  function skillOptions(selected) {
-    var opts = ["Beginner", "Intermediate", "Advanced"];
-    var html = '<option value="">Select…</option>';
-    opts.forEach(function (o) {
-      html += '<option value="' + o + '"' + (selected === o ? " selected" : "") + ">" + o + "</option>";
-    });
-    return html;
+  var SKILLS = ["Beginner", "Intermediate", "Advanced"];
+
+  function segmentedSkill(selected) {
+    return (
+      '<div class="segmented" id="p-skill" role="group" aria-label="Skill level">' +
+      SKILLS.map(function (o) {
+        return (
+          '<button type="button" class="seg' + (selected === o ? " active" : "") +
+          '" data-val="' + o + '">' + o + "</button>"
+        );
+      }).join("") +
+      "</div>"
+    );
+  }
+
+  // Small circular avatar for rosters (photo or first initial).
+  function miniAvatar(r) {
+    if (r.photoDataUrl) {
+      return '<span class="roster-avatar"><img src="' + esc(r.photoDataUrl) + '" alt="" /></span>';
+    }
+    var init = (r.displayName || "?").trim().charAt(0).toUpperCase() || "?";
+    return '<span class="roster-avatar">' + esc(init) + "</span>";
+  }
+
+  function rosterItem(r) {
+    return (
+      '<li class="roster-item">' +
+      miniAvatar(r) +
+      '<span class="roster-name">' + esc(r.displayName) + "</span>" +
+      (r.skillLevel ? '<span class="roster-skill">' + esc(r.skillLevel) + "</span>" : "") +
+      (r.rating != null ? '<span class="roster-rating">' + esc(r.rating) + "</span>" : "") +
+      "</li>"
+    );
   }
 
   function renderProfile() {
@@ -419,11 +431,15 @@
         '<div class="profile-hero">' +
         '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + "</div>" +
         '<input type="file" id="photo-input" accept="image/*" hidden />' +
+        '<div class="identity-name' + (p.displayName ? "" : " is-empty") + '" id="name-preview">' +
+        esc(p.displayName || "Your name") + "</div>" +
+        '<div class="identity-skill" id="skill-preview"' + (p.skillLevel ? "" : " hidden") + ">" +
+        esc(p.skillLevel || "") + "</div>" +
         "</div>" +
         '<div class="field"><label>Name</label>' +
         '<input id="p-name" type="text" placeholder="Your name" value="' + esc(p.displayName || "") + '" /></div>' +
         '<div class="field"><label>Pickleball Skill Level</label>' +
-        '<select id="p-skill">' + skillOptions(p.skillLevel) + "</select></div>" +
+        segmentedSkill(p.skillLevel) + "</div>" +
         '<div class="field"><label>Favourite court?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">📍</span>' +
         '<input class="has-icon" id="p-court" type="text" placeholder="e.g. Pickleplex Downsview" value="' + esc(p.favCourt || "") + '" /></div></div>' +
@@ -444,9 +460,14 @@
           : '<p class="muted">Connect your DUPR account so open-play results update your official rating.</p>' +
             '<button class="btn-primary" id="link-dupr" type="button">Connect DUPR</button>') +
         "</div>" +
+        '<button class="btn-signout" id="signout-btn" type="button">Sign out</button>' +
         "</section>"
     );
     main.appendChild(card);
+
+    card.querySelector("#signout-btn").addEventListener("click", function () {
+      LH.signOut();
+    });
 
     // ---- photo upload ----
     // Delegate on the container so the handler survives innerHTML swaps; the
@@ -478,6 +499,35 @@
         });
     });
 
+    // ---- live preview: name + skill under the avatar ----
+    var nameInput = card.querySelector("#p-name");
+    var namePreview = card.querySelector("#name-preview");
+    nameInput.addEventListener("input", function () {
+      var v = nameInput.value.trim();
+      namePreview.textContent = v || "Your name";
+      namePreview.classList.toggle("is-empty", !v);
+    });
+
+    // ---- segmented skill control ----
+    var skillSeg = card.querySelector("#p-skill");
+    var skillPreview = card.querySelector("#skill-preview");
+    skillSeg.addEventListener("click", function (e) {
+      var btn = e.target.closest(".seg");
+      if (!btn) return;
+      var already = btn.classList.contains("active");
+      Array.prototype.forEach.call(skillSeg.querySelectorAll(".seg"), function (s) {
+        s.classList.remove("active");
+      });
+      if (!already) btn.classList.add("active"); // tapping the active one clears it
+      var val = already ? "" : btn.dataset.val;
+      skillPreview.textContent = val;
+      skillPreview.hidden = !val;
+    });
+    function selectedSkill() {
+      var active = skillSeg.querySelector(".seg.active");
+      return active ? active.dataset.val : null;
+    }
+
     // ---- save profile fields ----
     card.querySelector("#save-profile").addEventListener("click", function () {
       var name = card.querySelector("#p-name").value.trim();
@@ -491,7 +541,7 @@
         .set(
           {
             displayName: name,
-            skillLevel: card.querySelector("#p-skill").value || null,
+            skillLevel: selectedSkill(),
             favCourt: card.querySelector("#p-court").value.trim() || null,
             favPaddle: card.querySelector("#p-paddle").value.trim() || null,
           },
@@ -538,27 +588,10 @@
     renderSignedIn();
   });
 
-  // Gear menu: toggle, act on items, and close when clicking elsewhere.
-  settingsBtn.addEventListener("click", function (e) {
-    e.stopPropagation();
-    var open = settingsMenu.hidden;
-    settingsMenu.hidden = !open;
-    settingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
-    settingsBtn.classList.toggle("active", open);
-  });
-  settingsMenu.addEventListener("click", function (e) {
-    var item = e.target.closest(".menu-item");
-    if (!item) return;
-    closeMenu();
-    if (item.dataset.action === "profile") {
-      state.view = "profile";
-      renderSignedIn();
-    } else if (item.dataset.action === "signout") {
-      LH.signOut();
-    }
-  });
-  document.addEventListener("click", function () {
-    if (!settingsMenu.hidden) closeMenu();
+  // Profile icon opens the Profile view directly.
+  profileBtn.addEventListener("click", function () {
+    state.view = "profile";
+    renderSignedIn();
   });
 
   function start() {

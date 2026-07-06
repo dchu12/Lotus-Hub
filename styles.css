@@ -46,32 +46,16 @@ body {
 .brand { display: flex; align-items: center; justify-content: space-between; }
 .brand-actions { display: flex; align-items: center; gap: 10px; }
 
-/* red gear settings button + dropdown menu */
-.menu-wrap { position: relative; }
-.gear-btn {
+/* profile icon button (top-right) */
+.profile-icon-btn {
   width: 40px; height: 40px; flex: 0 0 40px; padding: 0;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%; border: 1.5px solid var(--line-strong);
   background: #fff; color: var(--brand); cursor: pointer;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
-.gear-btn:hover { border-color: var(--brand); background: var(--brand-soft); }
-.gear-btn.active { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 3px var(--brand-soft); }
-
-.menu {
-  position: absolute; top: calc(100% + 8px); right: 0; z-index: 20;
-  min-width: 168px; padding: 6px;
-  background: #fff; border: 1px solid var(--line); border-radius: 12px;
-  box-shadow: var(--shadow);
-}
-.menu-item {
-  display: block; width: 100%; text-align: left;
-  padding: 10px 12px; border: 0; background: transparent; color: var(--ink);
-  font-weight: 600; font-size: 0.92rem; border-radius: 8px; cursor: pointer;
-}
-.menu-item:hover { background: var(--bg); }
-.menu-item-danger { color: var(--danger); }
-.menu-item-danger:hover { background: var(--brand-soft); }
+.profile-icon-btn:hover { border-color: var(--brand); background: var(--brand-soft); }
+.profile-icon-btn.active { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 3px var(--brand-soft); }
 .wordmark {
   font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; margin: 0;
   display: flex; align-items: center; gap: 10px; color: var(--brand);
@@ -141,6 +125,37 @@ input:disabled { background: #f2eeeb; color: var(--muted); cursor: not-allowed; 
   box-shadow: var(--shadow-sm); transition: background 0.15s;
 }
 .avatar-edit:hover { background: var(--brand-hover); }
+
+/* live identity preview under avatar */
+.profile-hero { flex-direction: column; align-items: center; gap: 8px; }
+.identity-name { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+.identity-name.is-empty { color: #c3bab6; font-weight: 700; }
+.identity-skill {
+  font-size: 0.74rem; font-weight: 800; letter-spacing: 0.02em;
+  color: var(--accent-ink); background: var(--accent-soft); border: 1px solid #f3e2ad;
+  padding: 3px 11px; border-radius: 999px;
+}
+
+/* segmented skill control */
+.segmented {
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--bg); border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+}
+.seg {
+  flex: 1; border: 0; background: transparent; color: var(--muted);
+  font-weight: 700; font-size: 0.86rem; padding: 9px 6px; border-radius: 8px; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.seg:hover { color: var(--ink); }
+.seg.active { background: var(--brand); color: #fff; box-shadow: var(--shadow-sm); }
+
+/* sign-out button (bottom of profile) */
+.btn-signout {
+  width: 100%; border: 1.5px solid var(--line-strong); background: #fff;
+  color: var(--danger); font-weight: 700; padding: 12px; border-radius: 11px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-signout:hover { background: var(--brand-soft); border-color: var(--danger); }
 
 /* leading-icon inputs */
 .input-wrap { position: relative; }
@@ -216,9 +231,23 @@ button { font: inherit; cursor: pointer; }
 .session-actions { display: flex; gap: 10px; }
 .session-actions .btn-ghost { flex: 0 0 auto; }
 .session-actions .btn-primary { flex: 1; }
-.roster { list-style: none; margin: 6px 0 12px; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); }
-.roster li { padding: 5px 0; font-size: 0.9rem; border-bottom: 1px solid var(--line); }
+.roster { list-style: none; margin: 6px 0 12px; padding: 6px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.roster li { padding: 8px 0; font-size: 0.9rem; border-bottom: 1px solid var(--line); }
 .roster li:last-child { border-bottom: 0; }
+.roster-item { display: flex; align-items: center; gap: 10px; }
+.roster-avatar {
+  width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; overflow: hidden;
+  background: var(--brand-soft); color: var(--brand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.82rem; font-weight: 800;
+}
+.roster-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.roster-name { flex: 1; font-weight: 600; }
+.roster-skill {
+  font-size: 0.68rem; font-weight: 800; color: var(--accent-ink);
+  background: var(--accent-soft); border: 1px solid #f3e2ad; padding: 2px 8px; border-radius: 999px;
+}
+.roster-rating { font-size: 0.82rem; font-weight: 700; color: var(--muted); }
 
 .dupr-box {
   margin-top: 4px; padding: 16px;

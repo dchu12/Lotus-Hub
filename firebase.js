@@ -211,6 +211,8 @@
             uid: u.uid,
             displayName: profile.displayName || u.displayName || "Player",
             rating: profile.rating != null ? profile.rating : null,
+            photoDataUrl: profile.photoDataUrl || profile.photoURL || null,
+            skillLevel: profile.skillLevel || null,
             status: status,
             joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
           });
