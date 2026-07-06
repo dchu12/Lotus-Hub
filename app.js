@@ -386,12 +386,17 @@
     });
   }
 
-  function avatarInner(p) {
+  var AVATAR_EDIT_BTN =
+    '<button class="avatar-edit" id="upload-btn" type="button" aria-label="Change photo" title="Change photo">' +
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>' +
+    "</button>";
+
+  function avatarFace(p) {
     if (p.photoDataUrl || p.photoURL) {
       return '<img src="' + esc(p.photoDataUrl || p.photoURL) + '" alt="" referrerpolicy="no-referrer" />';
     }
     var name = p.displayName || (state.user && state.user.email) || "?";
-    return esc(name.trim().charAt(0).toUpperCase() || "?");
+    return '<span class="avatar-initial">' + esc(name.trim().charAt(0).toUpperCase() || "?") + "</span>";
   }
 
   function skillOptions(selected) {
@@ -409,34 +414,33 @@
     var linked = !!p.duprLinked;
     var duprValue = linked && p.homeRatingDoubles != null ? String(p.homeRatingDoubles) : "";
     var card = el(
-      '<section class="card stack">' +
-        "<h2>Profile</h2>" +
-        '<div class="avatar-row">' +
-        '<div class="avatar-preview" id="avatar-preview">' + avatarInner(p) + "</div>" +
-        "<div>" +
-        '<button class="btn-ghost" id="upload-btn" type="button">' +
-        (p.photoDataUrl || p.photoURL ? "Change photo" : "Upload photo") +
-        "</button>" +
+      '<section class="card stack profile-card">' +
+        "<h2>Lotus Profile</h2>" +
+        '<div class="profile-hero">' +
+        '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + "</div>" +
         '<input type="file" id="photo-input" accept="image/*" hidden />' +
-        '<p class="muted">Shown as a circle on your profile.</p>' +
-        "</div></div>" +
+        "</div>" +
         '<div class="field"><label>Name</label>' +
-        '<input id="p-name" type="text" value="' + esc(p.displayName || "") + '" /></div>' +
-        '<div class="field"><label>Skill level</label>' +
+        '<input id="p-name" type="text" placeholder="Your name" value="' + esc(p.displayName || "") + '" /></div>' +
+        '<div class="field"><label>Pickleball Skill Level</label>' +
         '<select id="p-skill">' + skillOptions(p.skillLevel) + "</select></div>" +
         '<div class="field"><label>Favourite court?</label>' +
-        '<input id="p-court" type="text" placeholder="e.g. Riverside Courts" value="' + esc(p.favCourt || "") + '" /></div>' +
+        '<div class="input-wrap"><span class="lead" aria-hidden="true">📍</span>' +
+        '<input class="has-icon" id="p-court" type="text" placeholder="e.g. Pickleplex Downsview" value="' + esc(p.favCourt || "") + '" /></div></div>' +
         '<div class="field"><label>Favourite paddle?</label>' +
-        '<input id="p-paddle" type="text" placeholder="e.g. Selkirk Vanguard" value="' + esc(p.favPaddle || "") + '" /></div>' +
+        '<div class="input-wrap"><span class="lead" aria-hidden="true">🏓</span>' +
+        '<input class="has-icon" id="p-paddle" type="text" placeholder="e.g. Selkirk Vanguard" value="' + esc(p.favPaddle || "") + '" /></div></div>' +
         '<button class="btn-primary" id="save-profile" type="button">Save profile</button>' +
         '<div class="dupr-box">' +
-        "<h3>DUPR rating</h3>" +
+        '<div class="dupr-head"><h3>DUPR rating</h3>' +
+        '<span class="chip ' + (linked ? "chip-ok" : "chip-muted") + '">' +
+        (linked ? "Connected" : "Not connected") + "</span></div>" +
         '<div class="field"><label>Rating</label>' +
         '<input id="p-dupr" type="text" value="' + esc(duprValue) + '"' +
         (linked ? "" : " disabled") +
         ' placeholder="Connect DUPR to see your rating" /></div>' +
         (linked
-          ? '<p class="muted">Linked ✓ · updates automatically from your matches.</p>'
+          ? '<p class="muted">Updates automatically from your matches.</p>'
           : '<p class="muted">Connect your DUPR account so open-play results update your official rating.</p>' +
             '<button class="btn-primary" id="link-dupr" type="button">Connect DUPR</button>') +
         "</div>" +
@@ -445,8 +449,10 @@
     main.appendChild(card);
 
     // ---- photo upload ----
+    // Delegate on the container so the handler survives innerHTML swaps; the
+    // whole avatar (image + camera badge) is tappable to change the photo.
     var photoInput = card.querySelector("#photo-input");
-    card.querySelector("#upload-btn").addEventListener("click", function () {
+    card.querySelector("#avatar-preview").addEventListener("click", function () {
       photoInput.click();
     });
     photoInput.addEventListener("change", function () {
@@ -457,7 +463,7 @@
       resizeImage(file, 256)
         .then(function (dataUrl) {
           card.querySelector("#avatar-preview").innerHTML =
-            '<img src="' + dataUrl + '" alt="" />';
+            '<img src="' + dataUrl + '" alt="" />' + AVATAR_EDIT_BTN;
           return firebase
             .firestore()
             .collection("users")
