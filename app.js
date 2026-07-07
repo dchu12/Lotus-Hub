@@ -675,7 +675,7 @@
   // ---- Connect: DUPR leaderboard (sample data for now) ----
   // TODO: replace with real players once the DUPR integration lands.
   var LEADERBOARD = [
-    { name: "Ava Chen", flag: "🇨🇦", dupr: 6.82 },
+    { name: "Ralph Llacar", flag: "🇨🇦", dupr: 6.82 },
     { name: "Marco Silva", flag: "🇧🇷", dupr: 6.75 },
     { name: "Priya Nair", flag: "🇮🇳", dupr: 6.61 },
     { name: "Leo Tanaka", flag: "🇯🇵", dupr: 6.40 },
