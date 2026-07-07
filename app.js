@@ -38,6 +38,16 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
+  // Pull a flag emoji (two regional-indicator chars) out of a free-text string.
+  function flagOf(s) {
+    if (!s) return "";
+    var m = String(s).match(/[\u{1F1E6}-\u{1F1FF}]{2}/u);
+    return m ? m[0] : "";
+  }
+  // Person's heritage flag (reads legacy 'ethnicity' too).
+  function heritageFlagOf(o) {
+    return o ? flagOf(o.heritage != null ? o.heritage : o.ethnicity) : "";
+  }
   var toastTimer = null;
   function toast(msg) {
     toastEl.textContent = msg;
@@ -220,7 +230,7 @@
     return (
       '<article class="card coach-list-item is-clickable" role="button" tabindex="0" data-uid="' + esc(c.uid) + '">' +
       coachAvatar(c, "coach-list-avatar") +
-      '<div class="coach-list-body"><h3>' + esc(c.displayName || "Coach") + "</h3>" +
+      '<div class="coach-list-body"><h3>' + esc(c.displayName || "Coach") + (heritageFlagOf(c) ? " " + heritageFlagOf(c) : "") + "</h3>" +
       (c.skillLevel ? '<span class="pill">' + esc(c.skillLevel) + "</span>" : "") +
       (bio ? '<p class="muted">' + esc(bio) + "</p>" : "") +
       "</div><span class=\"chevron\">›</span></article>"
@@ -309,7 +319,7 @@
         card.innerHTML =
           '<div class="profile-hero">' +
           coachAvatar(c, "avatar-preview") +
-          '<div class="identity-name">' + esc(c.displayName || "Coach") + "</div>" +
+          '<div class="identity-name">' + esc(c.displayName || "Coach") + (heritageFlagOf(c) ? " " + heritageFlagOf(c) : "") + "</div>" +
           (c.skillLevel ? '<div class="identity-skill">' + esc(c.skillLevel) + "</div>" : "") +
           "</div>" +
           (c.coachSpecialties ? metaRow("Specialties", c.coachSpecialties) : "") +
@@ -347,7 +357,7 @@
       '<section class="card stack profile-card">' +
         '<div class="profile-hero">' +
         coachAvatar(p, "avatar-preview") +
-        '<div class="identity-name">' + esc(p.displayName || "Your name") + "</div>" +
+        '<div class="identity-name">' + esc(p.displayName || "Your name") + (heritageFlagOf(p) ? " " + heritageFlagOf(p) : "") + "</div>" +
         (p.skillLevel ? '<div class="identity-skill">' + esc(p.skillLevel) + "</div>" : "") +
         "</div>" +
         '<p class="muted" style="text-align:center;margin-top:-4px">Your photo and name come from your <strong>Profile</strong>.</p>' +
@@ -513,6 +523,7 @@
                 rating: state.profile ? state.profile.homeRatingDoubles : null,
                 photoDataUrl: state.profile ? state.profile.photoDataUrl || state.profile.photoURL : null,
                 skillLevel: state.profile ? state.profile.skillLevel : null,
+                heritageFlag: heritageFlagOf(state.profile) || null,
               });
         action
           .then(function (res) {
@@ -665,7 +676,7 @@
     return (
       '<li class="roster-item">' +
       miniAvatar(r) +
-      '<span class="roster-name">' + esc(r.displayName) + "</span>" +
+      '<span class="roster-name">' + esc(r.displayName) + (r.heritageFlag ? " " + esc(r.heritageFlag) : "") + "</span>" +
       (r.skillLevel ? '<span class="roster-skill">' + esc(r.skillLevel) + "</span>" : "") +
       (r.rating != null ? '<span class="roster-rating">' + esc(r.rating) + "</span>" : "") +
       "</li>"
@@ -753,7 +764,7 @@
       '<section class="card stack profile-card">' +
         '<div class="profile-hero">' +
         '<div class="identity-name' + (p.displayName ? "" : " is-empty") + '" id="name-preview">' +
-        esc(p.displayName || "Your name") + "</div>" +
+        esc(p.displayName || "Your name") + (heritageFlagOf(p) ? " " + heritageFlagOf(p) : "") + "</div>" +
         '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + "</div>" +
         '<input type="file" id="photo-input" accept="image/*" hidden />' +
         '<div class="identity-dupr' + (linked && duprValue ? "" : " is-muted") + '">' +
@@ -838,11 +849,15 @@
     // ---- live preview: name + skill under the avatar ----
     var nameInput = card.querySelector("#p-name");
     var namePreview = card.querySelector("#name-preview");
-    nameInput.addEventListener("input", function () {
+    var heritageInput = card.querySelector("#p-heritage");
+    function refreshNamePreview() {
       var v = nameInput.value.trim();
-      namePreview.textContent = v || "Your name";
+      var fl = flagOf(heritageInput.value);
+      namePreview.textContent = (v || "Your name") + (fl ? " " + fl : "");
       namePreview.classList.toggle("is-empty", !v);
-    });
+    }
+    nameInput.addEventListener("input", refreshNamePreview);
+    heritageInput.addEventListener("input", refreshNamePreview);
 
     // ---- segmented skill control ----
     var skillSeg = card.querySelector("#p-skill");
