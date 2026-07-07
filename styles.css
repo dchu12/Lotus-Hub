@@ -274,7 +274,7 @@ button { font: inherit; cursor: pointer; }
 
 /* coaching cards */
 .coach-card { display: flex; align-items: center; gap: 14px; border-top: 3px solid var(--accent); }
-.coach-card > div { flex: 1; }
+.coach-card > div:not(.coach-icon) { flex: 1; }
 .coach-card h3 { margin: 0 0 2px; }
 .coach-card .muted { margin: 0; }
 .coach-icon {

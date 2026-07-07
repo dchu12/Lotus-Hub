@@ -162,12 +162,6 @@
   function renderCoaching() {
     main.innerHTML = "";
     var wrap = el('<section class="stack"></section>');
-    wrap.appendChild(
-      el(
-        '<div class="view-head"><h2>Coaching</h2>' +
-          '<p class="muted">Level up your game with lessons and drills.</p></div>'
-      )
-    );
 
     // Find a coach — clickable, opens the coach directory.
     var findCard = el(
@@ -230,7 +224,7 @@
     var wrap = el('<section class="stack"></section>');
     wrap.appendChild(
       el(
-        '<div class="view-head"><button class="link-back" id="back" type="button">‹ Coaching</button>' +
+        '<div class="view-head"><button class="link-back" id="back" type="button">‹ Practice</button>' +
           "<h2>Find a Coach</h2>" +
           '<p class="muted">Tap a coach to view their profile.</p></div>'
       )
