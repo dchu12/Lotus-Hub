@@ -163,11 +163,11 @@
     main.innerHTML = "";
     var wrap = el('<section class="stack"></section>');
 
-    // Find a coach — clickable, opens the coach directory.
+    // Explore pickleball coaches — clickable, opens the coach directory.
     var findCard = el(
       '<article class="card coach-card is-clickable" id="find-coach" role="button" tabindex="0">' +
-        '<div class="coach-icon">🎯</div>' +
-        "<div><h3>Find a coach</h3>" +
+        '<div class="coach-icon">🔍</div>' +
+        "<div><h3>Explore pickleball coaches</h3>" +
         '<p class="muted">Browse coaches and view their profiles.</p></div>' +
         '<span class="chevron">›</span>' +
         "</article>"
@@ -180,8 +180,10 @@
 
     // Still-planned items.
     [
-      ["📅", "Book a lesson", "Schedule 1-on-1 or small-group sessions."],
-      ["📚", "Drills &amp; tips", "A library of drills to sharpen your dinks, serves, and strategy."],
+      ["🧑‍🏫", "Book a private lesson", "1-on-1 coaching tailored to you."],
+      ["👥", "Book a group lesson", "Small-group sessions with a coach."],
+      ["🎯", "Drilling sessions", "Structured drills to sharpen your game."],
+      ["🪷", "Lotus mini games", "Fun mini-games and challenges to level up."],
     ].forEach(function (it) {
       wrap.appendChild(
         el(
