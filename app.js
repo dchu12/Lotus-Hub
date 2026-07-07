@@ -767,8 +767,8 @@
         segmentedSkill(p.skillLevel) + "</div>" +
         '<div class="field"><label>Country</label>' +
         '<input id="p-country" type="text" placeholder="e.g. Canada 🇨🇦" value="' + esc(p.country || "") + '" /></div>' +
-        '<div class="field"><label>Ethnicity</label>' +
-        '<input id="p-ethnicity" type="text" placeholder="e.g. China 🇨🇳" value="' + esc(p.ethnicity || "") + '" /></div>' +
+        '<div class="field"><label>Heritage</label>' +
+        '<input id="p-heritage" type="text" placeholder="e.g. Korean 🇰🇷" value="' + esc(p.heritage != null ? p.heritage : (p.ethnicity || "")) + '" /></div>' +
         '<div class="field"><label>Favourite court?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">📍</span>' +
         '<input class="has-icon" id="p-court" type="text" placeholder="e.g. Pickleplex Downsview" value="' + esc(p.favCourt || "") + '" /></div></div>' +
@@ -888,7 +888,7 @@
               displayName: name,
               skillLevel: selectedSkill(),
               country: card.querySelector("#p-country").value.trim() || null,
-              ethnicity: card.querySelector("#p-ethnicity").value.trim() || null,
+              heritage: card.querySelector("#p-heritage").value.trim() || null,
               favCourt: card.querySelector("#p-court").value.trim() || null,
               favPaddle: card.querySelector("#p-paddle").value.trim() || null,
             },
