@@ -146,8 +146,13 @@
     profileBtn.hidden = false;
     profileBtn.classList.toggle("active", state.view === "profile");
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
+    var isPlay = state.view === "discover" || state.view === "create";
     Array.prototype.forEach.call(tabs.querySelectorAll(".tab"), function (t) {
-      var active = t.dataset.view === state.view || (t.dataset.view === "coaching" && isCoaching);
+      var v = t.dataset.view;
+      var active =
+        v === state.view ||
+        (v === "coaching" && isCoaching) ||
+        (v === "discover" && isPlay);
       t.classList.toggle("active", active);
     });
     if (state.view === "discover") renderDiscover();
@@ -156,6 +161,7 @@
     else if (state.view === "coaches") renderCoachList();
     else if (state.view === "coach-edit") renderCoachEdit();
     else if (state.view === "coach-view") renderCoachDetail(state.viewingCoachUid);
+    else if (state.view === "connect") renderConnect();
     else if (state.view === "profile") renderProfile();
   }
 
@@ -422,11 +428,18 @@
     );
     wrap.appendChild(head);
 
+    var hostBtn = el('<button class="btn-primary" id="host-btn" type="button">＋ Host an open play</button>');
+    hostBtn.addEventListener("click", function () {
+      state.view = "create";
+      renderSignedIn();
+    });
+    wrap.appendChild(hostBtn);
+
     if (!state.sessions.length) {
       wrap.appendChild(
         el(
           '<div class="empty">No upcoming sessions yet. ' +
-            'Tap <strong>Host</strong> to create the first one.</div>'
+            "Tap <strong>Host an open play</strong> above to create the first one.</div>"
         )
       );
     }
@@ -519,6 +532,13 @@
 
   function renderCreate() {
     main.innerHTML = "";
+    var wrap = el('<section class="stack"></section>');
+    var back = el('<div class="view-head"><button class="link-back" id="back" type="button">‹ Play</button></div>');
+    wrap.appendChild(back);
+    back.querySelector("#back").addEventListener("click", function () {
+      state.view = "discover";
+      renderSignedIn();
+    });
     var card = el(
       '<section class="card">' +
         "<h2>Host an open play</h2>" +
@@ -544,7 +564,8 @@
         '<button class="btn-primary" type="submit">Create session</button>' +
         "</form></section>"
     );
-    main.appendChild(card);
+    wrap.appendChild(card);
+    main.appendChild(wrap);
 
     card.querySelector("#create-form").addEventListener("submit", function (e) {
       e.preventDefault();
@@ -649,6 +670,78 @@
       (r.rating != null ? '<span class="roster-rating">' + esc(r.rating) + "</span>" : "") +
       "</li>"
     );
+  }
+
+  // ---- Connect: DUPR leaderboard (sample data for now) ----
+  // TODO: replace with real players once the DUPR integration lands.
+  var LEADERBOARD = [
+    { name: "Ava Chen", flag: "🇨🇦", dupr: 6.82 },
+    { name: "Marco Silva", flag: "🇧🇷", dupr: 6.75 },
+    { name: "Priya Nair", flag: "🇮🇳", dupr: 6.61 },
+    { name: "Leo Tanaka", flag: "🇯🇵", dupr: 6.40 },
+    { name: "Sofia Rossi", flag: "🇮🇹", dupr: 6.28 },
+    { name: "James Park", flag: "🇰🇷", dupr: 6.15 },
+    { name: "Emma Müller", flag: "🇩🇪", dupr: 6.03 },
+    { name: "Diego Torres", flag: "🇲🇽", dupr: 5.92 },
+    { name: "Lena Novak", flag: "🇨🇿", dupr: 5.85 },
+    { name: "Noah Smith", flag: "🇺🇸", dupr: 5.77 },
+  ];
+
+  function podiumCol(pl, rank) {
+    var medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
+    var cls = rank === 1 ? "gold" : rank === 2 ? "silver" : "bronze";
+    var init = pl.name.trim().charAt(0).toUpperCase();
+    return (
+      '<div class="podium-col ' + cls + '">' +
+      (rank === 1 ? '<div class="podium-crown">👑</div>' : "") +
+      '<div class="podium-avatar">' + esc(init) + "</div>" +
+      '<div class="podium-medal">' + medal + "</div>" +
+      '<div class="podium-name">' + esc(pl.name) + " " + esc(pl.flag) + "</div>" +
+      '<div class="podium-dupr">' + esc(pl.dupr.toFixed(2)) + "</div>" +
+      '<div class="podium-stand"><span class="podium-rank">' + rank + "</span></div>" +
+      "</div>"
+    );
+  }
+
+  function renderConnect() {
+    main.innerHTML = "";
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el(
+        '<div class="view-head"><h2>Leaderboard</h2>' +
+          '<p class="muted">Top DUPR-rated players on Lotus Hub.</p></div>'
+      )
+    );
+
+    var top3 = LEADERBOARD.slice(0, 3);
+    // Podium order: 2nd (left), 1st (center), 3rd (right)
+    var podium = el(
+      '<div class="card podium-card"><div class="podium">' +
+        (top3[1] ? podiumCol(top3[1], 2) : "") +
+        (top3[0] ? podiumCol(top3[0], 1) : "") +
+        (top3[2] ? podiumCol(top3[2], 3) : "") +
+        "</div></div>"
+    );
+    wrap.appendChild(podium);
+
+    var rows = LEADERBOARD.slice(3)
+      .map(function (pl, i) {
+        var rank = i + 4;
+        return (
+          '<div class="lb-row">' +
+          '<span class="lb-rank">' + rank + "</span>" +
+          '<span class="lb-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + "</span>" +
+          '<span class="lb-name">' + esc(pl.name) + " " + esc(pl.flag) + "</span>" +
+          '<span class="lb-dupr">' + esc(pl.dupr.toFixed(2)) + "</span>" +
+          "</div>"
+        );
+      })
+      .join("");
+    wrap.appendChild(el('<div class="card lb-list">' + rows + "</div>"));
+    wrap.appendChild(
+      el('<p class="muted" style="text-align:center">Sample rankings — real DUPR standings arrive with the DUPR integration.</p>')
+    );
+    main.appendChild(wrap);
   }
 
   function renderProfile() {

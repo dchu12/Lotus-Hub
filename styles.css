@@ -317,6 +317,45 @@ button { font: inherit; cursor: pointer; }
 .coach-bio h3 { margin: 0 0 6px; }
 .coach-bio p { margin: 0; line-height: 1.5; }
 
+/* ---- Connect: leaderboard ---- */
+.podium-card { padding: 20px 12px 0; overflow: hidden; }
+.podium { display: flex; align-items: flex-end; justify-content: center; gap: 8px; }
+.podium-col { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+.podium-crown { font-size: 1.2rem; line-height: 1; margin-bottom: 2px; }
+.podium-avatar {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; font-weight: 800; color: var(--brand);
+  background: var(--brand-soft); border: 3px solid var(--line-strong);
+}
+.podium-col.gold .podium-avatar { width: 68px; height: 68px; font-size: 1.7rem; border-color: #eab308; }
+.podium-col.silver .podium-avatar { border-color: #9ca3af; }
+.podium-col.bronze .podium-avatar { border-color: #b45309; }
+.podium-medal { font-size: 1.1rem; margin-top: 4px; }
+.podium-name { font-size: 0.78rem; font-weight: 700; margin-top: 2px; line-height: 1.2; }
+.podium-dupr { font-size: 0.82rem; font-weight: 800; color: var(--brand); margin-bottom: 8px; }
+.podium-stand {
+  width: 100%; border-radius: 10px 10px 0 0;
+  display: flex; align-items: flex-start; justify-content: center; padding-top: 8px;
+  color: #fff; font-weight: 800;
+}
+.podium-col.gold .podium-stand { height: 78px; background: linear-gradient(180deg, #fbbf24, #d97706); }
+.podium-col.silver .podium-stand { height: 56px; background: linear-gradient(180deg, #cbd5e1, #94a3b8); }
+.podium-col.bronze .podium-stand { height: 40px; background: linear-gradient(180deg, #d8a25e, #b45309); }
+.podium-rank { font-size: 1.2rem; }
+
+.lb-list { padding: 6px 14px; }
+.lb-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.lb-row:last-child { border-bottom: 0; }
+.lb-rank { width: 22px; text-align: center; font-weight: 800; color: var(--muted); flex: 0 0 22px; }
+.lb-avatar {
+  width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%;
+  background: var(--brand-soft); color: var(--brand);
+  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;
+}
+.lb-name { flex: 1; font-weight: 600; min-width: 0; }
+.lb-dupr { font-weight: 800; color: var(--brand); }
+
 /* ---- toast ---- */
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
