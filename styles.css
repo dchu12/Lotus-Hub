@@ -50,6 +50,16 @@ body {
 .brand { display: flex; align-items: center; justify-content: space-between; }
 .brand-actions { display: flex; align-items: center; gap: 10px; }
 
+/* instagram link button (top-right) */
+.ig-btn {
+  width: 40px; height: 40px; flex: 0 0 40px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; border: 1.5px solid var(--line-strong);
+  background: #fff; color: var(--brand); cursor: pointer; text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ig-btn:hover { border-color: var(--brand); background: var(--brand-soft); }
+
 /* profile icon button (top-right) */
 .profile-icon-btn {
   width: 40px; height: 40px; flex: 0 0 40px; padding: 0;
@@ -72,8 +82,8 @@ body {
   border-radius: 12px; box-shadow: var(--shadow-sm);
 }
 .tab {
-  flex: 1; border: 0; background: transparent; color: var(--muted);
-  font-weight: 600; font-size: 0.9rem; padding: 9px 8px; border-radius: 9px;
+  flex: 1; border: 0; background: transparent; color: var(--muted); white-space: nowrap;
+  font-weight: 600; font-size: 0.82rem; padding: 9px 4px; border-radius: 9px;
   cursor: pointer; transition: background 0.15s, color 0.15s;
 }
 .tab:hover { color: var(--ink); }
@@ -355,6 +365,23 @@ button { font: inherit; cursor: pointer; }
 }
 .lb-name { flex: 1; font-weight: 600; min-width: 0; }
 .lb-dupr { font-weight: 800; color: var(--brand); }
+
+/* ---- Connect: find players ---- */
+.connect-card { display: flex; align-items: center; gap: 12px; }
+.connect-avatar {
+  width: 44px; height: 44px; flex: 0 0 44px; border-radius: 50%;
+  background: var(--brand-soft); color: var(--brand);
+  display: flex; align-items: center; justify-content: center; font-weight: 800;
+}
+.connect-body { flex: 1; min-width: 0; }
+.connect-body h3 { margin: 0 0 2px; font-size: 1rem; }
+.connect-body .muted { margin: 0; }
+.btn-connect {
+  flex: 0 0 auto; border: 0; background: var(--brand); color: #fff;
+  font-weight: 700; font-size: 0.85rem; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+}
+.btn-connect:hover { background: var(--brand-hover); }
+.btn-connect.is-requested { background: #fff; color: var(--muted); border: 1px solid var(--line-strong); }
 
 /* ---- toast ---- */
 .toast {

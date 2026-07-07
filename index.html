@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#ffffff" />
   <title>Lotus Hub</title>
-  <link rel="stylesheet" href="styles.css?v=21" />
+  <link rel="stylesheet" href="styles.css?v=25" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="favicon-64.png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -16,6 +16,9 @@
       <div class="brand">
         <h1 class="wordmark" aria-label="Lotus Hub"><img class="brand-logo" src="logo.png" alt="" width="38" height="38" /> Lotus Hub</h1>
         <div class="brand-actions">
+          <a class="ig-btn" id="ig-link" href="https://www.instagram.com/lotuspickleballacademy_?igsh=MXV2NjEyNng5bXY0bA==" target="_blank" rel="noopener noreferrer" aria-label="Lotus Pickleball Academy on Instagram" title="Instagram">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+          </a>
           <button class="profile-icon-btn" id="profile-btn" aria-label="Your profile" title="Profile" hidden>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           </button>
@@ -25,6 +28,7 @@
         <button class="tab" data-view="coaching">Practice</button>
         <button class="tab active" data-view="discover">Play</button>
         <button class="tab" data-view="connect">Connect</button>
+        <button class="tab" data-view="rank">Rank</button>
       </nav>
     </header>
 
@@ -42,7 +46,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js?v=1"></script>
   <script src="firebase.js?v=24"></script>
-  <script src="app.js?v=24"></script>
+  <script src="app.js?v=25"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

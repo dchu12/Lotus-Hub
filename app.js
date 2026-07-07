@@ -172,6 +172,7 @@
     else if (state.view === "coach-edit") renderCoachEdit();
     else if (state.view === "coach-view") renderCoachDetail(state.viewingCoachUid);
     else if (state.view === "connect") renderConnect();
+    else if (state.view === "rank") renderRank();
     else if (state.view === "profile") renderProfile();
   }
 
@@ -714,7 +715,69 @@
     );
   }
 
+  // ---- Connect: find & connect with players (sample data for now) ----
+  var CONNECT_PLAYERS = [
+    { name: "Jenny Kim", flag: "🇰🇷", skill: "Intermediate", city: "Toronto" },
+    { name: "Raj Patel", flag: "🇮🇳", skill: "Advanced", city: "Mississauga" },
+    { name: "Maria Lopez", flag: "🇲🇽", skill: "Beginner", city: "Toronto" },
+    { name: "Kevin Wong", flag: "🇭🇰", skill: "Intermediate", city: "Markham" },
+    { name: "Aisha Khan", flag: "🇵🇰", skill: "Advanced", city: "Brampton" },
+    { name: "Tom Nguyen", flag: "🇻🇳", skill: "Intermediate", city: "Scarborough" },
+  ];
+
+  function connectCard(pl) {
+    return (
+      '<article class="card connect-card">' +
+      '<span class="connect-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + "</span>" +
+      '<div class="connect-body"><h3>' + esc(pl.name) + " " + esc(pl.flag) + "</h3>" +
+      '<p class="muted">' + esc(pl.skill) + " · " + esc(pl.city) + "</p></div>" +
+      '<button class="btn-connect" data-connect="' + esc(pl.name) + '" type="button">Connect</button>' +
+      "</article>"
+    );
+  }
+
   function renderConnect() {
+    main.innerHTML = "";
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el(
+        '<div class="view-head"><h2>Connect</h2>' +
+          '<p class="muted">Find and connect with other players.</p></div>'
+      )
+    );
+    var search = el(
+      '<div class="input-wrap"><span class="lead" aria-hidden="true">🔍</span>' +
+        '<input class="has-icon" id="connect-search" type="text" placeholder="Search players by name…" /></div>'
+    );
+    wrap.appendChild(search);
+    var listEl = el('<div class="stack" id="connect-list"></div>');
+    wrap.appendChild(listEl);
+    main.appendChild(wrap);
+
+    function draw(q) {
+      var query = (q || "").trim().toLowerCase();
+      var items = CONNECT_PLAYERS.filter(function (pl) {
+        return !query || pl.name.toLowerCase().indexOf(query) > -1 || pl.city.toLowerCase().indexOf(query) > -1;
+      });
+      listEl.innerHTML = items.length
+        ? items.map(connectCard).join("")
+        : '<div class="empty">No players found.</div>';
+    }
+    draw("");
+    search.querySelector("#connect-search").addEventListener("input", function (e) {
+      draw(e.target.value);
+    });
+    listEl.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-connect]");
+      if (!btn) return;
+      btn.textContent = "Requested";
+      btn.disabled = true;
+      btn.classList.add("is-requested");
+      toast("Connection request sent to " + btn.dataset.connect + "!");
+    });
+  }
+
+  function renderRank() {
     main.innerHTML = "";
     var wrap = el('<section class="stack"></section>');
     wrap.appendChild(
