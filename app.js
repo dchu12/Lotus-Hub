@@ -15,6 +15,7 @@
   var main = document.getElementById("main");
   var tabs = document.getElementById("tabs");
   var profileBtn = document.getElementById("profile-btn");
+  var hostBtn = document.getElementById("host-btn");
   var banner = document.getElementById("setup-banner");
   var toastEl = document.getElementById("toast");
 
@@ -93,6 +94,7 @@
   function renderSignedOut() {
     tabs.hidden = true;
     profileBtn.hidden = true;
+    hostBtn.hidden = true;
     var configured = LH.available;
     main.innerHTML = "";
     var card = el(
@@ -154,6 +156,7 @@
   function renderSignedIn() {
     tabs.hidden = false;
     profileBtn.hidden = false;
+    hostBtn.hidden = false;
     profileBtn.classList.toggle("active", state.view === "profile");
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
     var isPlay = state.view === "discover" || state.view === "create";
@@ -439,18 +442,11 @@
     );
     wrap.appendChild(head);
 
-    var hostBtn = el('<button class="btn-primary" id="host-btn" type="button">＋ Host an open play</button>');
-    hostBtn.addEventListener("click", function () {
-      state.view = "create";
-      renderSignedIn();
-    });
-    wrap.appendChild(hostBtn);
-
     if (!state.sessions.length) {
       wrap.appendChild(
         el(
           '<div class="empty">No upcoming sessions yet. ' +
-            "Tap <strong>Host an open play</strong> above to create the first one.</div>"
+            "Tap the yellow pickleball <strong>＋</strong> icon at the top to host the first one.</div>"
         )
       );
     }
@@ -1024,6 +1020,11 @@
   // Profile icon opens the Profile view directly.
   profileBtn.addEventListener("click", function () {
     state.view = "profile";
+    renderSignedIn();
+  });
+  // Pickleball ＋ icon opens the Host an open play form.
+  hostBtn.addEventListener("click", function () {
+    state.view = "create";
     renderSignedIn();
   });
 
