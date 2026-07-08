@@ -846,8 +846,7 @@
         esc(p.displayName || "Your name") + "</div>" +
         '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + flagBadge(heritageFlagOf(p)) + "</div>" +
         '<input type="file" id="photo-input" accept="image/*" hidden />' +
-        '<div class="identity-dupr' + (linked && duprValue ? "" : " is-muted") + '">' +
-        (linked && duprValue ? "DUPR " + esc(duprValue) : "DUPR · not connected") + "</div>" +
+        (linked && duprValue ? '<div class="identity-dupr">DUPR ' + esc(duprValue) + "</div>" : "") +
         '<div class="identity-skill" id="skill-preview"' + (p.skillLevel ? "" : " hidden") + ">" +
         esc(p.skillLevel || "") + "</div>" +
         "</div>" +
@@ -855,9 +854,9 @@
         '<input id="p-name" type="text" placeholder="Your name" value="' + esc(p.displayName || "") + '" /></div>' +
         '<div class="field"><label>Pickleball Skill Level</label>' +
         segmentedSkill(p.skillLevel) + "</div>" +
-        '<div class="field"><label>Country</label>' +
-        '<input id="p-country" type="text" placeholder="e.g. Canada 🇨🇦" value="' + esc(p.country || "") + '" /></div>' +
-        '<div class="field"><label>Heritage</label>' +
+        '<div class="field"><label>Location</label>' +
+        '<input id="p-country" type="text" placeholder="e.g. Toronto, Canada 🇨🇦" value="' + esc(p.country || "") + '" /></div>' +
+        '<div class="field"><label>Background Heritage</label>' +
         '<input id="p-heritage" type="text" placeholder="e.g. Korean 🇰🇷" value="' + esc(p.heritage != null ? p.heritage : (p.ethnicity || "")) + '" /></div>' +
         '<div class="field"><label>Favourite court?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">📍</span>' +
