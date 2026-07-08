@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#ffffff" />
   <title>Lotus Hub</title>
-  <link rel="stylesheet" href="styles.css?v=26" />
+  <link rel="stylesheet" href="styles.css?v=27" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="favicon-64.png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -35,17 +35,18 @@
           </button>
         </div>
       </div>
-      <nav class="tabs" id="tabs" hidden>
-        <button class="tab" data-view="coaching">Practice</button>
-        <button class="tab active" data-view="discover">Play</button>
-        <button class="tab" data-view="connect">Connect</button>
-        <button class="tab" data-view="rank">Rank</button>
-      </nav>
     </header>
 
     <div id="setup-banner" class="banner" hidden></div>
 
     <main id="main"><!-- rendered by app.js --></main>
+
+    <nav class="tabbar" id="tabs" hidden>
+      <button class="tab" data-view="coaching"><span class="tab-ico">🎯</span><span class="tab-lbl">Practice</span></button>
+      <button class="tab active" data-view="discover"><span class="tab-ico">🏓</span><span class="tab-lbl">Play</span></button>
+      <button class="tab" data-view="connect"><span class="tab-ico">👥</span><span class="tab-lbl">Connect</span></button>
+      <button class="tab" data-view="rank"><span class="tab-ico">🏆</span><span class="tab-lbl">Rank</span></button>
+    </nav>
   </div>
 
   <div id="modal-root"></div>
