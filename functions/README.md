@@ -1,37 +1,54 @@
 # Cloud Functions — DUPR integration (server side)
 
-This folder is where the **DUPR Partner API** integration lives. It is intentionally
-kept out of the browser code because the DUPR API uses a **client secret** that must
-never ship to the client, and DUPR sends **webhooks** that need a server endpoint.
+All DUPR Partner API calls live here because the API uses a **client secret**
+(never allowed in the browser) and DUPR posts **webhooks** that need an HTTPS
+endpoint. Functions write results to Firestore with the Admin SDK.
 
-## Why this can't go in the browser
+## Functions
 
-- The DUPR partner **client key + secret** authenticate your app to DUPR. Anything
-  in `firebase.js` / `app.js` is fully visible to users. The secret must stay server-side.
-- Submitting match results and receiving rating-change webhooks are server-to-server
-  operations.
-
-## Planned functions (not yet implemented)
-
-| Function | Trigger | Purpose |
+| Function | Type | Purpose |
 |---|---|---|
-| `linkDupr` | HTTPS callable | Look up a DUPR ID by the user's email, store `duprId` on their user doc |
-| `refreshRating` | callable / scheduled | Fetch current rating from DUPR, cache on the user doc |
-| `submitSessionMatches` | callable (organizer) | Bulk-submit a session's match results to DUPR |
-| `duprWebhook` | HTTPS | Receive DUPR rating-change events, update cached ratings |
+| `linkDupr` | callable | Look up a DUPR account by email, store `duprId` + ratings on the user doc |
+| `refreshDuprRating` | callable | Re-fetch the caller's rating and update the cache |
+| `submitSessionMatches` | callable (organizer) | Bulk-submit a session's `pending` matches to DUPR |
+| `duprWebhook` | HTTPS | Receive rating-change events and update cached ratings |
 
-## Setup when you're ready to build these
+## Prerequisites (all four are required before this works)
 
-1. Apply for **DUPR API partner** access to get a client key + secret (this approval
-   is the long pole — start it early).
-2. `cd functions && npm init` and add the Firebase Functions SDK + Admin SDK.
-3. Store credentials as secrets — never in source:
-   ```bash
-   firebase functions:secrets:set DUPR_CLIENT_KEY
-   firebase functions:secrets:set DUPR_CLIENT_SECRET
-   ```
-4. Use the DUPR **UAT** environment for all development; switch to production only
-   after partner approval.
+1. **DUPR API partner access** — apply to DUPR for a **client key + secret**
+   (see <https://www.dupr.com/club-resources> / contact DUPR). This is the long pole.
+2. **Firebase Blaze plan** — Cloud Functions with outbound network calls require
+   pay-as-you-go (Firebase Console → upgrade project to Blaze; has a free tier).
+3. **Node + Firebase CLI on a computer** — deploying can't be done from a phone.
+4. **Confirm API paths** — the base URL, auth flow and endpoint paths in
+   `index.js` (`CONFIG`) are correct in shape but must be verified against the
+   DUPR partner docs / Swagger (<https://backend.mydupr.com/swagger-ui/index.html>).
 
-Until these exist, the app's "Connect DUPR" button is a stub and open play works
-fully without ratings (phases 1–3 of `docs/pickleball-app-plan.md`).
+## Deploy
+
+```bash
+cd Lotus-Hub
+npm install -g firebase-tools        # if not already
+firebase login
+cd functions && npm install && cd ..
+
+# Set DUPR credentials as secrets (never commit these):
+firebase functions:secrets:set DUPR_CLIENT_KEY
+firebase functions:secrets:set DUPR_CLIENT_SECRET
+
+firebase deploy --only functions
+```
+
+After deploy, copy the `duprWebhook` URL from the deploy output and register it
+in your DUPR partner dashboard, and add DUPR's signature verification to
+`duprWebhook` before trusting payloads.
+
+## Local testing (optional)
+
+```bash
+cd functions && npm install
+firebase emulators:start --only functions,firestore
+```
+
+Until these are deployed, the app's **Connect DUPR** button will report that the
+integration isn't live yet — everything else works without it.

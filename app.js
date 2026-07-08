@@ -875,9 +875,16 @@
         (linked ? "" : " disabled") +
         ' placeholder="Connect DUPR to see your rating" /></div>' +
         (linked
-          ? '<p class="muted">Updates automatically from your matches.</p>'
+          ? '<p class="muted">Updates automatically from your matches.</p>' +
+            '<button class="btn-ghost" id="refresh-dupr" type="button">Refresh rating</button>'
           : '<p class="muted">Connect your DUPR account so open-play results update your official rating.</p>' +
-            '<button class="btn-primary" id="link-dupr" type="button">Connect DUPR</button>') +
+            '<button class="btn-primary" id="link-dupr" type="button">Connect DUPR</button>' +
+            '<div id="dupr-link-form" hidden>' +
+            '<div class="field" style="margin-top:12px"><label>DUPR account email</label>' +
+            '<input id="dupr-email" type="email" placeholder="you@example.com" autocomplete="email" /></div>' +
+            '<button class="btn-primary" id="dupr-link-go" type="button">Link account</button>' +
+            "</div>") +
+        '<p class="save-status" id="dupr-status" hidden></p>' +
         "</div>" +
         '<button class="btn-signout" id="signout-btn" type="button">Sign out</button>' +
         "</section>"
@@ -1007,12 +1014,59 @@
       }
     });
 
+    // ---- DUPR connect / refresh (calls Cloud Functions) ----
+    var duprStatus = card.querySelector("#dupr-status");
+    function setDuprStatus(msg, kind) {
+      duprStatus.hidden = false;
+      duprStatus.textContent = msg;
+      duprStatus.className = "save-status" + (kind ? " " + kind : "");
+    }
+    function friendlyDuprError(err) {
+      var code = err && err.code ? String(err.code) : "";
+      // Function missing/unreachable == not deployed yet.
+      if (code.indexOf("not-found") > -1 || code.indexOf("internal") > -1 || code.indexOf("unavailable") > -1) {
+        return "DUPR linking isn't live yet — the Cloud Functions need to be deployed (see functions/README).";
+      }
+      return (err && err.message) || "Couldn't link DUPR.";
+    }
+
     var linkBtn = card.querySelector("#link-dupr");
     if (linkBtn) {
+      var linkForm = card.querySelector("#dupr-link-form");
       linkBtn.addEventListener("click", function () {
-        // DUPR linking requires the partner API (client secret) which must run
-        // server-side in a Cloud Function. Stubbed until that's deployed.
-        toast("DUPR connect is coming — needs the server-side partner API (see functions/).");
+        linkForm.hidden = false;
+        linkBtn.hidden = true;
+        var e = card.querySelector("#dupr-email");
+        if (e) e.focus();
+      });
+      card.querySelector("#dupr-link-go").addEventListener("click", function () {
+        var email = card.querySelector("#dupr-email").value.trim();
+        if (!email) return setDuprStatus("Enter the email on your DUPR account.", "err");
+        setDuprStatus("Linking…", "");
+        LH.linkDupr(email)
+          .then(function () {
+            setDuprStatus("Linked ✓", "ok");
+            renderProfile(); // reflect connected state + rating
+          })
+          .catch(function (err) {
+            console.error("linkDupr failed:", err);
+            setDuprStatus(friendlyDuprError(err), "err");
+          });
+      });
+    }
+
+    var refreshBtn = card.querySelector("#refresh-dupr");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", function () {
+        setDuprStatus("Refreshing…", "");
+        LH.refreshDuprRating()
+          .then(function () {
+            setDuprStatus("Updated ✓", "ok");
+            renderProfile();
+          })
+          .catch(function (err) {
+            setDuprStatus(friendlyDuprError(err), "err");
+          });
       });
     }
   }

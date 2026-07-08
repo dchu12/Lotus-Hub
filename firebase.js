@@ -19,6 +19,7 @@
 
   var auth = null;
   var db = null;
+  var fns = null;
   var ready = false;
 
   function init() {
@@ -27,6 +28,8 @@
       firebase.initializeApp(window.FIREBASE_CONFIG);
       auth = firebase.auth();
       db = firebase.firestore();
+      // Cloud Functions (DUPR integration). Only usable once functions deploy.
+      try { fns = firebase.functions ? firebase.functions() : null; } catch (e) { fns = null; }
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
       db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
       ready = true;
@@ -34,6 +37,22 @@
       ready = false;
     }
     return ready;
+  }
+
+  // ---- DUPR (calls Cloud Functions; see functions/) ---------------------
+  function callFn(name, payload) {
+    if (!ready || !fns) return Promise.reject(new Error("Not connected."));
+    return fns
+      .httpsCallable(name)(payload || {})
+      .then(function (res) {
+        return res.data;
+      });
+  }
+  function linkDupr(email) {
+    return callFn("linkDupr", { email: String(email || "").trim() });
+  }
+  function refreshDuprRating() {
+    return callFn("refreshDuprRating", {});
   }
 
   // ---- Auth -------------------------------------------------------------
@@ -326,6 +345,8 @@
     watchUser: watchUser,
     getUserOnce: getUserOnce,
     watchCoaches: watchCoaches,
+    linkDupr: linkDupr,
+    refreshDuprRating: refreshDuprRating,
     watchUpcomingSessions: watchUpcomingSessions,
     createSession: createSession,
     watchRsvps: watchRsvps,
