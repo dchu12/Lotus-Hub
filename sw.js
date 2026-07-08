@@ -1,11 +1,12 @@
-/* sw.js — minimal service worker so Lotus Hub is installable as a PWA.
- * Caches the app shell; network-first for everything else so Firebase stays live. */
-var CACHE = "lotus-hub-v29";
+/* sw.js — service worker for Lotus Hub (installable PWA).
+ * Network-first with HTTP-cache bypass so the newest deploy always loads on open;
+ * falls back to the runtime cache only when offline. */
+var CACHE = "lotus-hub-v30";
 var SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=29",
-  "./app.js?v=29",
+  "./styles.css?v=30",
+  "./app.js?v=30",
   "./firebase.js?v=24",
   "./firebase-config.js?v=1",
   "./manifest.json",
@@ -18,26 +19,36 @@ self.addEventListener("install", function (e) {
 
 self.addEventListener("activate", function (e) {
   e.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(
-        keys.map(function (k) { return k === CACHE ? null : caches.delete(k); })
-      );
-    })
+    caches
+      .keys()
+      .then(function (keys) {
+        return Promise.all(keys.map(function (k) { return k === CACHE ? null : caches.delete(k); }));
+      })
+      .then(function () { return self.clients.claim(); })
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", function (e) {
-  var url = e.request.url;
-  // Never cache Firebase / Google traffic — always hit the network.
+  var req = e.request;
+  if (req.method !== "GET") return;
+  var url = req.url;
+  // Never intercept Firebase / Google traffic — always straight to network.
   if (url.indexOf("firebase") > -1 || url.indexOf("googleapis") > -1 || url.indexOf("gstatic") > -1) {
     return;
   }
+  // Network-first, bypassing the browser HTTP cache so a fresh deploy always
+  // wins on open. Cache a copy for offline. Fall back to cache when offline.
   e.respondWith(
-    fetch(e.request).catch(function () {
-      return caches.match(e.request).then(function (r) {
-        return r || caches.match("./index.html");
-      });
-    })
+    fetch(req, { cache: "no-store" })
+      .then(function (res) {
+        if (res && res.ok) {
+          var copy = res.clone();
+          caches.open(CACHE).then(function (c) { c.put(req, copy); }).catch(function () {});
+        }
+        return res;
+      })
+      .catch(function () {
+        return caches.match(req).then(function (r) { return r || caches.match("./index.html"); });
+      })
   );
 });
