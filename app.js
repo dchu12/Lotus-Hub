@@ -78,16 +78,23 @@
 
   // ---- setup / connection banner ---------------------------------------
   function renderBanner() {
-    if (!LH.available) {
-      banner.hidden = false;
-      banner.innerHTML =
-        "⚙️ <strong>Setup needed.</strong> Paste your new Firebase project's keys into " +
-        "<code>firebase-config.js</code> to enable sign-in and open-play data. " +
-        "See the README for the 5-minute setup.";
-      return false;
+    if (LH.available) {
+      banner.hidden = true;
+      return true;
     }
-    banner.hidden = true;
-    return true;
+    banner.hidden = false;
+    if (!LH.configured) {
+      banner.innerHTML =
+        "⚙️ <strong>Setup needed.</strong> Paste your Firebase project's keys into " +
+        "<code>firebase-config.js</code>. See the README for setup.";
+    } else {
+      // Config is present but the Firebase SDK didn't load — almost always a
+      // network issue reaching the CDN, not a real setup problem.
+      banner.innerHTML =
+        "⚠️ <strong>Can't connect.</strong> Couldn't reach the server — usually a " +
+        "network hiccup. Check your internet and reload the page.";
+    }
+    return false;
   }
 
   // ---- auth views -------------------------------------------------------
@@ -115,11 +122,18 @@
             '<div class="divider"><span>or</span></div>' +
             '<button class="btn-google full" type="button" id="google-btn">Continue with Google</button>' +
             "</form>"
+          : LH.configured
+          ? '<p class="muted">Can\'t connect right now — check your internet, then reload.</p>' +
+            '<button class="btn-primary" type="button" id="reload-btn">Reload</button>'
           : '<p class="muted">Sign-in turns on once Firebase is configured.</p>') +
         "</section>"
     );
     main.appendChild(card);
-    if (!configured) return;
+    if (!configured) {
+      var rb = card.querySelector("#reload-btn");
+      if (rb) rb.addEventListener("click", function () { window.location.reload(); });
+      return;
+    }
 
     var mode = "signin";
     var form = card.querySelector("#auth-form");
