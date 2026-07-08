@@ -15,7 +15,6 @@
   var main = document.getElementById("main");
   var tabs = document.getElementById("tabs");
   var profileBtn = document.getElementById("profile-btn");
-  var hostBtn = document.getElementById("host-btn");
   var banner = document.getElementById("setup-banner");
   var toastEl = document.getElementById("toast");
 
@@ -48,6 +47,10 @@
   // Person's heritage flag (reads legacy 'ethnicity' too).
   function heritageFlagOf(o) {
     return o ? flagOf(o.heritage != null ? o.heritage : o.ethnicity) : "";
+  }
+  // Small flag badge that sits at ~5 o'clock on an avatar circle.
+  function flagBadge(flag) {
+    return flag ? '<span class="av-flag">' + esc(flag) + "</span>" : "";
   }
   var toastTimer = null;
   function toast(msg) {
@@ -101,7 +104,6 @@
   function renderSignedOut() {
     tabs.hidden = true;
     profileBtn.hidden = true;
-    hostBtn.hidden = true;
     var configured = LH.available;
     main.innerHTML = "";
     var card = el(
@@ -170,7 +172,6 @@
   function renderSignedIn() {
     tabs.hidden = false;
     profileBtn.hidden = false;
-    hostBtn.hidden = false;
     profileBtn.classList.toggle("active", state.view === "profile");
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
     var isPlay = state.view === "discover" || state.view === "create";
@@ -235,11 +236,10 @@
 
   // ---- coach directory ----
   function coachAvatar(c, cls) {
-    if (c.photoDataUrl || c.photoURL) {
-      return '<span class="' + cls + '"><img src="' + esc(c.photoDataUrl || c.photoURL) + '" alt="" referrerpolicy="no-referrer" /></span>';
-    }
-    var init = (c.displayName || "?").trim().charAt(0).toUpperCase() || "?";
-    return '<span class="' + cls + '">' + esc(init) + "</span>";
+    var inner = (c.photoDataUrl || c.photoURL)
+      ? '<img src="' + esc(c.photoDataUrl || c.photoURL) + '" alt="" referrerpolicy="no-referrer" />'
+      : esc((c.displayName || "?").trim().charAt(0).toUpperCase() || "?");
+    return '<span class="' + cls + '">' + inner + flagBadge(heritageFlagOf(c)) + "</span>";
   }
 
   function coachListItem(c) {
@@ -248,7 +248,7 @@
     return (
       '<article class="card coach-list-item is-clickable" role="button" tabindex="0" data-uid="' + esc(c.uid) + '">' +
       coachAvatar(c, "coach-list-avatar") +
-      '<div class="coach-list-body"><h3>' + esc(c.displayName || "Coach") + (heritageFlagOf(c) ? " " + heritageFlagOf(c) : "") + "</h3>" +
+      '<div class="coach-list-body"><h3>' + esc(c.displayName || "Coach") + "</h3>" +
       (c.skillLevel ? '<span class="pill">' + esc(c.skillLevel) + "</span>" : "") +
       (bio ? '<p class="muted">' + esc(bio) + "</p>" : "") +
       "</div><span class=\"chevron\">›</span></article>"
@@ -337,7 +337,7 @@
         card.innerHTML =
           '<div class="profile-hero">' +
           coachAvatar(c, "avatar-preview") +
-          '<div class="identity-name">' + esc(c.displayName || "Coach") + (heritageFlagOf(c) ? " " + heritageFlagOf(c) : "") + "</div>" +
+          '<div class="identity-name">' + esc(c.displayName || "Coach") + "</div>" +
           (c.skillLevel ? '<div class="identity-skill">' + esc(c.skillLevel) + "</div>" : "") +
           "</div>" +
           (c.coachSpecialties ? metaRow("Specialties", c.coachSpecialties) : "") +
@@ -375,7 +375,7 @@
       '<section class="card stack profile-card">' +
         '<div class="profile-hero">' +
         coachAvatar(p, "avatar-preview") +
-        '<div class="identity-name">' + esc(p.displayName || "Your name") + (heritageFlagOf(p) ? " " + heritageFlagOf(p) : "") + "</div>" +
+        '<div class="identity-name">' + esc(p.displayName || "Your name") + "</div>" +
         (p.skillLevel ? '<div class="identity-skill">' + esc(p.skillLevel) + "</div>" : "") +
         "</div>" +
         '<p class="muted" style="text-align:center;margin-top:-4px">Your photo and name come from your <strong>Profile</strong>.</p>' +
@@ -456,11 +456,18 @@
     );
     wrap.appendChild(head);
 
+    var hostBtn = el('<button class="btn-primary" type="button">＋ Host an open play</button>');
+    hostBtn.addEventListener("click", function () {
+      state.view = "create";
+      renderSignedIn();
+    });
+    wrap.appendChild(hostBtn);
+
     if (!state.sessions.length) {
       wrap.appendChild(
         el(
           '<div class="empty">No upcoming sessions yet. ' +
-            "Tap the yellow pickleball <strong>＋</strong> icon at the top to host the first one.</div>"
+            "Tap <strong>Host an open play</strong> above to create the first one.</div>"
         )
       );
     }
@@ -676,18 +683,17 @@
 
   // Small circular avatar for rosters (photo or first initial).
   function miniAvatar(r) {
-    if (r.photoDataUrl) {
-      return '<span class="roster-avatar"><img src="' + esc(r.photoDataUrl) + '" alt="" /></span>';
-    }
-    var init = (r.displayName || "?").trim().charAt(0).toUpperCase() || "?";
-    return '<span class="roster-avatar">' + esc(init) + "</span>";
+    var inner = r.photoDataUrl
+      ? '<img src="' + esc(r.photoDataUrl) + '" alt="" />'
+      : esc((r.displayName || "?").trim().charAt(0).toUpperCase() || "?");
+    return '<span class="roster-avatar">' + inner + flagBadge(r.heritageFlag) + "</span>";
   }
 
   function rosterItem(r) {
     return (
       '<li class="roster-item">' +
       miniAvatar(r) +
-      '<span class="roster-name">' + esc(r.displayName) + (r.heritageFlag ? " " + esc(r.heritageFlag) : "") + "</span>" +
+      '<span class="roster-name">' + esc(r.displayName) + "</span>" +
       (r.skillLevel ? '<span class="roster-skill">' + esc(r.skillLevel) + "</span>" : "") +
       (r.rating != null ? '<span class="roster-rating">' + esc(r.rating) + "</span>" : "") +
       "</li>"
@@ -716,9 +722,9 @@
     return (
       '<div class="podium-col ' + cls + '">' +
       (rank === 1 ? '<div class="podium-crown">👑</div>' : "") +
-      '<div class="podium-avatar">' + esc(init) + "</div>" +
+      '<div class="podium-avatar">' + esc(init) + flagBadge(pl.flag) + "</div>" +
       '<div class="podium-medal">' + medal + "</div>" +
-      '<div class="podium-name">' + esc(pl.name) + " " + esc(pl.flag) + "</div>" +
+      '<div class="podium-name">' + esc(pl.name) + "</div>" +
       '<div class="podium-dupr">' + esc(pl.dupr.toFixed(2)) + "</div>" +
       '<div class="podium-stand"><span class="podium-rank">' + rank + "</span></div>" +
       "</div>"
@@ -738,8 +744,8 @@
   function connectCard(pl) {
     return (
       '<article class="card connect-card">' +
-      '<span class="connect-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + "</span>" +
-      '<div class="connect-body"><h3>' + esc(pl.name) + " " + esc(pl.flag) + "</h3>" +
+      '<span class="connect-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + flagBadge(pl.flag) + "</span>" +
+      '<div class="connect-body"><h3>' + esc(pl.name) + "</h3>" +
       '<p class="muted">' + esc(pl.skill) + " · " + esc(pl.city) + "</p></div>" +
       '<button class="btn-connect" data-connect="' + esc(pl.name) + '" type="button">Connect</button>' +
       "</article>"
@@ -814,8 +820,8 @@
         return (
           '<div class="lb-row">' +
           '<span class="lb-rank">' + rank + "</span>" +
-          '<span class="lb-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + "</span>" +
-          '<span class="lb-name">' + esc(pl.name) + " " + esc(pl.flag) + "</span>" +
+          '<span class="lb-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + flagBadge(pl.flag) + "</span>" +
+          '<span class="lb-name">' + esc(pl.name) + "</span>" +
           '<span class="lb-dupr">' + esc(pl.dupr.toFixed(2)) + "</span>" +
           "</div>"
         );
@@ -837,8 +843,8 @@
       '<section class="card stack profile-card">' +
         '<div class="profile-hero">' +
         '<div class="identity-name' + (p.displayName ? "" : " is-empty") + '" id="name-preview">' +
-        esc(p.displayName || "Your name") + (heritageFlagOf(p) ? " " + heritageFlagOf(p) : "") + "</div>" +
-        '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + "</div>" +
+        esc(p.displayName || "Your name") + "</div>" +
+        '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + flagBadge(heritageFlagOf(p)) + "</div>" +
         '<input type="file" id="photo-input" accept="image/*" hidden />' +
         '<div class="identity-dupr' + (linked && duprValue ? "" : " is-muted") + '">' +
         (linked && duprValue ? "DUPR " + esc(duprValue) : "DUPR · not connected") + "</div>" +
@@ -903,7 +909,8 @@
       resizeImage(file, 256)
         .then(function (dataUrl) {
           card.querySelector("#avatar-preview").innerHTML =
-            '<img src="' + dataUrl + '" alt="" />' + AVATAR_EDIT_BTN;
+            '<img src="' + dataUrl + '" alt="" />' + AVATAR_EDIT_BTN +
+            flagBadge(flagOf(card.querySelector("#p-heritage").value));
           return firebase
             .firestore()
             .collection("users")
@@ -923,11 +930,16 @@
     var nameInput = card.querySelector("#p-name");
     var namePreview = card.querySelector("#name-preview");
     var heritageInput = card.querySelector("#p-heritage");
+    var avatarPreview = card.querySelector("#avatar-preview");
     function refreshNamePreview() {
       var v = nameInput.value.trim();
-      var fl = flagOf(heritageInput.value);
-      namePreview.textContent = (v || "Your name") + (fl ? " " + fl : "");
+      namePreview.textContent = v || "Your name";
       namePreview.classList.toggle("is-empty", !v);
+      // Live-update the avatar's flag badge as heritage changes.
+      var existing = avatarPreview.querySelector(".av-flag");
+      if (existing) existing.remove();
+      var fl = flagOf(heritageInput.value);
+      if (fl) avatarPreview.insertAdjacentHTML("beforeend", flagBadge(fl));
     }
     nameInput.addEventListener("input", refreshNamePreview);
     heritageInput.addEventListener("input", refreshNamePreview);
@@ -1034,11 +1046,6 @@
   // Profile icon opens the Profile view directly.
   profileBtn.addEventListener("click", function () {
     state.view = "profile";
-    renderSignedIn();
-  });
-  // Pickleball ＋ icon opens the Host an open play form.
-  hostBtn.addEventListener("click", function () {
-    state.view = "create";
     renderSignedIn();
   });
 

@@ -155,13 +155,24 @@ input:disabled { background: #f2eeeb; color: var(--muted); cursor: not-allowed; 
 .avatar-preview .avatar-initial { font-size: 2.3rem; font-weight: 800; }
 .avatar-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
 .avatar-edit {
-  position: absolute; right: 2px; bottom: 2px;
+  position: absolute; left: 2px; bottom: 2px;
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--brand); color: #fff; border: 2px solid #fff;
   display: flex; align-items: center; justify-content: center; cursor: pointer;
   box-shadow: var(--shadow-sm); transition: background 0.15s;
 }
 .avatar-edit:hover { background: var(--brand-hover); }
+
+/* heritage flag badge at ~5 o'clock on avatars */
+.av-flag {
+  position: absolute; right: -3px; bottom: -3px; z-index: 2;
+  background: #fff; border-radius: 4px; padding: 0 1px;
+  font-size: 10px; line-height: 15px; height: 15px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 2px rgba(32, 20, 20, 0.3);
+}
+.avatar-preview .av-flag { right: 3px; bottom: 3px; font-size: 20px; line-height: 27px; height: 27px; border-radius: 7px; padding: 0 3px; }
+.podium-avatar .av-flag { font-size: 12px; line-height: 17px; height: 17px; }
 
 /* live identity preview under avatar */
 .profile-hero { flex-direction: column; align-items: center; gap: 8px; }
@@ -283,12 +294,13 @@ button { font: inherit; cursor: pointer; }
 .roster li:last-child { border-bottom: 0; }
 .roster-item { display: flex; align-items: center; gap: 10px; }
 .roster-avatar {
-  width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; overflow: hidden;
+  position: relative;
+  width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%;
   background: var(--brand-soft); color: var(--brand);
   display: flex; align-items: center; justify-content: center;
   font-size: 0.82rem; font-weight: 800;
 }
-.roster-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.roster-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
 .roster-name { flex: 1; font-weight: 600; }
 .roster-skill {
   font-size: 0.68rem; font-weight: 800; color: var(--accent-ink);
@@ -329,12 +341,13 @@ button { font: inherit; cursor: pointer; }
 .coach-list-item { display: flex; align-items: center; gap: 14px; cursor: pointer; transition: box-shadow 0.15s; }
 .coach-list-item:hover { box-shadow: 0 2px 4px rgba(32,20,20,0.08), 0 10px 22px rgba(32,20,20,0.09); }
 .coach-list-avatar {
-  width: 56px; height: 56px; flex: 0 0 56px; border-radius: 50%; overflow: hidden;
+  position: relative;
+  width: 56px; height: 56px; flex: 0 0 56px; border-radius: 50%;
   background: var(--brand-soft); color: var(--brand);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.2rem; font-weight: 800;
 }
-.coach-list-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.coach-list-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
 .coach-list-body { flex: 1; min-width: 0; }
 .coach-list-body h3 { margin: 0 0 4px; }
 .coach-list-body .pill { display: inline-block; margin-bottom: 4px; }
@@ -354,6 +367,7 @@ button { font: inherit; cursor: pointer; }
 .podium-col { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
 .podium-crown { font-size: 1.2rem; line-height: 1; margin-bottom: 2px; }
 .podium-avatar {
+  position: relative;
   width: 56px; height: 56px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 1.4rem; font-weight: 800; color: var(--brand);
@@ -380,6 +394,7 @@ button { font: inherit; cursor: pointer; }
 .lb-row:last-child { border-bottom: 0; }
 .lb-rank { width: 22px; text-align: center; font-weight: 800; color: var(--muted); flex: 0 0 22px; }
 .lb-avatar {
+  position: relative;
   width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%;
   background: var(--brand-soft); color: var(--brand);
   display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;
@@ -390,6 +405,7 @@ button { font: inherit; cursor: pointer; }
 /* ---- Connect: find players ---- */
 .connect-card { display: flex; align-items: center; gap: 12px; }
 .connect-avatar {
+  position: relative;
   width: 44px; height: 44px; flex: 0 0 44px; border-radius: 50%;
   background: var(--brand-soft); color: var(--brand);
   display: flex; align-items: center; justify-content: center; font-weight: 800;
