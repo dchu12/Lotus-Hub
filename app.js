@@ -838,7 +838,10 @@
     main.innerHTML = "";
     var p = state.profile || {};
     var linked = !!p.duprLinked;
-    var duprValue = linked && p.homeRatingDoubles != null ? String(p.homeRatingDoubles) : "";
+    var manualVal = p.duprManual != null ? String(p.duprManual) : "";
+    // Verified (API) rating wins; otherwise show the self-reported one.
+    var shownRating = linked && p.homeRatingDoubles != null ? String(p.homeRatingDoubles) : manualVal;
+    var duprValue = shownRating;
     var card = el(
       '<section class="card stack profile-card">' +
         '<div class="profile-hero">' +
@@ -846,7 +849,7 @@
         esc(p.displayName || "Your name") + "</div>" +
         '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + flagBadge(heritageFlagOf(p)) + "</div>" +
         '<input type="file" id="photo-input" accept="image/*" hidden />' +
-        (linked && duprValue ? '<div class="identity-dupr">DUPR ' + esc(duprValue) + "</div>" : "") +
+        (shownRating ? '<div class="identity-dupr">DUPR ' + esc(shownRating) + (linked ? "" : " ·<span class=\"self-rated\"> self-rated</span>") + "</div>" : "") +
         '<div class="identity-skill" id="skill-preview"' + (p.skillLevel ? "" : " hidden") + ">" +
         esc(p.skillLevel || "") + "</div>" +
         "</div>" +
@@ -868,16 +871,18 @@
         '<p class="save-status" id="save-status" hidden></p>' +
         '<div class="dupr-box">' +
         '<div class="dupr-head"><h3>DUPR rating</h3>' +
-        '<span class="chip ' + (linked ? "chip-ok" : "chip-muted") + '">' +
-        (linked ? "Connected" : "Not connected") + "</span></div>" +
-        '<div class="field"><label>Rating</label>' +
-        '<input id="p-dupr" type="text" value="' + esc(duprValue) + '"' +
-        (linked ? "" : " disabled") +
-        ' placeholder="Connect DUPR to see your rating" /></div>' +
+        '<span class="chip ' + (linked ? "chip-ok" : manualVal ? "chip-warn" : "chip-muted") + '">' +
+        (linked ? "Connected" : manualVal ? "Self-reported" : "Not connected") + "</span></div>" +
         (linked
-          ? '<p class="muted">Updates automatically from your matches.</p>' +
+          ? '<div class="field"><label>Rating</label>' +
+            '<input id="p-dupr" type="text" value="' + esc(duprValue) + '" disabled /></div>' +
+            '<p class="muted">Verified — updates automatically from your matches.</p>' +
             '<button class="btn-ghost" id="refresh-dupr" type="button">Refresh rating</button>'
-          : '<p class="muted">Connect your DUPR account so open-play results update your official rating.</p>' +
+          : '<div class="field"><label>Your DUPR rating</label>' +
+            '<input id="p-dupr" type="number" step="0.001" min="2" max="8.5" value="' + esc(manualVal) + '" placeholder="e.g. 3.750" /></div>' +
+            '<button class="btn-ghost" id="save-dupr" type="button">Save rating</button>' +
+            '<p class="muted">Self-reported for now. Once our DUPR API access is approved, you can ' +
+            "connect your account and ratings verify automatically.</p>" +
             '<button class="btn-primary" id="link-dupr" type="button">Connect DUPR</button>' +
             '<div id="dupr-link-form" hidden>' +
             '<div class="field" style="margin-top:12px"><label>DUPR account email</label>' +
@@ -1066,6 +1071,32 @@
           })
           .catch(function (err) {
             setDuprStatus(friendlyDuprError(err), "err");
+          });
+      });
+    }
+
+    var saveDuprBtn = card.querySelector("#save-dupr");
+    if (saveDuprBtn) {
+      saveDuprBtn.addEventListener("click", function () {
+        var raw = card.querySelector("#p-dupr").value.trim();
+        var u = LH.currentUser() || state.user;
+        if (!u) return setDuprStatus("You're not signed in.", "err");
+        var val = raw === "" ? null : parseFloat(raw);
+        if (raw !== "" && (isNaN(val) || val < 2 || val > 8.5)) {
+          return setDuprStatus("Enter a DUPR rating between 2.0 and 8.5.", "err");
+        }
+        setDuprStatus("Saving…", "");
+        firebase
+          .firestore()
+          .collection("users")
+          .doc(u.uid)
+          .set({ duprManual: val }, { merge: true })
+          .then(function () {
+            setDuprStatus("Saved ✓", "ok");
+            renderProfile();
+          })
+          .catch(function (err) {
+            setDuprStatus("Couldn't save — " + (err && (err.code || err.message) ? err.code || err.message : "error"), "err");
           });
       });
     }

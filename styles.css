@@ -180,6 +180,7 @@ input:disabled { background: #f2eeeb; color: var(--muted); cursor: not-allowed; 
 .identity-name.is-empty { color: #c3bab6; font-weight: 700; }
 .identity-dupr { font-size: 1.05rem; font-weight: 800; color: var(--brand); }
 .identity-dupr.is-muted { color: var(--muted); font-weight: 700; font-size: 0.84rem; }
+.identity-dupr .self-rated { color: var(--muted); font-weight: 600; font-size: 0.72rem; }
 .identity-skill {
   font-size: 0.74rem; font-weight: 800; letter-spacing: 0.02em;
   color: var(--accent-ink); background: var(--accent-soft); border: 1px solid #f3e2ad;
@@ -229,6 +230,7 @@ input.has-icon { padding-left: 40px; }
 .chip { font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
 .chip-muted { background: #fff; color: var(--muted); border: 1px solid var(--line-strong); }
 .chip-ok { background: #e7f6ec; color: #1a7f43; border: 1px solid #b7e3c6; }
+.chip-warn { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid #f3e2ad; }
 
 /* ---- buttons ---- */
 button { font: inherit; cursor: pointer; }
