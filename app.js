@@ -14,7 +14,6 @@
 
   var main = document.getElementById("main");
   var tabs = document.getElementById("tabs");
-  var profileBtn = document.getElementById("profile-btn");
   var banner = document.getElementById("setup-banner");
   var toastEl = document.getElementById("toast");
 
@@ -103,7 +102,6 @@
   // ---- auth views -------------------------------------------------------
   function renderSignedOut() {
     tabs.hidden = true;
-    profileBtn.hidden = true;
     var configured = LH.available;
     main.innerHTML = "";
     var card = el(
@@ -171,16 +169,16 @@
   // ---- signed-in shell --------------------------------------------------
   function renderSignedIn() {
     tabs.hidden = false;
-    profileBtn.hidden = false;
-    profileBtn.classList.toggle("active", state.view === "profile");
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
     var isPlay = state.view === "discover" || state.view === "create";
+    var isProfile = state.view === "profile" || state.view === "profile-edit";
     Array.prototype.forEach.call(tabs.querySelectorAll(".tab"), function (t) {
       var v = t.dataset.view;
       var active =
         v === state.view ||
         (v === "coaching" && isCoaching) ||
-        (v === "discover" && isPlay);
+        (v === "discover" && isPlay) ||
+        (v === "profile" && isProfile);
       t.classList.toggle("active", active);
     });
     if (state.view === "discover") renderDiscover();
@@ -191,7 +189,8 @@
     else if (state.view === "coach-view") renderCoachDetail(state.viewingCoachUid);
     else if (state.view === "connect") renderConnect();
     else if (state.view === "rank") renderRank();
-    else if (state.view === "profile") renderProfile();
+    else if (state.view === "profile-edit") renderProfileEdit();
+    else if (state.view === "profile") renderProfileView();
   }
 
   function renderCoaching() {
@@ -834,7 +833,52 @@
     main.appendChild(wrap);
   }
 
-  function renderProfile() {
+  // Read-only "how visitors see you" profile, with a pencil to edit.
+  function renderProfileView() {
+    main.innerHTML = "";
+    var p = state.profile || {};
+    var linked = !!p.duprLinked;
+    var manualVal = p.duprManual != null ? String(p.duprManual) : "";
+    var shownRating = linked && p.homeRatingDoubles != null ? String(p.homeRatingDoubles) : manualVal;
+    var heritage = p.heritage != null ? p.heritage : p.ethnicity;
+
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el(
+        '<div class="view-head"><button class="edit-link" id="edit-profile" type="button">' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>' +
+          " Edit</button></div>"
+      )
+    );
+    var card = el(
+      '<section class="card stack profile-card">' +
+        '<div class="profile-hero">' +
+        '<div class="avatar-preview">' + avatarFace(p) + flagBadge(heritageFlagOf(p)) + "</div>" +
+        '<div class="identity-name">' + esc(p.displayName || "Player") + "</div>" +
+        (shownRating
+          ? '<div class="identity-dupr">DUPR ' + esc(shownRating) + (linked ? "" : ' ·<span class="self-rated"> self-rated</span>') + "</div>"
+          : "") +
+        (p.skillLevel ? '<div class="identity-skill">' + esc(p.skillLevel) + "</div>" : "") +
+        "</div>" +
+        (p.country ? metaRow("Location", p.country) : "") +
+        (heritage ? metaRow("Background heritage", heritage) : "") +
+        (p.favCourt ? metaRow("Favourite court", p.favCourt) : "") +
+        (p.favPaddle ? metaRow("Favourite paddle", p.favPaddle) : "") +
+        "</section>"
+    );
+    wrap.appendChild(card);
+    wrap.appendChild(
+      el('<p class="muted" style="text-align:center">This is how your profile appears to other players.</p>')
+    );
+    main.appendChild(wrap);
+
+    wrap.querySelector("#edit-profile").addEventListener("click", function () {
+      state.view = "profile-edit";
+      renderSignedIn();
+    });
+  }
+
+  function renderProfileEdit() {
     main.innerHTML = "";
     var p = state.profile || {};
     var linked = !!p.duprLinked;
@@ -1006,8 +1050,10 @@
             { merge: true }
           )
           .then(function () {
-            setStatus("Saved ✓", "ok");
             toast("Saved.");
+            // Show the profile as visitors see it after saving.
+            state.view = "profile";
+            renderSignedIn();
           })
           .catch(function (err) {
             console.error("Profile save failed:", err);
@@ -1051,7 +1097,7 @@
         LH.linkDupr(email)
           .then(function () {
             setDuprStatus("Linked ✓", "ok");
-            renderProfile(); // reflect connected state + rating
+            renderProfileEdit();
           })
           .catch(function (err) {
             console.error("linkDupr failed:", err);
@@ -1067,7 +1113,7 @@
         LH.refreshDuprRating()
           .then(function () {
             setDuprStatus("Updated ✓", "ok");
-            renderProfile();
+            renderProfileEdit();
           })
           .catch(function (err) {
             setDuprStatus(friendlyDuprError(err), "err");
@@ -1093,7 +1139,7 @@
           .set({ duprManual: val }, { merge: true })
           .then(function () {
             setDuprStatus("Saved ✓", "ok");
-            renderProfile();
+            renderProfileEdit();
           })
           .catch(function (err) {
             setDuprStatus("Couldn't save — " + (err && (err.code || err.message) ? err.code || err.message : "error"), "err");
@@ -1127,11 +1173,6 @@
     renderSignedIn();
   });
 
-  // Profile icon opens the Profile view directly.
-  profileBtn.addEventListener("click", function () {
-    state.view = "profile";
-    renderSignedIn();
-  });
 
   function start() {
     var ok = renderBanner();
