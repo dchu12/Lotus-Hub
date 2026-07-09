@@ -845,9 +845,9 @@
     var wrap = el('<section class="stack"></section>');
     wrap.appendChild(
       el(
-        '<div class="view-head"><button class="edit-link" id="edit-profile" type="button">' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>' +
-          " Edit</button></div>"
+        '<div class="profile-topbar"><button class="gear-btn" id="open-settings" type="button" aria-label="Settings" title="Settings">' +
+          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' +
+          "</button></div>"
       )
     );
     var card = el(
@@ -870,11 +870,43 @@
     wrap.appendChild(
       el('<p class="muted" style="text-align:center">This is how your profile appears to other players.</p>')
     );
+
+    // Slide-in settings side panel (opened by the gear).
+    var overlay = el('<div class="drawer-overlay" id="settings-overlay"></div>');
+    var drawer = el(
+      '<aside class="drawer" id="settings-drawer" role="dialog" aria-label="Settings">' +
+        '<div class="drawer-head"><h3>Settings</h3><button class="drawer-close" id="drawer-close" aria-label="Close">✕</button></div>' +
+        '<button class="drawer-item" id="drawer-edit" type="button">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>' +
+        " Edit profile</button>" +
+        '<button class="drawer-item drawer-item-danger" id="drawer-signout" type="button">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>' +
+        " Sign out</button>" +
+        "</aside>"
+    );
+    wrap.appendChild(overlay);
+    wrap.appendChild(drawer);
     main.appendChild(wrap);
 
-    wrap.querySelector("#edit-profile").addEventListener("click", function () {
+    function openPanel() {
+      overlay.classList.add("show");
+      drawer.classList.add("open");
+    }
+    function closePanel() {
+      overlay.classList.remove("show");
+      drawer.classList.remove("open");
+    }
+    wrap.querySelector("#open-settings").addEventListener("click", openPanel);
+    overlay.addEventListener("click", closePanel);
+    drawer.querySelector("#drawer-close").addEventListener("click", closePanel);
+    drawer.querySelector("#drawer-edit").addEventListener("click", function () {
+      closePanel();
       state.view = "profile-edit";
       renderSignedIn();
+    });
+    drawer.querySelector("#drawer-signout").addEventListener("click", function () {
+      function reload() { window.location.reload(); }
+      LH.signOut().then(reload, reload);
     });
   }
 

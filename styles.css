@@ -334,12 +334,38 @@ button { font: inherit; cursor: pointer; }
 .coach-card.is-clickable:active { transform: translateY(1px); }
 .chevron { margin-left: auto; font-size: 1.6rem; color: var(--muted); line-height: 1; }
 
-/* pencil edit link (profile view) */
-.edit-link {
-  display: inline-flex; align-items: center; gap: 6px;
-  border: 0; background: transparent; color: var(--brand);
-  font-weight: 700; font-size: 0.9rem; padding: 0 0 6px; cursor: pointer;
+/* profile settings gear + slide-in drawer */
+.profile-topbar { display: flex; justify-content: flex-end; }
+.gear-btn {
+  width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; border: 1.5px solid var(--line-strong); background: #fff; color: var(--brand);
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
 }
+.gear-btn:hover { border-color: var(--brand); background: var(--brand-soft); }
+
+.drawer-overlay {
+  position: fixed; inset: 0; background: rgba(20, 12, 12, 0.4); z-index: 60;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.drawer-overlay.show { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed; top: 0; right: 0; height: 100%; width: min(82%, 320px);
+  background: #fff; z-index: 61; box-shadow: -6px 0 24px rgba(32, 20, 20, 0.18);
+  transform: translateX(100%); transition: transform 0.22s ease;
+  display: flex; flex-direction: column; padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+.drawer.open { transform: translateX(0); }
+.drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.drawer-head h3 { margin: 0; }
+.drawer-close { border: 0; background: none; font-size: 1.2rem; color: var(--muted); cursor: pointer; line-height: 1; padding: 4px; }
+.drawer-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  border: 0; background: none; padding: 12px 8px; border-radius: 10px;
+  font-weight: 600; font-size: 0.95rem; color: var(--ink); cursor: pointer;
+}
+.drawer-item:hover { background: var(--bg); }
+.drawer-item-danger { color: var(--danger); }
 
 /* back link */
 .link-back {
