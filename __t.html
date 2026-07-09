@@ -5,7 +5,7 @@
 <div id="modal-root"></div><div id="toast" class="toast" hidden></div>
 <script>
 var USER={uid:"u1",email:"t@e.com",displayName:"Derek Chu",photoURL:null};
-var PROFILE={uid:"u1",displayName:"Derek Chu",skillLevel:"Intermediate",country:"Toronto, Canada 🇨🇦",heritage:"Korean 🇰🇷",favCourt:"Pickleplex Downsview",favPaddle:"Triton 5",duprLinked:false,duprManual:3.75};
+var PROFILE={uid:"u1",displayName:"Derek Chu",skillLevel:"Intermediate",country:"Toronto",flag:"🇨🇳",favCourt:"Pickleplex Downsview",favPaddle:"Triton 5",duprLinked:false,duprManual:3.75};
 function snap(d){return{exists:!!d,id:"u1",data:function(){return d;}};}
 function qsnap(a){return{forEach:function(f){a.forEach(function(d){f({id:d.uid,data:function(){return d;}});});}};}
 var docApi={get:function(){return Promise.resolve(snap(PROFILE));},set:function(){return Promise.resolve();},onSnapshot:function(cb){cb(snap(PROFILE));return function(){};},collection:function(){return colApi;}};

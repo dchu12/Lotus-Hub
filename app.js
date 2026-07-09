@@ -43,13 +43,94 @@
     var m = String(s).match(/[\u{1F1E6}-\u{1F1FF}]{2}/u);
     return m ? m[0] : "";
   }
-  // Person's heritage flag (reads legacy 'ethnicity' too).
+  // Person's flag: the chosen `flag` field, falling back to a flag emoji found
+  // in legacy heritage/ethnicity text.
   function heritageFlagOf(o) {
-    return o ? flagOf(o.heritage != null ? o.heritage : o.ethnicity) : "";
+    if (!o) return "";
+    return o.flag || flagOf(o.heritage != null ? o.heritage : o.ethnicity);
   }
   // Small flag badge that sits at ~5 o'clock on an avatar circle.
   function flagBadge(flag) {
     return flag ? '<span class="av-flag">' + esc(flag) + "</span>" : "";
+  }
+  // Tappable flag badge for the edit avatar (placeholder globe when unset).
+  function flagEditBtn(flag) {
+    return (
+      '<button type="button" class="av-flag av-flag-edit" id="flag-pick" aria-label="Choose your flag" title="Choose your flag">' +
+      (flag ? esc(flag) : "🌍") +
+      "</button>"
+    );
+  }
+
+  // Curated country flags for the picker (emoji + name).
+  var FLAGS = [
+    ["🇨🇦", "Canada"], ["🇺🇸", "United States"], ["🇲🇽", "Mexico"], ["🇧🇷", "Brazil"],
+    ["🇦🇷", "Argentina"], ["🇬🇧", "United Kingdom"], ["🇮🇪", "Ireland"], ["🇫🇷", "France"],
+    ["🇩🇪", "Germany"], ["🇪🇸", "Spain"], ["🇵🇹", "Portugal"], ["🇮🇹", "Italy"],
+    ["🇳🇱", "Netherlands"], ["🇧🇪", "Belgium"], ["🇨🇭", "Switzerland"], ["🇸🇪", "Sweden"],
+    ["🇳🇴", "Norway"], ["🇩🇰", "Denmark"], ["🇫🇮", "Finland"], ["🇵🇱", "Poland"],
+    ["🇨🇿", "Czechia"], ["🇦🇹", "Austria"], ["🇬🇷", "Greece"], ["🇷🇴", "Romania"],
+    ["🇺🇦", "Ukraine"], ["🇷🇺", "Russia"], ["🇹🇷", "Türkiye"], ["🇮🇱", "Israel"],
+    ["🇸🇦", "Saudi Arabia"], ["🇦🇪", "UAE"], ["🇮🇳", "India"], ["🇵🇰", "Pakistan"],
+    ["🇧🇩", "Bangladesh"], ["🇱🇰", "Sri Lanka"], ["🇳🇵", "Nepal"], ["🇨🇳", "China"],
+    ["🇭🇰", "Hong Kong"], ["🇹🇼", "Taiwan"], ["🇯🇵", "Japan"], ["🇰🇷", "South Korea"],
+    ["🇵🇭", "Philippines"], ["🇻🇳", "Vietnam"], ["🇹🇭", "Thailand"], ["🇲🇾", "Malaysia"],
+    ["🇸🇬", "Singapore"], ["🇮🇩", "Indonesia"], ["🇦🇺", "Australia"], ["🇳🇿", "New Zealand"],
+    ["🇿🇦", "South Africa"], ["🇳🇬", "Nigeria"], ["🇬🇭", "Ghana"], ["🇰🇪", "Kenya"],
+    ["🇪🇬", "Egypt"], ["🇲🇦", "Morocco"], ["🇪🇹", "Ethiopia"], ["🇯🇲", "Jamaica"],
+    ["🇹🇹", "Trinidad & Tobago"], ["🇩🇴", "Dominican Republic"], ["🇨🇺", "Cuba"], ["🇨🇴", "Colombia"],
+    ["🇨🇱", "Chile"], ["🇵🇪", "Peru"], ["🇻🇪", "Venezuela"], ["🇬🇹", "Guatemala"],
+  ];
+
+  // Flag picker modal. Calls onPick(emoji) when a flag is chosen.
+  function openFlagPicker(current, onPick) {
+    var root = document.getElementById("modal-root");
+    root.innerHTML = "";
+    var sheet = el(
+      '<div class="modal-overlay" id="fp-overlay">' +
+        '<div class="modal-sheet" role="dialog" aria-label="Choose your flag">' +
+        '<div class="drawer-head"><h3>Choose your flag</h3><button class="drawer-close" id="fp-close" aria-label="Close">✕</button></div>' +
+        '<input class="fp-search" id="fp-search" type="text" placeholder="Search country…" />' +
+        '<div class="fp-grid" id="fp-grid"></div>' +
+        "</div></div>"
+    );
+    root.appendChild(sheet);
+    var grid = sheet.querySelector("#fp-grid");
+    function draw(q) {
+      var query = (q || "").trim().toLowerCase();
+      grid.innerHTML = FLAGS.filter(function (f) {
+        return !query || f[1].toLowerCase().indexOf(query) > -1;
+      })
+        .map(function (f) {
+          return (
+            '<button class="fp-item' + (f[0] === current ? " selected" : "") + '" type="button" data-flag="' + f[0] + '">' +
+            '<span class="fp-emoji">' + f[0] + "</span><span class=\"fp-name\">" + esc(f[1]) + "</span></button>"
+          );
+        })
+        .join("");
+    }
+    draw("");
+    function close() { root.innerHTML = ""; }
+    sheet.addEventListener("click", function (e) {
+      if (e.target === sheet) close(); // click on backdrop
+    });
+    sheet.querySelector("#fp-close").addEventListener("click", close);
+    sheet.querySelector("#fp-search").addEventListener("input", function (e) {
+      draw(e.target.value);
+    });
+    grid.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-flag]");
+      if (!btn) return;
+      close();
+      onPick(btn.dataset.flag);
+    });
+  }
+
+  // Save the chosen flag to the current user's profile.
+  function saveFlag(flag) {
+    var u = LH.currentUser() || state.user;
+    if (!u) return Promise.reject(new Error("Not signed in."));
+    return firebase.firestore().collection("users").doc(u.uid).set({ flag: flag }, { merge: true });
   }
   var toastTimer = null;
   function toast(msg) {
@@ -861,7 +942,6 @@
         (p.skillLevel ? '<div class="identity-skill">' + esc(p.skillLevel) + "</div>" : "") +
         "</div>" +
         (p.country ? metaRow("Location", p.country) : "") +
-        (heritage ? metaRow("Background heritage", heritage) : "") +
         (p.favCourt ? metaRow("Favourite court", p.favCourt) : "") +
         (p.favPaddle ? metaRow("Favourite paddle", p.favPaddle) : "") +
         "</section>"
@@ -918,13 +998,15 @@
     // Verified (API) rating wins; otherwise show the self-reported one.
     var shownRating = linked && p.homeRatingDoubles != null ? String(p.homeRatingDoubles) : manualVal;
     var duprValue = shownRating;
+    var myFlag = heritageFlagOf(p);
     var card = el(
       '<section class="card stack profile-card">' +
         '<div class="profile-hero">' +
         '<div class="identity-name' + (p.displayName ? "" : " is-empty") + '" id="name-preview">' +
         esc(p.displayName || "Your name") + "</div>" +
-        '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + flagBadge(heritageFlagOf(p)) + "</div>" +
+        '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + flagEditBtn(myFlag) + "</div>" +
         '<input type="file" id="photo-input" accept="image/*" hidden />' +
+        '<button type="button" class="flag-hint" id="flag-hint">🌍 Represent your background — tap your flag to set your nationality</button>' +
         (shownRating ? '<div class="identity-dupr">DUPR ' + esc(shownRating) + (linked ? "" : " ·<span class=\"self-rated\"> self-rated</span>") + "</div>" : "") +
         '<div class="identity-skill" id="skill-preview"' + (p.skillLevel ? "" : " hidden") + ">" +
         esc(p.skillLevel || "") + "</div>" +
@@ -935,8 +1017,6 @@
         segmentedSkill(p.skillLevel) + "</div>" +
         '<div class="field"><label>Location</label>' +
         '<input id="p-country" type="text" placeholder="e.g. Toronto, Canada 🇨🇦" value="' + esc(p.country || "") + '" /></div>' +
-        '<div class="field"><label>Background Heritage</label>' +
-        '<input id="p-heritage" type="text" placeholder="e.g. Korean 🇰🇷" value="' + esc(p.heritage != null ? p.heritage : (p.ethnicity || "")) + '" /></div>' +
         '<div class="field"><label>Favourite court?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">📍</span>' +
         '<input class="has-icon" id="p-court" type="text" placeholder="e.g. Pickleplex Downsview" value="' + esc(p.favCourt || "") + '" /></div></div>' +
@@ -981,11 +1061,26 @@
       LH.signOut().then(reload, reload);
     });
 
+    // ---- flag picker ----
+    function openPicker() {
+      openFlagPicker(myFlag, function (flag) {
+        saveFlag(flag)
+          .then(function () { renderProfileEdit(); })
+          .catch(function () { toast("Couldn't save your flag."); });
+      });
+    }
+    var flagHint = card.querySelector("#flag-hint");
+    if (flagHint) flagHint.addEventListener("click", openPicker);
+
     // ---- photo upload ----
-    // Delegate on the container so the handler survives innerHTML swaps; the
-    // whole avatar (image + camera badge) is tappable to change the photo.
+    // Delegate on the container so the handler survives innerHTML swaps: the
+    // flag badge opens the flag picker; anywhere else opens the photo picker.
     var photoInput = card.querySelector("#photo-input");
-    card.querySelector("#avatar-preview").addEventListener("click", function () {
+    card.querySelector("#avatar-preview").addEventListener("click", function (e) {
+      if (e.target.closest("#flag-pick")) {
+        openPicker();
+        return;
+      }
       photoInput.click();
     });
     photoInput.addEventListener("change", function () {
@@ -996,8 +1091,7 @@
       resizeImage(file, 256)
         .then(function (dataUrl) {
           card.querySelector("#avatar-preview").innerHTML =
-            '<img src="' + dataUrl + '" alt="" />' + AVATAR_EDIT_BTN +
-            flagBadge(flagOf(card.querySelector("#p-heritage").value));
+            '<img src="' + dataUrl + '" alt="" />' + AVATAR_EDIT_BTN + flagEditBtn(myFlag);
           return firebase
             .firestore()
             .collection("users")
@@ -1013,23 +1107,15 @@
         });
     });
 
-    // ---- live preview: name + skill under the avatar ----
+    // ---- live preview: name under the avatar ----
     var nameInput = card.querySelector("#p-name");
     var namePreview = card.querySelector("#name-preview");
-    var heritageInput = card.querySelector("#p-heritage");
-    var avatarPreview = card.querySelector("#avatar-preview");
     function refreshNamePreview() {
       var v = nameInput.value.trim();
       namePreview.textContent = v || "Your name";
       namePreview.classList.toggle("is-empty", !v);
-      // Live-update the avatar's flag badge as heritage changes.
-      var existing = avatarPreview.querySelector(".av-flag");
-      if (existing) existing.remove();
-      var fl = flagOf(heritageInput.value);
-      if (fl) avatarPreview.insertAdjacentHTML("beforeend", flagBadge(fl));
     }
     nameInput.addEventListener("input", refreshNamePreview);
-    heritageInput.addEventListener("input", refreshNamePreview);
 
     // ---- segmented skill control ----
     var skillSeg = card.querySelector("#p-skill");
@@ -1075,7 +1161,6 @@
               displayName: name,
               skillLevel: selectedSkill(),
               country: card.querySelector("#p-country").value.trim() || null,
-              heritage: card.querySelector("#p-heritage").value.trim() || null,
               favCourt: card.querySelector("#p-court").value.trim() || null,
               favPaddle: card.querySelector("#p-paddle").value.trim() || null,
             },

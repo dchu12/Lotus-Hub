@@ -174,6 +174,48 @@ input:disabled { background: #f2eeeb; color: var(--muted); cursor: not-allowed; 
 }
 .avatar-preview .av-flag { right: 3px; bottom: 3px; font-size: 20px; line-height: 27px; height: 27px; border-radius: 7px; padding: 0 3px; }
 .podium-avatar .av-flag { font-size: 12px; line-height: 17px; height: 17px; }
+/* tappable flag badge on the edit avatar */
+.av-flag-edit { cursor: pointer; border: 1.5px solid var(--brand); box-shadow: 0 1px 3px rgba(32,20,20,0.3); }
+.av-flag-edit:hover { background: var(--brand-soft); }
+
+/* annotation bubble pointing at the flag */
+.flag-hint {
+  position: relative; align-self: center; max-width: 250px; margin-top: 6px;
+  background: var(--ink); color: #fff; border: 0; cursor: pointer;
+  font-size: 0.76rem; font-weight: 600; line-height: 1.3; padding: 9px 13px; border-radius: 12px;
+  text-align: center;
+}
+.flag-hint::before {
+  content: ""; position: absolute; top: -6px; right: 30px;
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-bottom: 7px solid var(--ink);
+}
+
+/* flag picker modal */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 70; background: rgba(20, 12, 12, 0.45);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.modal-sheet {
+  background: #fff; width: 100%; max-width: 560px; max-height: 80vh;
+  border-radius: 18px 18px 0 0; padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column;
+}
+.fp-search {
+  width: 100%; margin-bottom: 12px; padding: 11px 12px;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); font: inherit;
+}
+.fp-grid { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
+.fp-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 10px 6px;
+  cursor: pointer; text-align: center;
+}
+.fp-item:hover { border-color: var(--brand); background: var(--brand-soft); }
+.fp-item.selected { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand-soft); }
+.fp-emoji { font-size: 1.6rem; line-height: 1; }
+.fp-name { font-size: 0.68rem; color: var(--muted); font-weight: 600; line-height: 1.15; }
 
 /* live identity preview under avatar */
 .profile-hero { flex-direction: column; align-items: center; gap: 8px; }
@@ -335,7 +377,7 @@ button { font: inherit; cursor: pointer; }
 .chevron { margin-left: auto; font-size: 1.6rem; color: var(--muted); line-height: 1; }
 
 /* profile settings gear + slide-in drawer */
-.profile-topbar { display: flex; justify-content: flex-end; }
+.profile-topbar { display: flex; justify-content: flex-start; }
 .gear-btn {
   width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;
   border-radius: 50%; border: 1.5px solid var(--line-strong); background: #fff; color: var(--brand);
@@ -349,9 +391,9 @@ button { font: inherit; cursor: pointer; }
 }
 .drawer-overlay.show { opacity: 1; pointer-events: auto; }
 .drawer {
-  position: fixed; top: 0; right: 0; height: 100%; width: min(82%, 320px);
-  background: #fff; z-index: 61; box-shadow: -6px 0 24px rgba(32, 20, 20, 0.18);
-  transform: translateX(100%); transition: transform 0.22s ease;
+  position: fixed; top: 0; left: 0; height: 100%; width: min(82%, 320px);
+  background: #fff; z-index: 61; box-shadow: 6px 0 24px rgba(32, 20, 20, 0.18);
+  transform: translateX(-100%); transition: transform 0.22s ease;
   display: flex; flex-direction: column; padding: 16px;
   padding-top: calc(16px + env(safe-area-inset-top, 0px));
 }
