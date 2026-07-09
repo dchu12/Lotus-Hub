@@ -783,17 +783,22 @@
   // ---- Connect: DUPR leaderboard (sample data for now) ----
   // TODO: replace with real players once the DUPR integration lands.
   var LEADERBOARD = [
-    { name: "Ralph Llacar", flag: "🇨🇦", dupr: 6.82 },
-    { name: "Marco Silva", flag: "🇧🇷", dupr: 6.75 },
-    { name: "Priya Nair", flag: "🇮🇳", dupr: 6.61 },
-    { name: "Leo Tanaka", flag: "🇯🇵", dupr: 6.40 },
-    { name: "Sofia Rossi", flag: "🇮🇹", dupr: 6.28 },
-    { name: "James Park", flag: "🇰🇷", dupr: 6.15 },
-    { name: "Emma Müller", flag: "🇩🇪", dupr: 6.03 },
-    { name: "Diego Torres", flag: "🇲🇽", dupr: 5.92 },
-    { name: "Lena Novak", flag: "🇨🇿", dupr: 5.85 },
-    { name: "Noah Smith", flag: "🇺🇸", dupr: 5.77 },
+    { name: "Ralph Llacar", flag: "🇨🇦", dupr: 6.82, lotus: 92 },
+    { name: "Marco Silva", flag: "🇧🇷", dupr: 6.75, lotus: 88 },
+    { name: "Priya Nair", flag: "🇮🇳", dupr: 6.61, lotus: 95 },
+    { name: "Leo Tanaka", flag: "🇯🇵", dupr: 6.40, lotus: 90 },
+    { name: "Sofia Rossi", flag: "🇮🇹", dupr: 6.28, lotus: 84 },
+    { name: "James Park", flag: "🇰🇷", dupr: 6.15, lotus: 86 },
+    { name: "Emma Müller", flag: "🇩🇪", dupr: 6.03, lotus: 78 },
+    { name: "Diego Torres", flag: "🇲🇽", dupr: 5.92, lotus: 81 },
+    { name: "Lena Novak", flag: "🇨🇿", dupr: 5.85, lotus: 74 },
+    { name: "Noah Smith", flag: "🇺🇸", dupr: 5.77, lotus: 89 },
   ];
+  // Which metric the leaderboard is ranked by ("dupr" | "lotus").
+  var rankMetric = "dupr";
+  function rankValueStr(pl) {
+    return rankMetric === "lotus" ? String(pl.lotus) : pl.dupr.toFixed(2);
+  }
 
   function podiumCol(pl, rank) {
     var medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
@@ -805,7 +810,7 @@
       '<div class="podium-avatar">' + esc(init) + flagBadge(pl.flag) + "</div>" +
       '<div class="podium-medal">' + medal + "</div>" +
       '<div class="podium-name">' + esc(pl.name) + "</div>" +
-      '<div class="podium-dupr">' + esc(pl.dupr.toFixed(2)) + "</div>" +
+      '<div class="podium-dupr">' + esc(rankValueStr(pl)) + "</div>" +
       '<div class="podium-stand"><span class="podium-rank">' + rank + "</span></div>" +
       "</div>"
     );
@@ -875,16 +880,38 @@
 
   function renderRank() {
     main.innerHTML = "";
+    var isLotus = rankMetric === "lotus";
     var wrap = el('<section class="stack"></section>');
     wrap.appendChild(
       el(
-        '<div class="view-head"><h2>Leaderboard</h2>' +
-          '<p class="muted">Top DUPR-rated players on Lotus Hub.</p></div>'
+        '<div class="rank-head">' +
+          "<div><h2>Leaderboard</h2>" +
+          '<p class="muted">Top ' + (isLotus ? "Lotus Score" : "DUPR-rated") + " players on Lotus Hub.</p></div>" +
+          '<div class="menu-wrap">' +
+          '<button class="filter-btn" id="rank-filter" type="button" aria-label="Filter leaderboard" title="Filter">' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>' +
+          "</button>" +
+          '<div class="filter-menu" id="rank-menu" hidden>' +
+          '<div class="filter-menu-label">Rank by</div>' +
+          '<button class="filter-item' + (!isLotus ? " selected" : "") + '" data-metric="dupr" type="button">DUPR</button>' +
+          '<button class="filter-item' + (isLotus ? " selected" : "") + '" data-metric="lotus" type="button">Lotus Score</button>' +
+          "</div></div></div>"
       )
     );
 
-    var top3 = LEADERBOARD.slice(0, 3);
-    // Podium order: 2nd (left), 1st (center), 3rd (right)
+    if (isLotus) {
+      wrap.appendChild(
+        el(
+          '<div class="lotus-note"><strong>Lotus Score</strong> is your overall player rating — combining your ' +
+            "skill, performance, activity, and community involvement into one score.</div>"
+        )
+      );
+    }
+
+    var ranked = LEADERBOARD.slice().sort(function (a, b) {
+      return (isLotus ? b.lotus - a.lotus : b.dupr - a.dupr);
+    });
+    var top3 = ranked.slice(0, 3);
     var podium = el(
       '<div class="card podium-card"><div class="podium">' +
         (top3[1] ? podiumCol(top3[1], 2) : "") +
@@ -894,7 +921,8 @@
     );
     wrap.appendChild(podium);
 
-    var rows = LEADERBOARD.slice(3)
+    var rows = ranked
+      .slice(3)
       .map(function (pl, i) {
         var rank = i + 4;
         return (
@@ -902,16 +930,42 @@
           '<span class="lb-rank">' + rank + "</span>" +
           '<span class="lb-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + flagBadge(pl.flag) + "</span>" +
           '<span class="lb-name">' + esc(pl.name) + "</span>" +
-          '<span class="lb-dupr">' + esc(pl.dupr.toFixed(2)) + "</span>" +
+          '<span class="lb-dupr">' + esc(rankValueStr(pl)) + "</span>" +
           "</div>"
         );
       })
       .join("");
     wrap.appendChild(el('<div class="card lb-list">' + rows + "</div>"));
     wrap.appendChild(
-      el('<p class="muted" style="text-align:center">Sample rankings — real DUPR standings arrive with the DUPR integration.</p>')
+      el('<p class="muted" style="text-align:center">Sample rankings — real standings arrive with the DUPR integration.</p>')
     );
     main.appendChild(wrap);
+
+    var filterBtn = wrap.querySelector("#rank-filter");
+    var filterMenu = wrap.querySelector("#rank-menu");
+    function onDocClick(e) {
+      if (!filterMenu.contains(e.target) && !filterBtn.contains(e.target)) closeMenu();
+    }
+    function closeMenu() {
+      filterMenu.hidden = true;
+      document.removeEventListener("click", onDocClick);
+    }
+    filterBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (filterMenu.hidden) {
+        filterMenu.hidden = false;
+        setTimeout(function () { document.addEventListener("click", onDocClick); }, 0);
+      } else {
+        closeMenu();
+      }
+    });
+    filterMenu.addEventListener("click", function (e) {
+      var item = e.target.closest("[data-metric]");
+      if (!item) return;
+      document.removeEventListener("click", onDocClick);
+      rankMetric = item.dataset.metric;
+      renderRank();
+    });
   }
 
   // Read-only "how visitors see you" profile, with a pencil to edit.
