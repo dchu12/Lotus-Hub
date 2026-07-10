@@ -49,6 +49,14 @@
     if (!o) return "";
     return o.flag || flagOf(o.heritage != null ? o.heritage : o.ethnicity);
   }
+  // The rating to display for a player: verified DUPR (when linked) wins,
+  // otherwise the self-reported one. Mirrors what the profile view shows so a
+  // self-rated player's number isn't dropped on rosters.
+  function ratingOf(p) {
+    if (!p) return null;
+    if (p.duprLinked && p.homeRatingDoubles != null) return p.homeRatingDoubles;
+    return p.duprManual != null ? p.duprManual : null;
+  }
   // Small flag badge that sits at ~5 o'clock on an avatar circle.
   function flagBadge(flag) {
     return flag ? '<span class="av-flag">' + esc(flag) + "</span>" : "";
@@ -618,7 +626,7 @@
             ? LH.leave(s.id)
             : LH.join(s.id, {
                 displayName: (state.profile && state.profile.displayName) || "Player",
-                rating: state.profile ? state.profile.homeRatingDoubles : null,
+                rating: ratingOf(state.profile),
                 photoDataUrl: state.profile ? state.profile.photoDataUrl || state.profile.photoURL : null,
                 skillLevel: state.profile ? state.profile.skillLevel : null,
                 heritageFlag: heritageFlagOf(state.profile) || null,
@@ -1342,6 +1350,18 @@
     if (!t) return;
     state.view = t.dataset.view;
     renderSignedIn();
+  });
+
+  // Keyboard support for card-style controls that use role="button" (coach and
+  // clickable cards): activate them on Enter/Space like a real button would.
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    var t = e.target;
+    if (!t || typeof t.closest !== "function") return;
+    var target = t.closest('[role="button"]');
+    if (!target || target.tagName === "BUTTON" || target.tagName === "A") return;
+    e.preventDefault();
+    target.click();
   });
 
 
