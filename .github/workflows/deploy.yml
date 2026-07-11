@@ -1,0 +1,44 @@
+name: Deploy to Firebase
+
+# Deploys Lotus Hub (Hosting + Firestore rules) whenever main changes.
+# Requires one repo secret: FIREBASE_SERVICE_ACCOUNT — the full JSON key of a
+# Google Cloud service account with permission to deploy (see DEPLOY.md).
+# Cloud Functions are intentionally NOT deployed here (they need the Blaze plan
+# and the DUPR secrets — deploy those separately when DUPR goes live).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Never run two deploys at once; cancel an in-progress one if a newer push lands.
+concurrency:
+  group: firebase-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install the Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write the service-account key
+        # Pass the secret through an env var (not shell interpolation) so its
+        # contents can't break quoting or leak into the command line.
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa-key.json"
+
+      - name: Deploy Hosting + Firestore rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa-key.json
+        run: firebase deploy --only hosting,firestore:rules --project lots-hub --non-interactive
