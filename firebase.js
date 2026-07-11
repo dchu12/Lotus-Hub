@@ -323,6 +323,95 @@
     );
   }
 
+  // ---- Games / scores (open-play results) -------------------------------
+  // Stored as sessions/{id}/games/{gameId}; organizer-entered (see rules).
+  // These power player stats now and bridge to DUPR (matches) later.
+  function sessionGames(sessionId) {
+    return sessionsCol().doc(sessionId).collection("games");
+  }
+
+  function watchSessionGames(sessionId, cb) {
+    if (!ready) return function () {};
+    return sessionGames(sessionId)
+      .orderBy("createdAt", "asc")
+      .onSnapshot(
+        function (qs) {
+          var out = [];
+          qs.forEach(function (d) {
+            out.push(Object.assign({ id: d.id }, d.data()));
+          });
+          cb(out);
+        },
+        function () {
+          cb([]);
+        }
+      );
+  }
+
+  // game: { teamA: [{uid,displayName}], teamB: [...], scoreA, scoreB }
+  function addGame(sessionId, game) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    var teamA = (game.teamA || []).slice(0, 2);
+    var teamB = (game.teamB || []).slice(0, 2);
+    var uidOf = function (p) { return p.uid; };
+    var nameOf = function (p) { return p.displayName || "Player"; };
+    return sessionGames(sessionId).add({
+      teamA: teamA.map(uidOf),
+      teamB: teamB.map(uidOf),
+      teamANames: teamA.map(nameOf),
+      teamBNames: teamB.map(nameOf),
+      players: teamA.concat(teamB).map(uidOf), // flat list for array-contains
+      scoreA: game.scoreA,
+      scoreB: game.scoreB,
+      winner: game.scoreA > game.scoreB ? "A" : "B",
+      enteredBy: u.uid,
+      duprStatus: "pending", // picked up by submitSessionMatches once DUPR is live
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  function deleteGame(sessionId, gameId) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    return sessionGames(sessionId).doc(gameId).delete();
+  }
+
+  function getSessionOnce(sessionId) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    return sessionsCol()
+      .doc(sessionId)
+      .get()
+      .then(function (s) {
+        return s.exists ? Object.assign({ id: s.id }, s.data()) : null;
+      });
+  }
+
+  // A player's cross-session record, computed from every game they appear in.
+  function getPlayerStats(uid) {
+    if (!ready || !uid) return Promise.resolve({ games: 0, wins: 0, losses: 0, winRate: 0 });
+    return db
+      .collectionGroup("games")
+      .where("players", "array-contains", uid)
+      .get()
+      .then(function (qs) {
+        var games = 0;
+        var wins = 0;
+        qs.forEach(function (d) {
+          var g = d.data();
+          games++;
+          var inA = (g.teamA || []).indexOf(uid) > -1;
+          if ((inA && g.winner === "A") || (!inA && g.winner === "B")) wins++;
+        });
+        return {
+          games: games,
+          wins: wins,
+          losses: games - wins,
+          winRate: games ? Math.round((wins / games) * 100) : 0,
+        };
+      });
+  }
+
   window.LH = {
     get available() {
       return hasSDK && configured;
@@ -353,5 +442,10 @@
     join: join,
     leave: leave,
     myRsvpStatus: myRsvpStatus,
+    watchSessionGames: watchSessionGames,
+    addGame: addGame,
+    deleteGame: deleteGame,
+    getSessionOnce: getSessionOnce,
+    getPlayerStats: getPlayerStats,
   };
 })();

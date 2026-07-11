@@ -33,6 +33,21 @@ service cloud.firestore {
         allow read: if signedIn();
         allow write: if isSelf(uid);
       }
+
+      // Games (recorded scores) for a session. Anyone signed in can read the
+      // results; only the session's organizer can add/edit/remove them. These
+      // feed player stats now and bridge to DUPR (matches) later.
+      match /games/{gameId} {
+        allow read: if signedIn();
+        allow write: if signedIn() &&
+          get(/databases/$(database)/documents/sessions/$(sessionId)).data.organizerUid == request.auth.uid;
+      }
+    }
+
+    // Collection-group read of games so a player's cross-session stats
+    // (games played / win rate) can be computed with one query.
+    match /{path=**}/games/{gameId} {
+      allow read: if signedIn();
     }
 
     // Matches are created/validated server-side (Cloud Functions) before being

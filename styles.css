@@ -580,3 +580,41 @@ button { font: inherit; cursor: pointer; }
 .roster-item.is-clickable { cursor: pointer; border-radius: 8px; padding: 3px 4px; transition: background 0.12s; }
 .roster-item.is-clickable:hover { background: var(--bg); }
 .roster-item.is-clickable:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* ---- session scores + score entry ---- */
+.section-title { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin: 6px 0 8px; }
+.session-actions { flex-wrap: wrap; }
+.session-actions .btn-scores { flex: 0 0 auto; }
+.scores-head h2 { color: var(--brand); margin: 0 0 2px; }
+
+.games-list { display: flex; flex-direction: column; gap: 8px; }
+.game-row { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; }
+.game-side { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.game-side.game-b { justify-content: flex-end; text-align: right; }
+.gt-names { font-weight: 600; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gt-score { font-weight: 800; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.game-side.win .gt-names, .game-side.win .gt-score { color: #1a7f43; }
+.game-vs { color: var(--muted); font-size: 0.72rem; font-weight: 700; flex: 0 0 auto; }
+.game-del { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 0.95rem; padding: 2px 4px; line-height: 1; flex: 0 0 auto; }
+.game-del:hover { color: var(--danger); }
+
+.score-entry { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 14px; }
+.muted.small { font-size: 0.8rem; margin: 0 0 10px; }
+.pk-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.pk-chip { position: relative; border: 1.5px solid var(--line-strong); background: #fff; color: var(--ink); font-weight: 600; font-size: 0.86rem; padding: 8px 12px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.pk-chip.pk-a { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+.pk-chip.pk-b { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+.pk-tag { font-size: 0.68rem; font-weight: 800; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+.pk-chip.pk-a .pk-tag { background: var(--brand); }
+.pk-chip.pk-b .pk-tag { background: var(--accent-ink); }
+.score-inputs { display: flex; align-items: flex-end; justify-content: center; gap: 12px; margin-bottom: 14px; }
+.score-inputs .si { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.score-inputs .si label { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.score-inputs .si input { width: 84px; text-align: center; font-size: 1.3rem; font-weight: 800; padding: 8px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
+.si-dash { font-size: 1.4rem; color: var(--muted); padding-bottom: 8px; }
+
+/* profile stat tiles */
+.pstats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 14px; }
+.pstat { background: #fbf7f4; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 6px; text-align: center; }
+.pstat-v { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; color: var(--brand); font-variant-numeric: tabular-nums; }
+.pstat-l { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-top: 5px; }

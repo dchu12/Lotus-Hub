@@ -25,7 +25,8 @@
     viewingCoachUid: null, // which coach's profile is open
     viewingPlayerUid: null, // which player's profile is open (visitor view)
     playerBackView: "discover", // where "‹ Back" returns from a player view
-    unsub: { sessions: null, profile: null, coaches: null },
+    scoresSessionId: null, // which session's scores view is open
+    unsub: { sessions: null, profile: null, coaches: null, scores: null },
   };
 
   // ---- helpers ----------------------------------------------------------
@@ -260,8 +261,13 @@
   // ---- signed-in shell --------------------------------------------------
   function renderSignedIn() {
     tabs.hidden = false;
+    // Stop the scores listeners when leaving that view (tab switch or otherwise).
+    if (state.view !== "scores" && state.unsub.scores) {
+      state.unsub.scores();
+      state.unsub.scores = null;
+    }
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
-    var isPlay = state.view === "discover" || state.view === "create" || state.view === "player-view";
+    var isPlay = state.view === "discover" || state.view === "create" || state.view === "player-view" || state.view === "scores";
     var isProfile = state.view === "profile" || state.view === "profile-edit";
     Array.prototype.forEach.call(tabs.querySelectorAll(".tab"), function (t) {
       var v = t.dataset.view;
@@ -283,6 +289,7 @@
     else if (state.view === "profile-edit") renderProfileEdit();
     else if (state.view === "profile") renderProfileView();
     else if (state.view === "player-view") renderPlayerView(state.viewingPlayerUid);
+    else if (state.view === "scores") renderScores(state.scoresSessionId);
   }
 
   function renderCoaching() {
@@ -585,6 +592,7 @@
         '<ul class="roster" hidden></ul>' +
         '<div class="session-actions">' +
         '<button class="btn-ghost btn-roster">Show players</button>' +
+        '<button class="btn-ghost btn-scores">🏓 Scores</button>' +
         '<button class="btn-primary btn-rsvp">Join</button>' +
         "</div>" +
         "</article>"
@@ -593,6 +601,11 @@
     var rosterEl = card.querySelector(".roster");
     var rosterBtn = card.querySelector(".btn-roster");
     var rsvpBtn = card.querySelector(".btn-rsvp");
+    card.querySelector(".btn-scores").addEventListener("click", function () {
+      state.scoresSessionId = s.id;
+      state.view = "scores";
+      renderSignedIn();
+    });
 
     // Live roster.
     var rosterOpen = false;
@@ -658,6 +671,197 @@
     });
 
     return card;
+  }
+
+  // ---- session scores: view results + (organizer) enter games ----
+  function renderScores(sessionId) {
+    main.innerHTML = "";
+    if (state.unsub.scores) { state.unsub.scores(); state.unsub.scores = null; }
+
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el('<div class="view-head"><button class="link-back" id="back" type="button">‹ Play</button><h2>Session scores</h2></div>')
+    );
+    var card = el('<section class="card stack"><p class="muted">Loading…</p></section>');
+    wrap.appendChild(card);
+    main.appendChild(wrap);
+
+    wrap.querySelector("#back").addEventListener("click", function () {
+      if (state.unsub.scores) { state.unsub.scores(); state.unsub.scores = null; }
+      state.view = "discover";
+      renderSignedIn();
+    });
+
+    if (!sessionId) { card.innerHTML = '<p class="muted">Session not found.</p>'; return; }
+    var me = LH.currentUser();
+
+    LH.getSessionOnce(sessionId).then(function (s) {
+      if (!s) { card.innerHTML = '<p class="muted">This session no longer exists.</p>'; return; }
+      var isOrganizer = !!(me && me.uid === s.organizerUid);
+      var roster = [];
+      var assign = {}; // uid -> "A" | "B"
+
+      card.innerHTML =
+        '<div class="scores-head"><h2>' + esc(s.title) + "</h2>" +
+        '<p class="muted">' + esc(s.venueName || "TBD") + " · " + fmtWhen(s.startAt) + "</p></div>" +
+        '<div class="section-title">Games</div>' +
+        '<div id="games-list" class="games-list"><p class="muted">Loading games…</p></div>' +
+        (isOrganizer
+          ? '<div class="score-entry">' +
+              '<div class="section-title">Add a game</div>' +
+              '<p class="muted small">Tap players to set Team A (red) or Team B (gold). Tap again to switch teams, once more to clear.</p>' +
+              '<div id="picker" class="pk-grid"></div>' +
+              '<div class="score-inputs">' +
+                '<div class="si"><label>Team A</label><input id="score-a" type="number" min="0" max="99" inputmode="numeric" placeholder="0" /></div>' +
+                '<span class="si-dash">–</span>' +
+                '<div class="si"><label>Team B</label><input id="score-b" type="number" min="0" max="99" inputmode="numeric" placeholder="0" /></div>' +
+              "</div>" +
+              '<button class="btn-primary" id="add-game" type="button">Add game</button>' +
+              '<p class="save-status" id="score-status" hidden></p>' +
+            "</div>"
+          : '<p class="muted">Only the organizer can enter scores for this session.</p>');
+
+      var gamesList = card.querySelector("#games-list");
+
+      function gameRow(g) {
+        var aWin = g.winner === "A", bWin = g.winner === "B";
+        var namesA = (g.teamANames || []).join(" & ") || "Team A";
+        var namesB = (g.teamBNames || []).join(" & ") || "Team B";
+        return (
+          '<div class="game-row">' +
+          '<div class="game-side game-a' + (aWin ? " win" : "") + '">' +
+          '<span class="gt-names">' + esc(namesA) + (aWin ? " 🏆" : "") + "</span>" +
+          '<span class="gt-score">' + esc(g.scoreA) + "</span></div>" +
+          '<span class="game-vs">vs</span>' +
+          '<div class="game-side game-b' + (bWin ? " win" : "") + '">' +
+          '<span class="gt-score">' + esc(g.scoreB) + "</span>" +
+          '<span class="gt-names">' + (bWin ? "🏆 " : "") + esc(namesB) + "</span></div>" +
+          (isOrganizer ? '<button class="game-del" type="button" data-gid="' + esc(g.id) + '" aria-label="Delete game">✕</button>' : "") +
+          "</div>"
+        );
+      }
+
+      var unsubGames = LH.watchSessionGames(sessionId, function (games) {
+        gamesList.innerHTML = games.length
+          ? games.map(gameRow).join("")
+          : '<p class="empty">No games recorded yet.' + (isOrganizer ? " Add the first one below." : "") + "</p>";
+      });
+      var unsubRoster = isOrganizer
+        ? LH.watchRsvps(sessionId, function (list) { roster = list; drawPicker(); })
+        : null;
+      state.unsub.scores = function () {
+        if (unsubGames) unsubGames();
+        if (unsubRoster) unsubRoster();
+      };
+
+      gamesList.addEventListener("click", function (e) {
+        var del = e.target.closest(".game-del");
+        if (!del) return;
+        if (!window.confirm("Delete this game?")) return;
+        LH.deleteGame(sessionId, del.dataset.gid).catch(function () { toast("Couldn't delete game."); });
+      });
+
+      // ---- organizer: player picker + add-game ----
+      var pickerEl = card.querySelector("#picker");
+      function drawPicker() {
+        if (!pickerEl) return;
+        if (!roster.length) {
+          pickerEl.innerHTML = '<p class="muted small">No players have joined yet — the roster fills in as people RSVP.</p>';
+          return;
+        }
+        pickerEl.innerHTML = roster
+          .map(function (p) {
+            var a = assign[p.uid];
+            return (
+              '<button type="button" class="pk-chip' + (a === "A" ? " pk-a" : a === "B" ? " pk-b" : "") + '" data-uid="' + esc(p.uid) + '">' +
+              esc(p.displayName || "Player") + (a ? '<span class="pk-tag">' + a + "</span>" : "") + "</button>"
+            );
+          })
+          .join("");
+      }
+      if (pickerEl) {
+        var teamCount = function (t) {
+          return roster.filter(function (p) { return assign[p.uid] === t; }).length;
+        };
+        pickerEl.addEventListener("click", function (e) {
+          var chip = e.target.closest(".pk-chip");
+          if (!chip) return;
+          var uid = chip.dataset.uid;
+          var cur = assign[uid];
+          // Cycle unassigned → A → B → unassigned, skipping any full (2-player)
+          // team so a full Team A never blocks reaching Team B.
+          var next;
+          if (cur === "A") next = teamCount("B") < 2 ? "B" : null;
+          else if (cur === "B") next = null;
+          else if (teamCount("A") < 2) next = "A";
+          else if (teamCount("B") < 2) next = "B";
+          else { toast("Both teams are full — clear a player first."); return; }
+          if (next) assign[uid] = next;
+          else delete assign[uid];
+          drawPicker();
+        });
+        drawPicker();
+      }
+
+      var addBtn = card.querySelector("#add-game");
+      if (addBtn) {
+        var statusEl = card.querySelector("#score-status");
+        var setStatus = function (msg, kind) {
+          statusEl.hidden = false;
+          statusEl.textContent = msg;
+          statusEl.className = "save-status" + (kind ? " " + kind : "");
+        };
+        addBtn.addEventListener("click", function () {
+          var teamA = roster.filter(function (p) { return assign[p.uid] === "A"; });
+          var teamB = roster.filter(function (p) { return assign[p.uid] === "B"; });
+          if (!teamA.length || !teamB.length) return setStatus("Put at least one player on each team.", "err");
+          var sa = parseInt(card.querySelector("#score-a").value, 10);
+          var sb = parseInt(card.querySelector("#score-b").value, 10);
+          if (isNaN(sa) || isNaN(sb) || sa < 0 || sb < 0) return setStatus("Enter both scores.", "err");
+          if (sa === sb) return setStatus("A game can't end in a tie — pick a winner.", "err");
+          addBtn.disabled = true;
+          setStatus("Saving…", "");
+          LH.addGame(sessionId, { teamA: teamA, teamB: teamB, scoreA: sa, scoreB: sb })
+            .then(function () {
+              setStatus("Game added ✓", "ok");
+              assign = {};
+              drawPicker();
+              card.querySelector("#score-a").value = "";
+              card.querySelector("#score-b").value = "";
+            })
+            .catch(function (err) {
+              var code = err && err.code ? String(err.code) : "";
+              setStatus(
+                code.indexOf("permission-denied") > -1
+                  ? "Score-saving isn't live yet — the updated security rules need to be deployed."
+                  : (err && err.message) || "Couldn't add game.",
+                "err"
+              );
+            })
+            .finally(function () { addBtn.disabled = false; });
+        });
+      }
+    }).catch(function () {
+      card.innerHTML = '<p class="muted">Could not load this session.</p>';
+    });
+  }
+
+  // Fill the stat tiles (games / win rate / record) for a profile, if the
+  // player has any recorded games. Async — degrades to nothing on error (e.g.
+  // before the games rules are deployed).
+  function attachStats(scope, uid) {
+    var box = scope.querySelector("[data-stats]");
+    if (!box || !uid || !LH.getPlayerStats) return;
+    LH.getPlayerStats(uid)
+      .then(function (st) {
+        if (!st || !st.games) return;
+        var tile = function (v, l) {
+          return '<div class="pstat"><div class="pstat-v">' + esc(v) + '</div><div class="pstat-l">' + esc(l) + "</div></div>";
+        };
+        box.innerHTML = tile(st.games, "Games") + tile(st.winRate + "%", "Win rate") + tile(st.wins + "–" + st.losses, "W–L");
+        box.hidden = false;
+      })
+      .catch(function () {});
   }
 
   function renderCreate() {
@@ -1103,6 +1307,7 @@
       (p.bio ? '<p class="profile-bio">' + esc(p.bio).replace(/\n/g, "<br>") + "</p>" : "") +
       styleChips(p) +
       "</div>" +
+      '<div class="pstats" data-stats hidden></div>' +
       facts
     );
   }
@@ -1200,6 +1405,7 @@
         }
         var isSelf = !!(me && me.uid === uid);
         card.innerHTML = profileBody(p) + (isSelf ? "" : visitorActions(p));
+        attachStats(card, uid);
         if (!isSelf) wireVisitorActions(card, p);
       })
       .catch(function () {
@@ -1222,6 +1428,7 @@
     );
     var card = el('<section class="card stack profile-card">' + profileBody(p) + "</section>");
     wrap.appendChild(card);
+    attachStats(card, state.user && state.user.uid);
     wrap.appendChild(
       el('<p class="muted" style="text-align:center">This is how your profile appears to other players.</p>')
     );
