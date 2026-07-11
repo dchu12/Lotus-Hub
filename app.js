@@ -23,6 +23,8 @@
     view: "discover",
     sessions: [],
     viewingCoachUid: null, // which coach's profile is open
+    viewingPlayerUid: null, // which player's profile is open (visitor view)
+    playerBackView: "discover", // where "‹ Back" returns from a player view
     unsub: { sessions: null, profile: null, coaches: null },
   };
 
@@ -259,7 +261,7 @@
   function renderSignedIn() {
     tabs.hidden = false;
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
-    var isPlay = state.view === "discover" || state.view === "create";
+    var isPlay = state.view === "discover" || state.view === "create" || state.view === "player-view";
     var isProfile = state.view === "profile" || state.view === "profile-edit";
     Array.prototype.forEach.call(tabs.querySelectorAll(".tab"), function (t) {
       var v = t.dataset.view;
@@ -280,6 +282,7 @@
     else if (state.view === "rank") renderRank();
     else if (state.view === "profile-edit") renderProfileEdit();
     else if (state.view === "profile") renderProfileView();
+    else if (state.view === "player-view") renderPlayerView(state.viewingPlayerUid);
   }
 
   function renderCoaching() {
@@ -607,6 +610,16 @@
       }
     });
 
+    // Tap a player in the roster to open their profile.
+    rosterEl.addEventListener("click", function (e) {
+      var li = e.target.closest("[data-uid]");
+      if (!li || !li.dataset.uid) return;
+      state.playerBackView = "discover";
+      state.viewingPlayerUid = li.dataset.uid;
+      state.view = "player-view";
+      renderSignedIn();
+    });
+
     // My RSVP state drives the button.
     LH.myRsvpStatus(s.id, function (status) {
       if (status === "going") {
@@ -769,6 +782,41 @@
     );
   }
 
+  // Generic single-select segmented control (format, hand, court side, …).
+  function segmentedGroup(id, options, selected) {
+    return (
+      '<div class="segmented" id="' + esc(id) + '" role="group">' +
+      options.map(function (o) {
+        return (
+          '<button type="button" class="seg' + (selected === o ? " active" : "") +
+          '" data-val="' + esc(o) + '">' + esc(o) + "</button>"
+        );
+      }).join("") +
+      "</div>"
+    );
+  }
+
+  // Wire a segmented control: single-select, tap the active one to clear it.
+  // Returns a getter for the current value (or null).
+  function wireSegmented(card, id) {
+    var seg = card.querySelector("#" + id);
+    if (seg) {
+      seg.addEventListener("click", function (e) {
+        var btn = e.target.closest(".seg");
+        if (!btn) return;
+        var already = btn.classList.contains("active");
+        Array.prototype.forEach.call(seg.querySelectorAll(".seg"), function (s) {
+          s.classList.remove("active");
+        });
+        if (!already) btn.classList.add("active");
+      });
+    }
+    return function () {
+      var active = seg && seg.querySelector(".seg.active");
+      return active ? active.dataset.val : null;
+    };
+  }
+
   // Small circular avatar for rosters (photo or first initial).
   function miniAvatar(r) {
     var inner = r.photoDataUrl
@@ -779,7 +827,7 @@
 
   function rosterItem(r) {
     return (
-      '<li class="roster-item">' +
+      '<li class="roster-item is-clickable" role="button" tabindex="0" data-uid="' + esc(r.uid) + '">' +
       miniAvatar(r) +
       '<span class="roster-name">' + esc(r.displayName) + "</span>" +
       (r.skillLevel ? '<span class="roster-skill">' + esc(r.skillLevel) + "</span>" : "") +
@@ -976,14 +1024,193 @@
     });
   }
 
-  // Read-only "how visitors see you" profile, with a pencil to edit.
-  function renderProfileView() {
-    main.innerHTML = "";
-    var p = state.profile || {};
+  // Meta row whose value is trusted HTML (e.g. a link). Label is still escaped.
+  function metaRowRaw(label, valHtml) {
+    return (
+      '<div class="meta-row"><span class="meta-label">' + esc(label) + "</span>" +
+      '<span class="meta-val">' + valHtml + "</span></div>"
+    );
+  }
+  // "Mar 2024" from a Firestore timestamp (or nothing if unset).
+  function fmtMemberSince(ts) {
+    if (!ts) return "";
+    var d = ts.toDate ? ts.toDate() : new Date(ts);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  }
+  // Strip a leading @ and whitespace from a handle.
+  function cleanHandle(s) {
+    return String(s || "").trim().replace(/^@+/, "");
+  }
+  // Scannable playing-style chips from the optional profile fields.
+  function styleChips(p) {
+    var out = [];
+    if (p.hand) out.push("🤚 " + p.hand + "-handed");
+    if (p.side) out.push("📍 " + p.side + " side");
+    if (p.format) out.push("🎾 " + p.format);
+    if (p.yearsPlaying != null && p.yearsPlaying !== "") {
+      out.push("⏳ " + p.yearsPlaying + " yr" + (Number(p.yearsPlaying) === 1 ? "" : "s"));
+    }
+    if (p.availability) out.push("🗓️ " + p.availability);
+    if (!out.length) return "";
+    return (
+      '<div class="style-chips">' +
+      out.map(function (c) { return '<span class="style-chip">' + esc(c) + "</span>"; }).join("") +
+      "</div>"
+    );
+  }
+
+  // Shared read-only profile body (hero + bio + style + facts). Used by both the
+  // owner's "how visitors see you" view and the visitor player view so the two
+  // never drift apart.
+  function profileBody(p) {
     var linked = !!p.duprLinked;
     var manualVal = p.duprManual != null ? String(p.duprManual) : "";
     var shownRating = linked && p.homeRatingDoubles != null ? String(p.homeRatingDoubles) : manualVal;
-    var heritage = p.heritage != null ? p.heritage : p.ethnicity;
+    var since = fmtMemberSince(p.createdAt);
+    var ig = cleanHandle(p.instagram);
+
+    var tags =
+      (p.skillLevel ? '<span class="identity-skill">' + esc(p.skillLevel) + "</span>" : "") +
+      (p.lotusScore != null ? '<span class="chip lotus-chip">🪷 Lotus ' + esc(p.lotusScore) + "</span>" : "") +
+      (p.isCoach ? '<span class="chip coach-chip">🎯 Coach</span>' : "");
+
+    var facts =
+      (p.country ? metaRow("Location", p.country) : "") +
+      (p.favCourt ? metaRow("Home court", p.favCourt) : "") +
+      (p.favPaddle ? metaRow("Paddle", p.favPaddle) : "") +
+      (p.lookingFor ? metaRow("Looking for", p.lookingFor) : "") +
+      (ig
+        ? metaRowRaw(
+            "Instagram",
+            '<a class="meta-link" href="https://instagram.com/' + encodeURIComponent(ig) +
+              '" target="_blank" rel="noopener noreferrer">@' + esc(ig) + "</a>"
+          )
+        : "") +
+      (since ? metaRow("Member since", since) : "");
+
+    return (
+      '<div class="profile-hero">' +
+      '<div class="avatar-preview">' + avatarFace(p) +
+      (linked ? '<span class="av-verified" title="DUPR verified">✓</span>' : "") +
+      flagBadge(heritageFlagOf(p)) + "</div>" +
+      '<div class="identity-name">' + esc(p.displayName || "Player") + "</div>" +
+      (tags ? '<div class="identity-tags">' + tags + "</div>" : "") +
+      (shownRating
+        ? '<div class="identity-dupr">DUPR ' + esc(shownRating) +
+          (linked ? "" : ' ·<span class="self-rated"> self-rated</span>') + "</div>"
+        : "") +
+      (p.bio ? '<p class="profile-bio">' + esc(p.bio).replace(/\n/g, "<br>") + "</p>" : "") +
+      styleChips(p) +
+      "</div>" +
+      facts
+    );
+  }
+
+  // Action bar shown to a VISITOR looking at someone else's profile.
+  function visitorActions(p) {
+    return (
+      '<div class="visitor-actions">' +
+      '<button class="btn-primary va-connect" type="button">＋ Connect</button>' +
+      '<button class="btn-ghost va-message" type="button">💬 Message</button>' +
+      '<button class="btn-ghost va-invite" type="button">🏓 Invite</button>' +
+      "</div>" +
+      '<div class="visitor-more">' +
+      (p.isCoach ? '<button class="btn-ghost full va-coach" type="button">🎯 View coaching profile</button>' : "") +
+      '<button class="linkish va-report" type="button">Report or block</button>' +
+      "</div>"
+    );
+  }
+
+  function wireVisitorActions(card, p) {
+    var connect = card.querySelector(".va-connect");
+    if (connect) {
+      connect.addEventListener("click", function () {
+        // No connections collection/rules yet — mirror the Connect tab (a local
+        // acknowledgement). Persisting the social graph lands with its own rules.
+        connect.textContent = "Requested";
+        connect.disabled = true;
+        connect.classList.add("is-joined");
+        toast("Connection request sent to " + (p.displayName || "player") + "!");
+      });
+    }
+    var message = card.querySelector(".va-message");
+    if (message) {
+      message.addEventListener("click", function () {
+        var ig = cleanHandle(p.instagram);
+        if (ig) {
+          window.open("https://instagram.com/" + encodeURIComponent(ig), "_blank", "noopener");
+        } else {
+          toast("No contact info yet — try connecting first.");
+        }
+      });
+    }
+    var invite = card.querySelector(".va-invite");
+    if (invite) {
+      invite.addEventListener("click", function () {
+        toast("Host a session, then share it with " + (p.displayName || "them") + " to play together.");
+        state.view = "create";
+        renderSignedIn();
+      });
+    }
+    var coach = card.querySelector(".va-coach");
+    if (coach) {
+      coach.addEventListener("click", function () {
+        state.viewingCoachUid = p.uid;
+        state.view = "coach-view";
+        renderSignedIn();
+      });
+    }
+    var report = card.querySelector(".va-report");
+    if (report) {
+      report.addEventListener("click", function () {
+        if (window.confirm("Report or block " + (p.displayName || "this player") + "? Our team will review.")) {
+          toast("Thanks — we'll review this player.");
+        }
+      });
+    }
+  }
+
+  // Visitor view of another player's profile (read-only + action bar).
+  function renderPlayerView(uid) {
+    main.innerHTML = "";
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el('<div class="view-head"><button class="link-back" id="back" type="button">‹ Back</button></div>')
+    );
+    var card = el('<section class="card stack profile-card"><p class="muted">Loading…</p></section>');
+    wrap.appendChild(card);
+    main.appendChild(wrap);
+
+    wrap.querySelector("#back").addEventListener("click", function () {
+      state.view = state.playerBackView || "discover";
+      renderSignedIn();
+    });
+
+    if (!uid) {
+      card.innerHTML = '<p class="muted">Player not found.</p>';
+      return;
+    }
+    var me = LH.currentUser();
+    LH.getUserOnce(uid)
+      .then(function (p) {
+        if (!p) {
+          card.innerHTML = '<p class="muted">Player not found.</p>';
+          return;
+        }
+        var isSelf = !!(me && me.uid === uid);
+        card.innerHTML = profileBody(p) + (isSelf ? "" : visitorActions(p));
+        if (!isSelf) wireVisitorActions(card, p);
+      })
+      .catch(function () {
+        card.innerHTML = '<p class="muted">Could not load this player.</p>';
+      });
+  }
+
+  // Read-only "how visitors see you" profile, with a gear to open settings.
+  function renderProfileView() {
+    main.innerHTML = "";
+    var p = state.profile || {};
 
     var wrap = el('<section class="stack"></section>');
     wrap.appendChild(
@@ -993,21 +1220,7 @@
           "</button></div>"
       )
     );
-    var card = el(
-      '<section class="card stack profile-card">' +
-        '<div class="profile-hero">' +
-        '<div class="avatar-preview">' + avatarFace(p) + flagBadge(heritageFlagOf(p)) + "</div>" +
-        '<div class="identity-name">' + esc(p.displayName || "Player") + "</div>" +
-        (shownRating
-          ? '<div class="identity-dupr">DUPR ' + esc(shownRating) + (linked ? "" : ' ·<span class="self-rated"> self-rated</span>') + "</div>"
-          : "") +
-        (p.skillLevel ? '<div class="identity-skill">' + esc(p.skillLevel) + "</div>" : "") +
-        "</div>" +
-        (p.country ? metaRow("Location", p.country) : "") +
-        (p.favCourt ? metaRow("Favourite court", p.favCourt) : "") +
-        (p.favPaddle ? metaRow("Favourite paddle", p.favPaddle) : "") +
-        "</section>"
-    );
+    var card = el('<section class="card stack profile-card">' + profileBody(p) + "</section>");
     wrap.appendChild(card);
     wrap.appendChild(
       el('<p class="muted" style="text-align:center">This is how your profile appears to other players.</p>')
@@ -1075,6 +1288,8 @@
         "</div>" +
         '<div class="field"><label>Name</label>' +
         '<input id="p-name" type="text" placeholder="Your name" value="' + esc(p.displayName || "") + '" /></div>' +
+        '<div class="field"><label>What\'s your game? <span class="muted">(short bio)</span></label>' +
+        '<textarea id="p-bio" rows="3" placeholder="e.g. Weeknight dinker chasing 4.0 — always up for a competitive doubles game.">' + esc(p.bio || "") + "</textarea></div>" +
         '<div class="field"><label>Pickleball Skill Level</label>' +
         segmentedSkill(p.skillLevel) + "</div>" +
         '<div class="field"><label>Location</label>' +
@@ -1085,6 +1300,23 @@
         '<div class="field"><label>Favourite paddle?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">🏓</span>' +
         '<input class="has-icon" id="p-paddle" type="text" placeholder="e.g. Selkirk Vanguard" value="' + esc(p.favPaddle || "") + '" /></div></div>' +
+        '<div class="field"><label>Preferred format</label>' +
+        segmentedGroup("p-format", ["Doubles", "Singles", "Mixed"], p.format) + "</div>" +
+        '<div class="field"><label>Dominant hand</label>' +
+        segmentedGroup("p-hand", ["Right", "Left"], p.hand) + "</div>" +
+        '<div class="field"><label>Court side</label>' +
+        segmentedGroup("p-side", ["Left", "Right", "Either"], p.side) + "</div>" +
+        '<div class="row">' +
+        '<div class="field"><label>Years playing</label>' +
+        '<input id="p-years" type="number" min="0" max="60" placeholder="e.g. 5" value="' + esc(p.yearsPlaying != null ? p.yearsPlaying : "") + '" /></div>' +
+        '<div class="field"><label>Usually free</label>' +
+        '<input id="p-avail" type="text" placeholder="Evenings &amp; weekends" value="' + esc(p.availability || "") + '" /></div>' +
+        "</div>" +
+        '<div class="field"><label>Instagram</label>' +
+        '<div class="input-wrap"><span class="lead" aria-hidden="true">@</span>' +
+        '<input class="has-icon" id="p-ig" type="text" placeholder="yourhandle" autocapitalize="none" value="' + esc(cleanHandle(p.instagram)) + '" /></div></div>' +
+        '<div class="field"><label>Looking for</label>' +
+        '<input id="p-looking" type="text" placeholder="e.g. a regular doubles partner" value="' + esc(p.lookingFor || "") + '" /></div>' +
         '<button class="btn-primary" id="save-profile" type="button">Save profile</button>' +
         '<p class="save-status" id="save-status" hidden></p>' +
         '<div class="dupr-box">' +
@@ -1199,6 +1431,11 @@
       return active ? active.dataset.val : null;
     }
 
+    // ---- new segmented controls (preferred format, hand, court side) ----
+    var getFormat = wireSegmented(card, "p-format");
+    var getHand = wireSegmented(card, "p-hand");
+    var getSide = wireSegmented(card, "p-side");
+
     // ---- save profile fields ----
     var statusEl = card.querySelector("#save-status");
     function setStatus(msg, kind) {
@@ -1221,10 +1458,21 @@
           .set(
             {
               displayName: name,
+              bio: card.querySelector("#p-bio").value.trim() || null,
               skillLevel: selectedSkill(),
               country: card.querySelector("#p-country").value.trim() || null,
               favCourt: card.querySelector("#p-court").value.trim() || null,
               favPaddle: card.querySelector("#p-paddle").value.trim() || null,
+              format: getFormat(),
+              hand: getHand(),
+              side: getSide(),
+              yearsPlaying: (function () {
+                var v = parseInt(card.querySelector("#p-years").value, 10);
+                return isNaN(v) ? null : v;
+              })(),
+              availability: card.querySelector("#p-avail").value.trim() || null,
+              instagram: cleanHandle(card.querySelector("#p-ig").value) || null,
+              lookingFor: card.querySelector("#p-looking").value.trim() || null,
             },
             { merge: true }
           )
