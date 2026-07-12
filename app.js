@@ -1250,11 +1250,6 @@
   function styleChips(p) {
     var out = [];
     if (p.hand) out.push("🤚 " + p.hand + "-handed");
-    if (p.side) out.push("📍 " + p.side + " side");
-    if (p.format) out.push("🎾 " + p.format);
-    if (p.yearsPlaying != null && p.yearsPlaying !== "") {
-      out.push("⏳ " + p.yearsPlaying + " yr" + (Number(p.yearsPlaying) === 1 ? "" : "s"));
-    }
     if (p.availability) out.push("🗓️ " + p.availability);
     if (!out.length) return "";
     return (
@@ -1281,9 +1276,6 @@
 
     var facts =
       (p.country ? metaRow("Location", p.country) : "") +
-      (p.favCourt ? metaRow("Home court", p.favCourt) : "") +
-      (p.favPaddle ? metaRow("Paddle", p.favPaddle) : "") +
-      (p.lookingFor ? metaRow("Looking for", p.lookingFor) : "") +
       (ig
         ? metaRowRaw(
             "Instagram",
@@ -1291,6 +1283,8 @@
               '" target="_blank" rel="noopener noreferrer">@' + esc(ig) + "</a>"
           )
         : "") +
+      (p.favCourt ? metaRow("Home court", p.favCourt) : "") +
+      (p.favPaddle ? metaRow("Paddle", p.favPaddle) : "") +
       (since ? metaRow("Member since", since) : "");
 
     return (
@@ -1301,8 +1295,11 @@
       '<div class="identity-name">' + esc(p.displayName || "Player") + "</div>" +
       (tags ? '<div class="identity-tags">' + tags + "</div>" : "") +
       (shownRating
-        ? '<div class="identity-dupr">DUPR ' + esc(shownRating) +
-          (linked ? "" : ' ·<span class="self-rated"> self-rated</span>') + "</div>"
+        ? '<div class="identity-dupr">' +
+          (linked
+            ? "DUPR " + esc(shownRating)
+            : esc(shownRating) + ' <span class="self-rated">· Self-rated</span>') +
+          "</div>"
         : "") +
       (p.bio ? '<p class="profile-bio">' + esc(p.bio).replace(/\n/g, "<br>") + "</p>" : "") +
       styleChips(p) +
@@ -1488,8 +1485,14 @@
         esc(p.displayName || "Your name") + "</div>" +
         '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + flagEditBtn(myFlag) + "</div>" +
         '<input type="file" id="photo-input" accept="image/*" hidden />' +
-        '<button type="button" class="flag-hint" id="flag-hint">🌍 Represent your background — tap your flag to set your nationality</button>' +
-        (shownRating ? '<div class="identity-dupr">DUPR ' + esc(shownRating) + (linked ? "" : " ·<span class=\"self-rated\"> self-rated</span>") + "</div>" : "") +
+        '<button type="button" class="flag-hint" id="flag-hint">🌍 Represent your native country — tap to display your flag</button>' +
+        (shownRating
+          ? '<div class="identity-dupr">' +
+            (linked
+              ? "DUPR " + esc(shownRating)
+              : esc(shownRating) + ' <span class="self-rated">· Self-rated</span>') +
+            "</div>"
+          : "") +
         '<div class="identity-skill" id="skill-preview"' + (p.skillLevel ? "" : " hidden") + ">" +
         esc(p.skillLevel || "") + "</div>" +
         "</div>" +
@@ -1501,29 +1504,19 @@
         segmentedSkill(p.skillLevel) + "</div>" +
         '<div class="field"><label>Location</label>' +
         '<input id="p-country" type="text" placeholder="e.g. Toronto, Canada 🇨🇦" value="' + esc(p.country || "") + '" /></div>' +
+        '<div class="field"><label>Instagram</label>' +
+        '<div class="input-wrap"><span class="lead" aria-hidden="true">@</span>' +
+        '<input class="has-icon" id="p-ig" type="text" placeholder="yourhandle" autocapitalize="none" value="' + esc(cleanHandle(p.instagram)) + '" /></div></div>' +
         '<div class="field"><label>Favourite court?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">📍</span>' +
         '<input class="has-icon" id="p-court" type="text" placeholder="e.g. Pickleplex Downsview" value="' + esc(p.favCourt || "") + '" /></div></div>' +
         '<div class="field"><label>Favourite paddle?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">🏓</span>' +
         '<input class="has-icon" id="p-paddle" type="text" placeholder="e.g. Selkirk Vanguard" value="' + esc(p.favPaddle || "") + '" /></div></div>' +
-        '<div class="field"><label>Preferred format</label>' +
-        segmentedGroup("p-format", ["Doubles", "Singles", "Mixed"], p.format) + "</div>" +
         '<div class="field"><label>Dominant hand</label>' +
         segmentedGroup("p-hand", ["Right", "Left"], p.hand) + "</div>" +
-        '<div class="field"><label>Court side</label>' +
-        segmentedGroup("p-side", ["Left", "Right", "Either"], p.side) + "</div>" +
-        '<div class="row">' +
-        '<div class="field"><label>Years playing</label>' +
-        '<input id="p-years" type="number" min="0" max="60" placeholder="e.g. 5" value="' + esc(p.yearsPlaying != null ? p.yearsPlaying : "") + '" /></div>' +
         '<div class="field"><label>Usually free</label>' +
-        '<input id="p-avail" type="text" placeholder="Evenings &amp; weekends" value="' + esc(p.availability || "") + '" /></div>' +
-        "</div>" +
-        '<div class="field"><label>Instagram</label>' +
-        '<div class="input-wrap"><span class="lead" aria-hidden="true">@</span>' +
-        '<input class="has-icon" id="p-ig" type="text" placeholder="yourhandle" autocapitalize="none" value="' + esc(cleanHandle(p.instagram)) + '" /></div></div>' +
-        '<div class="field"><label>Looking for</label>' +
-        '<input id="p-looking" type="text" placeholder="e.g. a regular doubles partner" value="' + esc(p.lookingFor || "") + '" /></div>' +
+        '<input id="p-avail" type="text" placeholder="e.g. Evenings &amp; weekends" value="' + esc(p.availability || "") + '" /></div>' +
         '<button class="btn-primary" id="save-profile" type="button">Save profile</button>' +
         '<p class="save-status" id="save-status" hidden></p>' +
         '<div class="dupr-box">' +
@@ -1638,10 +1631,8 @@
       return active ? active.dataset.val : null;
     }
 
-    // ---- new segmented controls (preferred format, hand, court side) ----
-    var getFormat = wireSegmented(card, "p-format");
+    // ---- dominant-hand segmented control ----
     var getHand = wireSegmented(card, "p-hand");
-    var getSide = wireSegmented(card, "p-side");
 
     // ---- save profile fields ----
     var statusEl = card.querySelector("#save-status");
@@ -1670,16 +1661,9 @@
               country: card.querySelector("#p-country").value.trim() || null,
               favCourt: card.querySelector("#p-court").value.trim() || null,
               favPaddle: card.querySelector("#p-paddle").value.trim() || null,
-              format: getFormat(),
               hand: getHand(),
-              side: getSide(),
-              yearsPlaying: (function () {
-                var v = parseInt(card.querySelector("#p-years").value, 10);
-                return isNaN(v) ? null : v;
-              })(),
               availability: card.querySelector("#p-avail").value.trim() || null,
               instagram: cleanHandle(card.querySelector("#p-ig").value) || null,
-              lookingFor: card.querySelector("#p-looking").value.trim() || null,
             },
             { merge: true }
           )
