@@ -1246,18 +1246,6 @@
   function cleanHandle(s) {
     return String(s || "").trim().replace(/^@+/, "");
   }
-  // Scannable playing-style chips from the optional profile fields.
-  function styleChips(p) {
-    var out = [];
-    if (p.availability) out.push("🗓️ " + p.availability);
-    if (!out.length) return "";
-    return (
-      '<div class="style-chips">' +
-      out.map(function (c) { return '<span class="style-chip">' + esc(c) + "</span>"; }).join("") +
-      "</div>"
-    );
-  }
-
   // Rating line: a bold number with a small tag. Verified DUPR ratings show
   // "DUPR <n>" + a green Verified tag; self-reported ones show just the number
   // + a neutral Self-rated tag (no "DUPR" word).
@@ -1288,6 +1276,9 @@
 
     var facts =
       (p.country ? metaRow("Location", p.country) : "") +
+      (p.favCourt ? metaRow("Home court", p.favCourt) : "") +
+      (p.availability ? metaRow("Usually free", p.availability) : "") +
+      (p.favPaddle ? metaRow("Paddle", p.favPaddle) : "") +
       (ig
         ? metaRowRaw(
             "Instagram",
@@ -1295,8 +1286,6 @@
               '" target="_blank" rel="noopener noreferrer">@' + esc(ig) + "</a>"
           )
         : "") +
-      (p.favCourt ? metaRow("Home court", p.favCourt) : "") +
-      (p.favPaddle ? metaRow("Paddle", p.favPaddle) : "") +
       (since ? metaRow("Member since", since) : "");
 
     return (
@@ -1308,7 +1297,6 @@
       (tags ? '<div class="identity-tags">' + tags + "</div>" : "") +
       (shownRating ? ratingHtml(linked, shownRating) : "") +
       (p.bio ? '<p class="profile-bio">' + esc(p.bio).replace(/\n/g, "<br>") + "</p>" : "") +
-      styleChips(p) +
       "</div>" +
       '<div class="pstats" data-stats hidden></div>' +
       facts
