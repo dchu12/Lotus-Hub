@@ -559,7 +559,8 @@ button { font: inherit; cursor: pointer; }
   background: #f6f1ee; border: 1px solid var(--line);
   padding: 4px 10px; border-radius: 999px; white-space: nowrap;
 }
-.meta-link { color: var(--brand); font-weight: 700; text-decoration: none; }
+/* Instagram value is a link but should read like every other meta-row value */
+.meta-link { color: inherit; font-weight: inherit; text-decoration: none; }
 .meta-link:hover { text-decoration: underline; }
 
 /* action bar shown to a visitor viewing another player's profile */

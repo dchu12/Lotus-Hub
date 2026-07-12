@@ -1264,10 +1264,10 @@
   function ratingHtml(linked, rating) {
     return (
       '<div class="rating">' +
-      '<span class="rating-val">' + (linked ? "DUPR " : "") + esc(rating) + "</span>" +
       (linked
         ? '<span class="rating-badge verified">Verified</span>'
         : '<span class="rating-badge">Self-rated</span>') +
+      '<span class="rating-val">' + (linked ? "DUPR " : "") + esc(rating) + "</span>" +
       "</div>"
     );
   }
