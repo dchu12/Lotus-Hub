@@ -1249,12 +1249,25 @@
   // Scannable playing-style chips from the optional profile fields.
   function styleChips(p) {
     var out = [];
-    if (p.hand) out.push("🤚 " + p.hand + "-handed");
     if (p.availability) out.push("🗓️ " + p.availability);
     if (!out.length) return "";
     return (
       '<div class="style-chips">' +
       out.map(function (c) { return '<span class="style-chip">' + esc(c) + "</span>"; }).join("") +
+      "</div>"
+    );
+  }
+
+  // Rating line: a bold number with a small tag. Verified DUPR ratings show
+  // "DUPR <n>" + a green Verified tag; self-reported ones show just the number
+  // + a neutral Self-rated tag (no "DUPR" word).
+  function ratingHtml(linked, rating) {
+    return (
+      '<div class="rating">' +
+      '<span class="rating-val">' + (linked ? "DUPR " : "") + esc(rating) + "</span>" +
+      (linked
+        ? '<span class="rating-badge verified">Verified</span>'
+        : '<span class="rating-badge">Self-rated</span>') +
       "</div>"
     );
   }
@@ -1271,8 +1284,7 @@
 
     var tags =
       (p.skillLevel ? '<span class="identity-skill">' + esc(p.skillLevel) + "</span>" : "") +
-      (p.lotusScore != null ? '<span class="chip lotus-chip">🪷 Lotus ' + esc(p.lotusScore) + "</span>" : "") +
-      (p.isCoach ? '<span class="chip coach-chip">🎯 Coach</span>' : "");
+      (p.lotusScore != null ? '<span class="chip lotus-chip">🪷 Lotus ' + esc(p.lotusScore) + "</span>" : "");
 
     var facts =
       (p.country ? metaRow("Location", p.country) : "") +
@@ -1294,13 +1306,7 @@
       flagBadge(heritageFlagOf(p)) + "</div>" +
       '<div class="identity-name">' + esc(p.displayName || "Player") + "</div>" +
       (tags ? '<div class="identity-tags">' + tags + "</div>" : "") +
-      (shownRating
-        ? '<div class="identity-dupr">' +
-          (linked
-            ? "DUPR " + esc(shownRating)
-            : esc(shownRating) + ' <span class="self-rated">· Self-rated</span>') +
-          "</div>"
-        : "") +
+      (shownRating ? ratingHtml(linked, shownRating) : "") +
       (p.bio ? '<p class="profile-bio">' + esc(p.bio).replace(/\n/g, "<br>") + "</p>" : "") +
       styleChips(p) +
       "</div>" +
@@ -1486,13 +1492,7 @@
         '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + flagEditBtn(myFlag) + "</div>" +
         '<input type="file" id="photo-input" accept="image/*" hidden />' +
         '<button type="button" class="flag-hint" id="flag-hint">🌍 Represent your native country — tap to display your flag</button>' +
-        (shownRating
-          ? '<div class="identity-dupr">' +
-            (linked
-              ? "DUPR " + esc(shownRating)
-              : esc(shownRating) + ' <span class="self-rated">· Self-rated</span>') +
-            "</div>"
-          : "") +
+        (shownRating ? ratingHtml(linked, shownRating) : "") +
         '<div class="identity-skill" id="skill-preview"' + (p.skillLevel ? "" : " hidden") + ">" +
         esc(p.skillLevel || "") + "</div>" +
         "</div>" +
@@ -1513,8 +1513,6 @@
         '<div class="field"><label>Favourite paddle?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">🏓</span>' +
         '<input class="has-icon" id="p-paddle" type="text" placeholder="e.g. Selkirk Vanguard" value="' + esc(p.favPaddle || "") + '" /></div></div>' +
-        '<div class="field"><label>Dominant hand</label>' +
-        segmentedGroup("p-hand", ["Right", "Left"], p.hand) + "</div>" +
         '<div class="field"><label>Usually free</label>' +
         '<input id="p-avail" type="text" placeholder="e.g. Evenings &amp; weekends" value="' + esc(p.availability || "") + '" /></div>' +
         '<button class="btn-primary" id="save-profile" type="button">Save profile</button>' +
@@ -1631,8 +1629,6 @@
       return active ? active.dataset.val : null;
     }
 
-    // ---- dominant-hand segmented control ----
-    var getHand = wireSegmented(card, "p-hand");
 
     // ---- save profile fields ----
     var statusEl = card.querySelector("#save-status");
@@ -1661,7 +1657,6 @@
               country: card.querySelector("#p-country").value.trim() || null,
               favCourt: card.querySelector("#p-court").value.trim() || null,
               favPaddle: card.querySelector("#p-paddle").value.trim() || null,
-              hand: getHand(),
               availability: card.querySelector("#p-avail").value.trim() || null,
               instagram: cleanHandle(card.querySelector("#p-ig").value) || null,
             },

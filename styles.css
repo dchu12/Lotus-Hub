@@ -618,3 +618,16 @@ button { font: inherit; cursor: pointer; }
 .pstat { background: #fbf7f4; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 6px; text-align: center; }
 .pstat-v { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; color: var(--brand); font-variant-numeric: tabular-nums; }
 .pstat-l { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-top: 5px; }
+
+/* rating line: bold number + small status tag (replaces the old plain text) */
+.rating { display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+.rating-val { font-size: 1.15rem; font-weight: 800; color: var(--brand); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.rating-badge {
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--muted); background: #f2ece9; border: 1px solid var(--line);
+  padding: 3px 9px; border-radius: 999px; line-height: 1.5;
+}
+.rating-badge.verified { color: #1a7f43; background: #e7f6ec; border-color: #b7e3c6; }
+
+/* nudge the flag badge on the large profile avatar slightly to the right */
+.avatar-preview .av-flag { right: -2px; }
