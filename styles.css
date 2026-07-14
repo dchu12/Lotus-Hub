@@ -376,8 +376,8 @@ button { font: inherit; cursor: pointer; }
 .coach-card.is-clickable:active { transform: translateY(1px); }
 .chevron { margin-left: auto; font-size: 1.6rem; color: var(--muted); line-height: 1; }
 
-/* profile settings gear + slide-in drawer */
-.profile-topbar { display: flex; justify-content: flex-start; }
+/* profile action toolbar (find friends · share · settings) + slide-in drawer */
+.profile-topbar { display: flex; justify-content: flex-end; gap: 8px; }
 .gear-btn {
   width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;
   border-radius: 50%; border: 1.5px solid var(--line-strong); background: #fff; color: var(--brand);
@@ -632,3 +632,18 @@ button { font: inherit; cursor: pointer; }
 
 /* nudge the flag badge on the large profile avatar slightly to the right */
 .avatar-preview .av-flag { right: -2px; }
+
+/* rating pill: one cohesive unit (label + number) instead of loose text */
+.rating-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #f4efec; border: 1px solid var(--line-strong);
+  border-radius: 999px; padding: 4px 12px; line-height: 1;
+}
+.rating-pill .rp-label {
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted);
+}
+.rating-pill .rp-val { font-size: 0.95rem; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; }
+.rating-pill.verified { background: #e7f6ec; border-color: #b7e3c6; }
+.rating-pill.verified .rp-label, .rating-pill.verified .rp-val { color: #1a7f43; }
+.rating-pill .rp-check { font-size: 0.78rem; font-weight: 900; color: #1a7f43; }

@@ -1043,19 +1043,20 @@
   // ---- Connect: DUPR leaderboard (sample data for now) ----
   // TODO: replace with real players once the DUPR integration lands.
   var LEADERBOARD = [
-    { name: "Ralph Llacar", flag: "🇨🇦", dupr: 6.82, lotus: 92 },
-    { name: "Marco Silva", flag: "🇧🇷", dupr: 6.75, lotus: 88 },
-    { name: "Priya Nair", flag: "🇮🇳", dupr: 6.61, lotus: 95 },
-    { name: "Leo Tanaka", flag: "🇯🇵", dupr: 6.40, lotus: 90 },
-    { name: "Sofia Rossi", flag: "🇮🇹", dupr: 6.28, lotus: 84 },
-    { name: "James Park", flag: "🇰🇷", dupr: 6.15, lotus: 86 },
-    { name: "Emma Müller", flag: "🇩🇪", dupr: 6.03, lotus: 78 },
-    { name: "Diego Torres", flag: "🇲🇽", dupr: 5.92, lotus: 81 },
-    { name: "Lena Novak", flag: "🇨🇿", dupr: 5.85, lotus: 74 },
-    { name: "Noah Smith", flag: "🇺🇸", dupr: 5.77, lotus: 89 },
+    { name: "Derek Chu", flag: "🇨🇳", dupr: 3.10, lotus: 888 },
+    { name: "Ralph Llacar", flag: "🇨🇦", dupr: 6.82, lotus: 800 },
+    { name: "Jeremy Lin", flag: "🇹🇼", dupr: 6.50, lotus: 750 },
+    { name: "Priya Nair", flag: "🇮🇳", dupr: 6.61, lotus: 720 },
+    { name: "Marco Silva", flag: "🇧🇷", dupr: 6.75, lotus: 700 },
+    { name: "Leo Tanaka", flag: "🇯🇵", dupr: 6.40, lotus: 680 },
+    { name: "Sofia Rossi", flag: "🇮🇹", dupr: 6.28, lotus: 660 },
+    { name: "James Park", flag: "🇰🇷", dupr: 6.15, lotus: 640 },
+    { name: "Emma Müller", flag: "🇩🇪", dupr: 6.03, lotus: 620 },
+    { name: "Noah Smith", flag: "🇺🇸", dupr: 5.77, lotus: 600 },
   ];
-  // Which metric the leaderboard is ranked by ("dupr" | "lotus").
-  var rankMetric = "dupr";
+  // Which metric the leaderboard is ranked by ("dupr" | "lotus"). Lotus Score
+  // is the default view.
+  var rankMetric = "lotus";
   function rankValueStr(pl) {
     return rankMetric === "lotus" ? String(pl.lotus) : pl.dupr.toFixed(2);
   }
@@ -1251,12 +1252,11 @@
   // + a neutral Self-rated tag (no "DUPR" word).
   function ratingHtml(linked, rating) {
     return (
-      '<div class="rating">' +
-      (linked
-        ? '<span class="rating-badge verified">Verified</span>'
-        : '<span class="rating-badge">Self-rated</span>') +
-      '<span class="rating-val">' + (linked ? "DUPR " : "") + esc(rating) + "</span>" +
-      "</div>"
+      '<span class="rating-pill' + (linked ? " verified" : "") + '">' +
+      '<span class="rp-label">' + (linked ? "DUPR" : "Self-rated") + "</span>" +
+      '<span class="rp-val">' + esc(rating) + "</span>" +
+      (linked ? '<span class="rp-check" aria-hidden="true">✓</span>' : "") +
+      "</span>"
     );
   }
 
@@ -1272,6 +1272,7 @@
 
     var tags =
       (p.skillLevel ? '<span class="identity-skill">' + esc(p.skillLevel) + "</span>" : "") +
+      (shownRating ? ratingHtml(linked, shownRating) : "") +
       (p.lotusScore != null ? '<span class="chip lotus-chip">🪷 Lotus ' + esc(p.lotusScore) + "</span>" : "");
 
     var facts =
@@ -1295,7 +1296,6 @@
       flagBadge(heritageFlagOf(p)) + "</div>" +
       '<div class="identity-name">' + esc(p.displayName || "Player") + "</div>" +
       (tags ? '<div class="identity-tags">' + tags + "</div>" : "") +
-      (shownRating ? ratingHtml(linked, shownRating) : "") +
       (p.bio ? '<p class="profile-bio">' + esc(p.bio).replace(/\n/g, "<br>") + "</p>" : "") +
       "</div>" +
       '<div class="pstats" data-stats hidden></div>' +
@@ -1412,9 +1412,17 @@
     var wrap = el('<section class="stack"></section>');
     wrap.appendChild(
       el(
-        '<div class="profile-topbar"><button class="gear-btn" id="open-settings" type="button" aria-label="Settings" title="Settings">' +
+        '<div class="profile-topbar">' +
+          '<button class="gear-btn" id="add-friend" type="button" aria-label="Find friends" title="Find friends">' +
+          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></svg>' +
+          "</button>" +
+          '<button class="gear-btn" id="share-profile" type="button" aria-label="Share profile" title="Share profile">' +
+          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>' +
+          "</button>" +
+          '<button class="gear-btn" id="open-settings" type="button" aria-label="Settings" title="Settings">' +
           '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' +
-          "</button></div>"
+          "</button>" +
+          "</div>"
       )
     );
     var card = el('<section class="card stack profile-card">' + profileBody(p) + "</section>");
@@ -1450,6 +1458,23 @@
       drawer.classList.remove("open");
     }
     wrap.querySelector("#open-settings").addEventListener("click", openPanel);
+    // Find friends → the Connect tab (where you discover & connect with players).
+    wrap.querySelector("#add-friend").addEventListener("click", function () {
+      state.view = "connect";
+      renderSignedIn();
+    });
+    // Share → native share sheet, falling back to copying the link.
+    wrap.querySelector("#share-profile").addEventListener("click", function () {
+      var url = window.location.origin + "/";
+      var data = { title: "Lotus Hub", text: "Check out Lotus Hub — open-play pickleball 🪷", url: url };
+      if (navigator.share) {
+        navigator.share(data).catch(function () {});
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function () { toast("Profile link copied!"); }, function () { toast(url); });
+      } else {
+        toast(url);
+      }
+    });
     overlay.addEventListener("click", closePanel);
     drawer.querySelector("#drawer-close").addEventListener("click", closePanel);
     drawer.querySelector("#drawer-edit").addEventListener("click", function () {
