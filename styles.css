@@ -667,3 +667,27 @@ button { font: inherit; cursor: pointer; }
 .row-btns .btn-ghost { flex: 0 0 auto; padding-left: 20px; padding-right: 20px; }
 .row-btns .btn-primary { flex: 1; }
 .ob-skip { display: block; margin: 2px auto 0; }
+
+/* DUPR "coming soon" placeholder (verified sync not live yet) */
+.dupr-soon {
+  margin-top: 12px; text-align: center; color: var(--muted);
+  background: #f4efec; border: 1px dashed var(--line-strong);
+  border-radius: 11px; padding: 12px; font-weight: 700; font-size: 0.9rem;
+}
+
+/* signup consent row + auth legal footer */
+.auth-card .consent-row { display: none; }
+.auth-card.is-signup .consent-row { display: flex; align-items: flex-start; gap: 9px; margin: 2px 0 10px; font-size: 0.86rem; color: var(--ink); cursor: pointer; }
+.consent-row input { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; accent-color: var(--brand); }
+.consent-row a { color: var(--brand); font-weight: 700; }
+.auth-legal { text-align: center; font-size: 0.78rem; color: var(--muted); margin-top: 14px; }
+.auth-legal a { color: var(--brand); font-weight: 600; text-decoration: none; }
+.auth-legal a:hover { text-decoration: underline; }
+
+/* drawer link (Privacy & Terms) matches the button items */
+a.drawer-item { text-decoration: none; color: var(--ink); }
+
+/* connection button states */
+.btn-connect.is-accept, .va-connect.is-accept { background: #1a7f43; color: #fff; }
+.va-connect.is-requested { background: #fff; color: var(--muted); border: 1.5px solid var(--line-strong); }
+.btn-connect:disabled, .va-connect:disabled { cursor: default; opacity: 1; }

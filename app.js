@@ -27,7 +27,8 @@
     playerBackView: "discover", // where "‹ Back" returns from a player view
     scoresSessionId: null, // which session's scores view is open
     _onboardDone: false, // first-run onboarding shown/dismissed this session
-    unsub: { sessions: null, profile: null, coaches: null, scores: null, players: null },
+    connections: [], // my connection docs (pending/accepted)
+    unsub: { sessions: null, profile: null, coaches: null, scores: null, players: null, connections: null },
   };
 
   // ---- helpers ----------------------------------------------------------
@@ -230,10 +231,12 @@
             '<div class="field"><label>Password</label>' +
             '<input id="f-pass" type="password" placeholder="••••••••" autocomplete="current-password" required /></div>' +
             '<div class="auth-forgot only-signin"><button type="button" class="link-inline" id="forgot-pass">Forgot password?</button></div>' +
+            '<label class="consent-row"><input type="checkbox" id="agree" /><span>I agree to the <a href="privacy.html" target="_blank" rel="noopener noreferrer">Terms &amp; Privacy Policy</a></span></label>' +
             '<button class="btn-primary" type="submit" id="auth-submit">Sign in</button>' +
             '<button class="btn-ghost full" type="button" id="toggle-mode">New here? Create an account</button>' +
             '<div class="divider"><span>or</span></div>' +
             '<button class="btn-google full" type="button" id="google-btn">Continue with Google</button>' +
+            '<p class="auth-legal">By continuing you agree to our <a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy &amp; Terms</a>.</p>' +
             "</form>"
           : LH.configured
           ? '<p class="muted">Can\'t connect right now — check your internet, then reload.</p>' +
@@ -260,6 +263,12 @@
     });
     form.addEventListener("submit", function (e) {
       e.preventDefault();
+      if (mode === "signup") {
+        var agree = card.querySelector("#agree");
+        if (!agree || !agree.checked) {
+          return toast("Please agree to the Terms & Privacy Policy to create an account.");
+        }
+      }
       var name = card.querySelector("#f-name").value.trim();
       var email = card.querySelector("#f-email").value.trim();
       var pass = card.querySelector("#f-pass").value;
@@ -298,6 +307,7 @@
       state.unsub.players();
       state.unsub.players = null;
     }
+    if (state.view !== "connect") connectRefresh = null;
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
     var isPlay = state.view === "discover" || state.view === "create" || state.view === "player-view" || state.view === "scores";
     var isProfile = state.view === "profile" || state.view === "profile-edit";
@@ -1110,6 +1120,60 @@
     );
   }
 
+  // ---- Connections (friend requests) ----
+  var connectRefresh = null; // set while the Connect list is on screen
+
+  function connectionWith(uid) {
+    var list = state.connections || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].users && list[i].users.indexOf(uid) > -1) return list[i];
+    }
+    return null;
+  }
+  // "none" | "pending-out" (I asked) | "pending-in" (they asked) | "connected"
+  function connStatus(uid) {
+    var c = connectionWith(uid);
+    if (!c) return "none";
+    if (c.status === "accepted") return "connected";
+    var me = LH.currentUser();
+    return me && c.requestedBy === me.uid ? "pending-out" : "pending-in";
+  }
+  function connectBtnHtml(uid, cls) {
+    var s = connStatus(uid);
+    var label = s === "connected" ? "✓ Connected" : s === "pending-out" ? "Requested" : s === "pending-in" ? "Accept" : "Connect";
+    var isDisabled = s === "connected" || s === "pending-out";
+    var mod = s === "pending-in" ? " is-accept" : isDisabled ? " is-requested" : "";
+    return (
+      '<button class="' + cls + mod + '" data-conn="' + esc(uid) + '" data-status="' + s + '" type="button"' +
+      (isDisabled ? " disabled" : "") + ">" + label + "</button>"
+    );
+  }
+  function connErr(err) {
+    var code = err && err.code ? String(err.code) : "";
+    if (code.indexOf("permission-denied") > -1) return "Connections aren't live yet — the updated rules need to be deployed.";
+    return (err && err.message) || "Something went wrong.";
+  }
+  function handleConnectClick(uid, status) {
+    if (status === "none") {
+      LH.requestConnection(uid)
+        .then(function () { toast("Connection request sent!"); })
+        .catch(function (e) { toast(connErr(e)); });
+    } else if (status === "pending-in") {
+      LH.acceptConnection(uid)
+        .then(function () { toast("You're connected! 🎉"); })
+        .catch(function (e) { toast(connErr(e)); });
+    }
+  }
+  // Update the visitor-profile Connect button in place when connections change.
+  function refreshVisitorConnectBtn() {
+    var oldBtn = main.querySelector(".va-connect");
+    if (!oldBtn) return;
+    var uid = oldBtn.dataset.conn;
+    var fresh = el(connectBtnHtml(uid, "btn-primary va-connect"));
+    oldBtn.replaceWith(fresh);
+    fresh.addEventListener("click", function () { handleConnectClick(uid, fresh.dataset.status); });
+  }
+
   // ---- Connect: find & connect with real players (from Firestore) ----
   function connectCard(u) {
     var sub = [u.skillLevel, u.country].filter(Boolean).map(esc).join(" · ");
@@ -1121,7 +1185,7 @@
       '<span class="connect-avatar">' + inner + flagBadge(heritageFlagOf(u)) + "</span>" +
       '<div class="connect-body"><h3>' + esc(u.displayName || "Player") + "</h3>" +
       (sub ? '<p class="muted">' + sub + "</p>" : "") + "</div>" +
-      '<button class="btn-connect" data-connect="' + esc(u.uid) + '" type="button">Connect</button>' +
+      connectBtnHtml(u.uid, "btn-connect") +
       "</article>"
     );
   }
@@ -1168,6 +1232,8 @@
       players = list;
       draw();
     });
+    // Let the connections watcher refresh this list's buttons in place.
+    connectRefresh = draw;
 
     search.querySelector("#connect-search").addEventListener("input", function (e) {
       query = e.target.value;
@@ -1176,12 +1242,7 @@
     listEl.addEventListener("click", function (e) {
       var btn = e.target.closest(".btn-connect");
       if (btn) {
-        // No connections backend yet — local acknowledgement (like the profile
-        // Connect button). Persisting the graph needs its own collection + rules.
-        btn.textContent = "Requested";
-        btn.disabled = true;
-        btn.classList.add("is-requested");
-        toast("Connection request sent!");
+        handleConnectClick(btn.dataset.conn, btn.dataset.status);
         return;
       }
       var cardEl = e.target.closest("[data-uid]");
@@ -1361,7 +1422,7 @@
   function visitorActions(p) {
     return (
       '<div class="visitor-actions">' +
-      '<button class="btn-primary va-connect" type="button">＋ Connect</button>' +
+      connectBtnHtml(p.uid, "btn-primary va-connect") +
       '<button class="btn-ghost va-message" type="button">💬 Message</button>' +
       '<button class="btn-ghost va-invite" type="button">🏓 Invite</button>' +
       "</div>" +
@@ -1376,12 +1437,7 @@
     var connect = card.querySelector(".va-connect");
     if (connect) {
       connect.addEventListener("click", function () {
-        // No connections collection/rules yet — mirror the Connect tab (a local
-        // acknowledgement). Persisting the social graph lands with its own rules.
-        connect.textContent = "Requested";
-        connect.disabled = true;
-        connect.classList.add("is-joined");
-        toast("Connection request sent to " + (p.displayName || "player") + "!");
+        handleConnectClick(p.uid, connect.dataset.status);
       });
     }
     var message = card.querySelector(".va-message");
@@ -1494,6 +1550,9 @@
         '<button class="drawer-item" id="drawer-edit" type="button">' +
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>' +
         " Edit profile</button>" +
+        '<a class="drawer-item" href="privacy.html" target="_blank" rel="noopener noreferrer">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>' +
+        " Privacy &amp; Terms</a>" +
         '<button class="drawer-item drawer-item-danger" id="drawer-signout" type="button">' +
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>' +
         " Sign out</button>" +
@@ -1771,14 +1830,9 @@
           : '<div class="field"><label>Your DUPR rating</label>' +
             '<input id="p-dupr" type="number" step="0.001" min="2" max="8.5" value="' + esc(manualVal) + '" placeholder="e.g. 3.750" /></div>' +
             '<button class="btn-ghost" id="save-dupr" type="button">Save rating</button>' +
-            '<p class="muted">Self-reported for now. Once our DUPR API access is approved, you can ' +
-            "connect your account and ratings verify automatically.</p>" +
-            '<button class="btn-primary" id="link-dupr" type="button">Connect DUPR</button>' +
-            '<div id="dupr-link-form" hidden>' +
-            '<div class="field" style="margin-top:12px"><label>DUPR account email</label>' +
-            '<input id="dupr-email" type="email" placeholder="you@example.com" autocomplete="email" /></div>' +
-            '<button class="btn-primary" id="dupr-link-go" type="button">Link account</button>' +
-            "</div>") +
+            '<p class="muted">Self-reported for now. <strong>Verified DUPR sync is coming soon</strong> — ' +
+            "once our DUPR partner access is live you'll be able to connect your account so your rating updates automatically from your matches.</p>" +
+            '<div class="dupr-soon">🔒 Connect DUPR · Coming soon</div>') +
         '<p class="save-status" id="dupr-status" hidden></p>' +
         "</div>" +
         '<button class="btn-signout" id="signout-btn" type="button">Sign out</button>' +
@@ -1936,31 +1990,6 @@
       return (err && err.message) || "Couldn't link DUPR.";
     }
 
-    var linkBtn = card.querySelector("#link-dupr");
-    if (linkBtn) {
-      var linkForm = card.querySelector("#dupr-link-form");
-      linkBtn.addEventListener("click", function () {
-        linkForm.hidden = false;
-        linkBtn.hidden = true;
-        var e = card.querySelector("#dupr-email");
-        if (e) e.focus();
-      });
-      card.querySelector("#dupr-link-go").addEventListener("click", function () {
-        var email = card.querySelector("#dupr-email").value.trim();
-        if (!email) return setDuprStatus("Enter the email on your DUPR account.", "err");
-        setDuprStatus("Linking…", "");
-        LH.linkDupr(email)
-          .then(function () {
-            setDuprStatus("Linked ✓", "ok");
-            renderProfileEdit();
-          })
-          .catch(function (err) {
-            console.error("linkDupr failed:", err);
-            setDuprStatus(friendlyDuprError(err), "err");
-          });
-      });
-    }
-
     var refreshBtn = card.querySelector("#refresh-dupr");
     if (refreshBtn) {
       refreshBtn.addEventListener("click", function () {
@@ -2024,6 +2053,13 @@
           state.view = "onboard";
           renderSignedIn();
         }
+      });
+      if (state.unsub.connections) state.unsub.connections();
+      state.unsub.connections = LH.watchConnections(function (list) {
+        state.connections = list || [];
+        // Reflect status changes live on whichever view is showing buttons.
+        if (state.view === "connect" && connectRefresh) connectRefresh();
+        else if (state.view === "player-view") refreshVisitorConnectBtn();
       });
     }
   }

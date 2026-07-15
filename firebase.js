@@ -201,6 +201,61 @@
       );
   }
 
+  // ---- Connections (player-to-player friend requests) -------------------
+  // One doc per pair, keyed by the two uids sorted + joined so a pair can't be
+  // duplicated regardless of who initiates.
+  function pairId(a, b) {
+    return [a, b].sort().join("__");
+  }
+
+  function watchConnections(cb) {
+    if (!ready) return function () {};
+    var u = auth.currentUser;
+    if (!u) { cb([]); return function () {}; }
+    return db
+      .collection("connections")
+      .where("users", "array-contains", u.uid)
+      .onSnapshot(
+        function (qs) {
+          var out = [];
+          qs.forEach(function (d) { out.push(Object.assign({ id: d.id }, d.data())); });
+          cb(out);
+        },
+        function () { cb([]); }
+      );
+  }
+
+  function requestConnection(otherUid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    if (otherUid === u.uid) return Promise.reject(new Error("That's your own profile."));
+    return db.collection("connections").doc(pairId(u.uid, otherUid)).set({
+      users: [u.uid, otherUid].sort(),
+      requestedBy: u.uid,
+      status: "pending",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  function acceptConnection(otherUid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return db.collection("connections").doc(pairId(u.uid, otherUid)).update({
+      status: "accepted",
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  function removeConnection(otherUid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return db.collection("connections").doc(pairId(u.uid, otherUid)).delete();
+  }
+
   // ---- Sessions (open play) --------------------------------------------
   function sessionsCol() {
     return db.collection("sessions");
@@ -462,6 +517,10 @@
     getUserOnce: getUserOnce,
     watchCoaches: watchCoaches,
     watchPlayers: watchPlayers,
+    watchConnections: watchConnections,
+    requestConnection: requestConnection,
+    acceptConnection: acceptConnection,
+    removeConnection: removeConnection,
     linkDupr: linkDupr,
     refreshDuprRating: refreshDuprRating,
     watchUpcomingSessions: watchUpcomingSessions,
