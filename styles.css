@@ -518,6 +518,9 @@ button { font: inherit; cursor: pointer; }
   background: var(--brand-soft); color: var(--brand);
   display: flex; align-items: center; justify-content: center; font-weight: 800;
 }
+.connect-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.connect-card.is-clickable { cursor: pointer; }
+.connect-card.is-clickable:hover { border-color: var(--line-strong); }
 .connect-body { flex: 1; min-width: 0; }
 .connect-body h3 { margin: 0 0 2px; font-size: 1rem; }
 .connect-body .muted { margin: 0; }

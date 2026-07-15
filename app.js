@@ -27,7 +27,7 @@
     playerBackView: "discover", // where "‹ Back" returns from a player view
     scoresSessionId: null, // which session's scores view is open
     _onboardDone: false, // first-run onboarding shown/dismissed this session
-    unsub: { sessions: null, profile: null, coaches: null, scores: null },
+    unsub: { sessions: null, profile: null, coaches: null, scores: null, players: null },
   };
 
   // ---- helpers ----------------------------------------------------------
@@ -289,10 +289,14 @@
   // ---- signed-in shell --------------------------------------------------
   function renderSignedIn() {
     tabs.hidden = false;
-    // Stop the scores listeners when leaving that view (tab switch or otherwise).
+    // Stop per-view listeners when leaving those views (tab switch or otherwise).
     if (state.view !== "scores" && state.unsub.scores) {
       state.unsub.scores();
       state.unsub.scores = null;
+    }
+    if (state.view !== "connect" && state.unsub.players) {
+      state.unsub.players();
+      state.unsub.players = null;
     }
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
     var isPlay = state.view === "discover" || state.view === "create" || state.view === "player-view" || state.view === "scores";
@@ -1106,23 +1110,18 @@
     );
   }
 
-  // ---- Connect: find & connect with players (sample data for now) ----
-  var CONNECT_PLAYERS = [
-    { name: "Jenny Kim", flag: "🇰🇷", skill: "Intermediate", city: "Toronto" },
-    { name: "Raj Patel", flag: "🇮🇳", skill: "Advanced", city: "Mississauga" },
-    { name: "Maria Lopez", flag: "🇲🇽", skill: "Beginner", city: "Toronto" },
-    { name: "Kevin Wong", flag: "🇭🇰", skill: "Intermediate", city: "Markham" },
-    { name: "Aisha Khan", flag: "🇵🇰", skill: "Advanced", city: "Brampton" },
-    { name: "Tom Nguyen", flag: "🇻🇳", skill: "Intermediate", city: "Scarborough" },
-  ];
-
-  function connectCard(pl) {
+  // ---- Connect: find & connect with real players (from Firestore) ----
+  function connectCard(u) {
+    var sub = [u.skillLevel, u.country].filter(Boolean).map(esc).join(" · ");
+    var inner = (u.photoDataUrl || u.photoURL)
+      ? '<img src="' + esc(u.photoDataUrl || u.photoURL) + '" alt="" referrerpolicy="no-referrer" />'
+      : esc((u.displayName || "?").trim().charAt(0).toUpperCase() || "?");
     return (
-      '<article class="card connect-card">' +
-      '<span class="connect-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + flagBadge(pl.flag) + "</span>" +
-      '<div class="connect-body"><h3>' + esc(pl.name) + "</h3>" +
-      '<p class="muted">' + esc(pl.skill) + " · " + esc(pl.city) + "</p></div>" +
-      '<button class="btn-connect" data-connect="' + esc(pl.name) + '" type="button">Connect</button>' +
+      '<article class="card connect-card is-clickable" role="button" tabindex="0" data-uid="' + esc(u.uid) + '">' +
+      '<span class="connect-avatar">' + inner + flagBadge(heritageFlagOf(u)) + "</span>" +
+      '<div class="connect-body"><h3>' + esc(u.displayName || "Player") + "</h3>" +
+      (sub ? '<p class="muted">' + sub + "</p>" : "") + "</div>" +
+      '<button class="btn-connect" data-connect="' + esc(u.uid) + '" type="button">Connect</button>' +
       "</article>"
     );
   }
@@ -1138,33 +1137,59 @@
     );
     var search = el(
       '<div class="input-wrap"><span class="lead" aria-hidden="true">🔍</span>' +
-        '<input class="has-icon" id="connect-search" type="text" placeholder="Search players by name…" /></div>'
+        '<input class="has-icon" id="connect-search" type="text" placeholder="Search players by name or location…" /></div>'
     );
     wrap.appendChild(search);
-    var listEl = el('<div class="stack" id="connect-list"></div>');
+    var listEl = el('<div class="stack" id="connect-list"><div class="muted" style="text-align:center;padding:20px">Loading players…</div></div>');
     wrap.appendChild(listEl);
     main.appendChild(wrap);
 
-    function draw(q) {
-      var query = (q || "").trim().toLowerCase();
-      var items = CONNECT_PLAYERS.filter(function (pl) {
-        return !query || pl.name.toLowerCase().indexOf(query) > -1 || pl.city.toLowerCase().indexOf(query) > -1;
+    var players = [];
+    var query = "";
+    function draw() {
+      var me = LH.currentUser();
+      var q = query.trim().toLowerCase();
+      var items = players.filter(function (u) {
+        if (me && u.uid === me.uid) return false; // don't list yourself
+        if (!q) return true;
+        return (u.displayName || "").toLowerCase().indexOf(q) > -1 ||
+          (u.country || "").toLowerCase().indexOf(q) > -1;
       });
+      items.sort(function (a, b) { return (a.displayName || "").localeCompare(b.displayName || ""); });
       listEl.innerHTML = items.length
         ? items.map(connectCard).join("")
-        : '<div class="empty">No players found.</div>';
+        : (players.length > (me ? 1 : 0)
+            ? '<div class="empty">No players match your search.</div>'
+            : '<div class="empty">No other players yet — invite friends to join Lotus Hub! 🪷</div>');
     }
-    draw("");
+
+    if (state.unsub.players) state.unsub.players();
+    state.unsub.players = LH.watchPlayers(function (list) {
+      players = list;
+      draw();
+    });
+
     search.querySelector("#connect-search").addEventListener("input", function (e) {
-      draw(e.target.value);
+      query = e.target.value;
+      draw();
     });
     listEl.addEventListener("click", function (e) {
-      var btn = e.target.closest("[data-connect]");
-      if (!btn) return;
-      btn.textContent = "Requested";
-      btn.disabled = true;
-      btn.classList.add("is-requested");
-      toast("Connection request sent to " + btn.dataset.connect + "!");
+      var btn = e.target.closest(".btn-connect");
+      if (btn) {
+        // No connections backend yet — local acknowledgement (like the profile
+        // Connect button). Persisting the graph needs its own collection + rules.
+        btn.textContent = "Requested";
+        btn.disabled = true;
+        btn.classList.add("is-requested");
+        toast("Connection request sent!");
+        return;
+      }
+      var cardEl = e.target.closest("[data-uid]");
+      if (!cardEl) return;
+      state.viewingPlayerUid = cardEl.dataset.uid;
+      state.playerBackView = "connect";
+      state.view = "player-view";
+      renderSignedIn();
     });
   }
 

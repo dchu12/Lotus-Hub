@@ -160,6 +160,27 @@
       });
   }
 
+  // Realtime list of players for the Connect tab (bounded for read cost;
+  // filtered/sorted client-side).
+  function watchPlayers(cb) {
+    if (!ready) return function () {};
+    return db
+      .collection("users")
+      .limit(200)
+      .onSnapshot(
+        function (qs) {
+          var out = [];
+          qs.forEach(function (d) {
+            out.push(Object.assign({ uid: d.id }, d.data()));
+          });
+          cb(out);
+        },
+        function () {
+          cb([]);
+        }
+      );
+  }
+
   // Realtime list of users who have opted in as coaches.
   function watchCoaches(cb) {
     if (!ready) return function () {};
@@ -440,6 +461,7 @@
     watchUser: watchUser,
     getUserOnce: getUserOnce,
     watchCoaches: watchCoaches,
+    watchPlayers: watchPlayers,
     linkDupr: linkDupr,
     refreshDuprRating: refreshDuprRating,
     watchUpcomingSessions: watchUpcomingSessions,
