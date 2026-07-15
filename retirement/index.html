@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>Retirement Tracker</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B4%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="hd">
+      <div class="hd-brand">
+        <span class="hd-logo" aria-hidden="true">🌴</span>
+        <div>
+          <h1>Retirement Tracker</h1>
+          <p class="hd-sub">See if you're on track for the retirement you want.</p>
+        </div>
+      </div>
+      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle dark mode" title="Toggle theme">🌙</button>
+    </header>
+
+    <main class="grid">
+      <!-- ---- Inputs ---- -->
+      <section class="card inputs" aria-label="Your details">
+        <h2 class="card-title">Your details</h2>
+        <form id="form" novalidate>
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-lbl">Current age</span>
+              <input type="number" id="currentAge" min="16" max="90" step="1" inputmode="numeric" />
+            </label>
+            <label class="field">
+              <span class="field-lbl">Retirement age</span>
+              <input type="number" id="retireAge" min="30" max="95" step="1" inputmode="numeric" />
+            </label>
+
+            <label class="field field-wide">
+              <span class="field-lbl">Current savings <em>invested for retirement</em></span>
+              <div class="money"><span class="money-sym">$</span><input type="number" id="currentSavings" min="0" step="100" inputmode="decimal" /></div>
+            </label>
+
+            <label class="field field-wide">
+              <span class="field-lbl">Monthly contribution <em>you + any employer match</em></span>
+              <div class="money"><span class="money-sym">$</span><input type="number" id="monthly" min="0" step="50" inputmode="decimal" /></div>
+            </label>
+
+            <label class="field">
+              <span class="field-lbl">Return <em>per year</em></span>
+              <div class="pct"><input type="number" id="rate" min="0" max="20" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
+            </label>
+            <label class="field">
+              <span class="field-lbl">Inflation <em>per year</em></span>
+              <div class="pct"><input type="number" id="inflation" min="0" max="15" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
+            </label>
+
+            <label class="field field-wide">
+              <span class="field-lbl">Income you want in retirement <em>per year, in today's dollars</em></span>
+              <div class="money"><span class="money-sym">$</span><input type="number" id="targetIncome" min="0" step="1000" inputmode="decimal" /></div>
+            </label>
+
+            <label class="field">
+              <span class="field-lbl">Withdrawal rate <em>the 4% rule</em></span>
+              <div class="pct"><input type="number" id="withdrawal" min="2" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
+            </label>
+          </div>
+
+          <label class="toggle-row">
+            <input type="checkbox" id="realDollars" />
+            <span>Show results in today's dollars <em>(adjusted for inflation)</em></span>
+          </label>
+
+          <button type="button" id="reset" class="ghost-btn">Reset to example</button>
+        </form>
+      </section>
+
+      <!-- ---- Results ---- -->
+      <section class="card results" aria-label="Your projection">
+        <div class="status" id="status" role="status">
+          <span class="status-dot"></span>
+          <span class="status-text" id="statusText">—</span>
+        </div>
+
+        <div class="headline">
+          <p class="headline-lbl" id="headlineLbl">Projected at retirement</p>
+          <p class="headline-num" id="nestEgg">$0</p>
+          <p class="headline-note" id="nestNote"></p>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat">
+            <p class="stat-lbl">Retirement income / yr</p>
+            <p class="stat-num" id="projIncome">$0</p>
+            <p class="stat-sub" id="incomeSub"></p>
+          </div>
+          <div class="stat">
+            <p class="stat-lbl">You'll need</p>
+            <p class="stat-num" id="needed">$0</p>
+            <p class="stat-sub">to fund your target</p>
+          </div>
+        </div>
+
+        <div class="gap" id="gapBox">
+          <p class="gap-line" id="gapLine">—</p>
+          <p class="gap-hint" id="gapHint"></p>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-legend">
+            <span class="lg lg-contrib"><i></i>Contributions</span>
+            <span class="lg lg-growth"><i></i>Growth</span>
+            <span class="lg lg-target"><i></i>Target</span>
+          </div>
+          <div id="chart" class="chart"></div>
+          <div class="chart-x" id="chartX"></div>
+        </div>
+
+        <div class="breakdown">
+          <div class="bd"><span class="bd-lbl">Total contributed</span><span class="bd-val" id="bdContrib">$0</span></div>
+          <div class="bd"><span class="bd-lbl">Investment growth</span><span class="bd-val" id="bdGrowth">$0</span></div>
+          <div class="bd"><span class="bd-lbl">Years to grow</span><span class="bd-val" id="bdYears">0</span></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="ft">
+      <p>Estimates only — not financial advice. Real returns vary; revisit as your plan changes.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
