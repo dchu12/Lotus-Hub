@@ -4,93 +4,105 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f766e" />
-  <title>Retirement Tracker</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B4%3C/text%3E%3C/svg%3E" />
+  <title>Derek &amp; Kelly · Retirement Goal Status</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="wrap">
     <header class="hd">
       <div class="hd-brand">
-        <span class="hd-logo" aria-hidden="true">🌴</span>
+        <span class="hd-logo" aria-hidden="true">📈</span>
         <div>
-          <h1>Retirement Tracker</h1>
-          <p class="hd-sub">See if you're on track for the retirement you want.</p>
+          <h1 id="hhTitle">Derek &amp; Kelly</h1>
+          <p class="hd-sub">Retirement Goal Status · <span id="asOf">updated today</span></p>
         </div>
       </div>
       <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle dark mode" title="Toggle theme">🌙</button>
     </header>
 
-    <main class="grid">
-      <!-- ---- Inputs ---- -->
-      <section class="card inputs" aria-label="Your details">
-        <h2 class="card-title">Your details</h2>
-        <form id="form" novalidate>
-          <div class="field-grid">
-            <label class="field">
-              <span class="field-lbl">Current age</span>
-              <input type="number" id="currentAge" min="16" max="90" step="1" inputmode="numeric" />
-            </label>
-            <label class="field">
-              <span class="field-lbl">Retirement age</span>
-              <input type="number" id="retireAge" min="30" max="95" step="1" inputmode="numeric" />
-            </label>
+    <!-- ---- Status banner ---- -->
+    <section class="statusbar card" aria-label="Overall status">
+      <div class="status" id="status" role="status">
+        <span class="status-dot"></span>
+        <span class="status-text" id="statusText">—</span>
+      </div>
+      <div class="statusbar-main">
+        <p class="sb-lbl" id="projLbl">On pace for retirement in <span id="yearsToGo">—</span></p>
+        <p class="sb-num" id="projPortfolio">$0</p>
+        <p class="sb-note" id="projNote"></p>
+      </div>
+      <div class="progress" aria-hidden="true">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div><div class="progress-goal"></div></div>
+        <div class="progress-cap"><span id="progressPct">0%</span><span>of goal</span></div>
+      </div>
+    </section>
 
-            <label class="field field-wide">
-              <span class="field-lbl">Current savings <em>invested for retirement</em></span>
-              <div class="money"><span class="money-sym">$</span><input type="number" id="currentSavings" min="0" step="100" inputmode="decimal" /></div>
-            </label>
+    <div class="grid">
+      <!-- ---- Left: accounts ---- -->
+      <section class="card" aria-label="Accounts and assets">
+        <div class="card-head">
+          <h2 class="card-title">Accounts &amp; assets</h2>
+          <button type="button" id="addAcct" class="add-btn">+ Add</button>
+        </div>
 
-            <label class="field field-wide">
-              <span class="field-lbl">Monthly contribution <em>you + any employer match</em></span>
-              <div class="money"><span class="money-sym">$</span><input type="number" id="monthly" min="0" step="50" inputmode="decimal" /></div>
-            </label>
+        <div class="acct-head">
+          <span class="ah-name">Account</span>
+          <span class="ah-owner">Who</span>
+          <span class="ah-type">Type</span>
+          <span class="ah-bal">Balance</span>
+          <span class="ah-mo">+ / mo</span>
+          <span class="ah-x"></span>
+        </div>
+        <div id="acctList" class="acct-list"><!-- rows rendered by app.js --></div>
 
-            <label class="field">
-              <span class="field-lbl">Return <em>per year</em></span>
-              <div class="pct"><input type="number" id="rate" min="0" max="20" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-            </label>
-            <label class="field">
-              <span class="field-lbl">Inflation <em>per year</em></span>
-              <div class="pct"><input type="number" id="inflation" min="0" max="15" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-            </label>
+        <div class="totals">
+          <div class="tt"><span class="tt-lbl">Net worth</span><span class="tt-val" id="netWorth">$0</span></div>
+          <div class="tt"><span class="tt-lbl">Retirement portfolio</span><span class="tt-val" id="portfolioNow">$0</span></div>
+          <div class="tt"><span class="tt-lbl">Contributions / mo</span><span class="tt-val" id="monthlyContrib">$0</span></div>
+        </div>
 
-            <label class="field field-wide">
-              <span class="field-lbl">Income you want in retirement <em>per year, in today's dollars</em></span>
-              <div class="money"><span class="money-sym">$</span><input type="number" id="targetIncome" min="0" step="1000" inputmode="decimal" /></div>
-            </label>
-
-            <label class="field">
-              <span class="field-lbl">Withdrawal rate <em>the 4% rule</em></span>
-              <div class="pct"><input type="number" id="withdrawal" min="2" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-            </label>
-          </div>
-
-          <label class="toggle-row">
-            <input type="checkbox" id="realDollars" />
-            <span>Show results in today's dollars <em>(adjusted for inflation)</em></span>
-          </label>
-
-          <button type="button" id="reset" class="ghost-btn">Reset to example</button>
-        </form>
+        <div class="owner-split" id="ownerSplit"><!-- rendered by app.js --></div>
       </section>
 
-      <!-- ---- Results ---- -->
-      <section class="card results" aria-label="Your projection">
-        <div class="status" id="status" role="status">
-          <span class="status-dot"></span>
-          <span class="status-text" id="statusText">—</span>
+      <!-- ---- Right: goal + projection ---- -->
+      <section class="card" aria-label="Goal and projection">
+        <h2 class="card-title">The goal</h2>
+        <div class="goal-grid">
+          <label class="field field-wide">
+            <span class="field-lbl">Household name</span>
+            <input type="text" id="household" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span class="field-lbl">Retire in year</span>
+            <input type="number" id="targetYear" min="2026" max="2100" step="1" inputmode="numeric" />
+          </label>
+          <label class="field">
+            <span class="field-lbl">Income wanted <em>/yr, today's $</em></span>
+            <div class="money"><span class="money-sym">$</span><input type="number" id="targetIncome" min="0" step="1000" inputmode="decimal" /></div>
+          </label>
+          <label class="field">
+            <span class="field-lbl">Return <em>/yr</em></span>
+            <div class="pct"><input type="number" id="rate" min="0" max="20" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
+          </label>
+          <label class="field">
+            <span class="field-lbl">Inflation <em>/yr</em></span>
+            <div class="pct"><input type="number" id="inflation" min="0" max="15" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
+          </label>
+          <label class="field">
+            <span class="field-lbl">Withdrawal <em>4% rule</em></span>
+            <div class="pct"><input type="number" id="withdrawal" min="2" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
+          </label>
         </div>
 
-        <div class="headline">
-          <p class="headline-lbl" id="headlineLbl">Projected at retirement</p>
-          <p class="headline-num" id="nestEgg">$0</p>
-          <p class="headline-note" id="nestNote"></p>
-        </div>
+        <label class="toggle-row">
+          <input type="checkbox" id="realDollars" />
+          <span>Show projections in today's dollars <em>(adjusted for inflation)</em></span>
+        </label>
 
         <div class="stat-row">
           <div class="stat">
-            <p class="stat-lbl">Retirement income / yr</p>
+            <p class="stat-lbl">Income at retirement / yr</p>
             <p class="stat-num" id="projIncome">$0</p>
             <p class="stat-sub" id="incomeSub"></p>
           </div>
@@ -108,24 +120,18 @@
 
         <div class="chart-wrap">
           <div class="chart-legend">
-            <span class="lg lg-contrib"><i></i>Contributions</span>
+            <span class="lg lg-contrib"><i></i>Contributed</span>
             <span class="lg lg-growth"><i></i>Growth</span>
-            <span class="lg lg-target"><i></i>Target</span>
+            <span class="lg lg-target"><i></i>Goal</span>
           </div>
           <div id="chart" class="chart"></div>
           <div class="chart-x" id="chartX"></div>
         </div>
-
-        <div class="breakdown">
-          <div class="bd"><span class="bd-lbl">Total contributed</span><span class="bd-val" id="bdContrib">$0</span></div>
-          <div class="bd"><span class="bd-lbl">Investment growth</span><span class="bd-val" id="bdGrowth">$0</span></div>
-          <div class="bd"><span class="bd-lbl">Years to grow</span><span class="bd-val" id="bdYears">0</span></div>
-        </div>
       </section>
-    </main>
+    </div>
 
     <footer class="ft">
-      <p>Estimates only — not financial advice. Real returns vary; revisit as your plan changes.</p>
+      <p>Saved on this device only. Estimates — not financial advice. Revisit as your plan changes.</p>
     </footer>
   </div>
 
