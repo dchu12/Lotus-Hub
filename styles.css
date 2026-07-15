@@ -653,3 +653,14 @@ button { font: inherit; cursor: pointer; }
 .link-inline { border: 0; background: none; color: var(--brand); font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; padding: 2px 0; }
 .link-inline:hover { text-decoration: underline; }
 .is-signup .only-signin { display: none; }
+
+/* first-run onboarding wizard */
+.onboard-progress { display: flex; gap: 8px; justify-content: center; padding: 2px 0 2px; }
+.onboard-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--line-strong); transition: background 0.2s, width 0.2s; }
+.onboard-dot.active { background: var(--brand); width: 22px; }
+.onboard-dot.done { background: var(--brand); opacity: 0.45; }
+.onboard .card h2 { color: var(--brand); }
+.row-btns { display: flex; gap: 10px; }
+.row-btns .btn-ghost { flex: 0 0 auto; padding-left: 20px; padding-right: 20px; }
+.row-btns .btn-primary { flex: 1; }
+.ob-skip { display: block; margin: 2px auto 0; }

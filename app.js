@@ -26,6 +26,7 @@
     viewingPlayerUid: null, // which player's profile is open (visitor view)
     playerBackView: "discover", // where "‹ Back" returns from a player view
     scoresSessionId: null, // which session's scores view is open
+    _onboardDone: false, // first-run onboarding shown/dismissed this session
     unsub: { sessions: null, profile: null, coaches: null, scores: null },
   };
 
@@ -317,6 +318,7 @@
     else if (state.view === "profile") renderProfileView();
     else if (state.view === "player-view") renderPlayerView(state.viewingPlayerUid);
     else if (state.view === "scores") renderScores(state.scoresSessionId);
+    else if (state.view === "onboard") renderOnboard();
   }
 
   function renderCoaching() {
@@ -1515,6 +1517,181 @@
     });
   }
 
+  // A brand-new user (nothing filled in yet, never onboarded) should be walked
+  // through setup. Existing users with any real profile data are left alone.
+  function needsOnboarding(p) {
+    if (!p || p.onboarded === true) return false;
+    return (
+      !p.country && !p.skillLevel && !p.photoDataUrl && !p.photoURL &&
+      p.duprManual == null && p.homeRatingDoubles == null && !p.bio
+    );
+  }
+
+  // First-run onboarding wizard: name/photo/flag → skill/location → rating.
+  function renderOnboard() {
+    tabs.hidden = true;
+    main.innerHTML = "";
+    var p = state.profile || {};
+    var draft = {
+      name: p.displayName || "",
+      photoDataUrl: p.photoDataUrl || p.photoURL || null,
+      flag: heritageFlagOf(p) || "",
+      skillLevel: p.skillLevel || null,
+      country: p.country || "",
+      duprManual: p.duprManual != null ? String(p.duprManual) : "",
+    };
+    var step = 0; // 0,1,2
+    var TOTAL = 3;
+
+    var wrap = el(
+      '<section class="stack onboard">' +
+        '<div class="onboard-progress" id="ob-progress"></div>' +
+        '<section class="card stack" id="ob-card"></section>' +
+        "</section>"
+    );
+    main.appendChild(wrap);
+    var cardEl = wrap.querySelector("#ob-card");
+    var progressEl = wrap.querySelector("#ob-progress");
+
+    function drawProgress() {
+      var dots = "";
+      for (var i = 0; i < TOTAL; i++) {
+        dots += '<span class="onboard-dot' + (i === step ? " active" : i < step ? " done" : "") + '"></span>';
+      }
+      progressEl.innerHTML = dots;
+    }
+
+    // Read whatever's currently on screen into the draft before navigating.
+    function capture() {
+      var nameEl = cardEl.querySelector("#ob-name");
+      if (nameEl) draft.name = nameEl.value;
+      var countryEl = cardEl.querySelector("#ob-country");
+      if (countryEl) draft.country = countryEl.value;
+      var duprEl = cardEl.querySelector("#ob-dupr");
+      if (duprEl) draft.duprManual = duprEl.value;
+      var seg = cardEl.querySelector("#p-skill .seg.active");
+      if (cardEl.querySelector("#p-skill")) draft.skillLevel = seg ? seg.dataset.val : null;
+    }
+
+    function pseudo() {
+      return { photoDataUrl: draft.photoDataUrl, displayName: draft.name };
+    }
+
+    function save(skip) {
+      capture();
+      var u = LH.currentUser() || state.user;
+      if (!u) return toast("You're not signed in. Please sign in again.");
+      var patch = { onboarded: true };
+      if (draft.name && draft.name.trim()) patch.displayName = draft.name.trim();
+      if (!skip) {
+        if (draft.photoDataUrl) patch.photoDataUrl = draft.photoDataUrl;
+        if (draft.flag) patch.flag = draft.flag;
+        patch.skillLevel = draft.skillLevel || null;
+        if (draft.country && draft.country.trim()) patch.country = draft.country.trim();
+        var dv = parseFloat(draft.duprManual);
+        if (draft.duprManual !== "" && !isNaN(dv) && dv >= 2 && dv <= 8.5) patch.duprManual = dv;
+      }
+      firebase
+        .firestore()
+        .collection("users")
+        .doc(u.uid)
+        .set(patch, { merge: true })
+        .then(function () {
+          toast(skip ? "You can finish your profile anytime." : "You're all set! 🎉");
+          state.view = "profile";
+          renderSignedIn();
+        })
+        .catch(function (err) {
+          toast("Couldn't save — " + (err && (err.code || err.message) ? err.code || err.message : "error"));
+        });
+    }
+
+    function go(next) {
+      capture();
+      step = Math.max(0, Math.min(TOTAL - 1, next));
+      renderStep();
+    }
+
+    function renderStep() {
+      drawProgress();
+      if (step === 0) {
+        cardEl.innerHTML =
+          "<h2>Welcome to Lotus Hub 🪷</h2>" +
+          '<p class="muted">Let\'s set up your profile so other players can find you. Takes about 30 seconds.</p>' +
+          '<div class="profile-hero"><div class="avatar-preview" id="ob-avatar">' +
+          avatarFace(pseudo()) + AVATAR_EDIT_BTN + flagEditBtn(draft.flag) + "</div>" +
+          '<input type="file" id="ob-photo" accept="image/*" hidden /></div>' +
+          '<p class="muted" style="text-align:center;margin-top:-2px">Tap to add a photo · tap the globe to pick your flag</p>' +
+          '<div class="field"><label>Your name</label>' +
+          '<input id="ob-name" type="text" placeholder="Your name" value="' + esc(draft.name) + '" /></div>' +
+          '<button class="btn-primary" id="ob-next" type="button">Next</button>' +
+          '<button class="link-inline ob-skip" type="button">Skip for now</button>';
+        wireAvatar();
+      } else if (step === 1) {
+        cardEl.innerHTML =
+          "<h2>How you play 🏓</h2>" +
+          '<p class="muted">This helps match you to the right open-play games.</p>' +
+          '<div class="field"><label>Skill level</label>' + segmentedSkill(draft.skillLevel) + "</div>" +
+          '<div class="field"><label>Location</label>' +
+          '<input id="ob-country" type="text" placeholder="e.g. Toronto, Canada 🇨🇦" value="' + esc(draft.country) + '" /></div>' +
+          '<div class="row-btns"><button class="btn-ghost" id="ob-back" type="button">Back</button>' +
+          '<button class="btn-primary" id="ob-next" type="button">Next</button></div>';
+        wireSkill();
+      } else {
+        cardEl.innerHTML =
+          "<h2>Your rating 📊</h2>" +
+          '<p class="muted">Self-report your DUPR for now — you can connect and verify it later. Optional.</p>' +
+          '<div class="field"><label>DUPR rating</label>' +
+          '<input id="ob-dupr" type="number" step="0.001" min="2" max="8.5" placeholder="e.g. 3.500" value="' + esc(draft.duprManual) + '" /></div>' +
+          '<div class="row-btns"><button class="btn-ghost" id="ob-back" type="button">Back</button>' +
+          '<button class="btn-primary" id="ob-finish" type="button">Finish</button></div>' +
+          '<button class="link-inline ob-skip" type="button">Skip for now</button>';
+      }
+
+      var nextBtn = cardEl.querySelector("#ob-next");
+      if (nextBtn) nextBtn.addEventListener("click", function () { go(step + 1); });
+      var backBtn = cardEl.querySelector("#ob-back");
+      if (backBtn) backBtn.addEventListener("click", function () { go(step - 1); });
+      var finishBtn = cardEl.querySelector("#ob-finish");
+      if (finishBtn) finishBtn.addEventListener("click", function () { save(false); });
+      var skipBtn = cardEl.querySelector(".ob-skip");
+      if (skipBtn) skipBtn.addEventListener("click", function () { save(true); });
+    }
+
+    function wireSkill() {
+      var seg = cardEl.querySelector("#p-skill");
+      if (!seg) return;
+      seg.addEventListener("click", function (e) {
+        var btn = e.target.closest(".seg");
+        if (!btn) return;
+        var already = btn.classList.contains("active");
+        Array.prototype.forEach.call(seg.querySelectorAll(".seg"), function (s) { s.classList.remove("active"); });
+        if (!already) btn.classList.add("active");
+      });
+    }
+
+    function wireAvatar() {
+      var avatar = cardEl.querySelector("#ob-avatar");
+      var photoInput = cardEl.querySelector("#ob-photo");
+      avatar.addEventListener("click", function (e) {
+        if (e.target.closest("#flag-pick")) {
+          openFlagPicker(draft.flag, function (flag) { draft.flag = flag; renderStep(); });
+          return;
+        }
+        photoInput.click();
+      });
+      photoInput.addEventListener("change", function () {
+        var file = photoInput.files && photoInput.files[0];
+        if (!file) return;
+        resizeImage(file, 256)
+          .then(function (dataUrl) { draft.photoDataUrl = dataUrl; renderStep(); })
+          .catch(function () { toast("Couldn't load that image."); });
+      });
+    }
+
+    renderStep();
+  }
+
   function renderProfileEdit() {
     main.innerHTML = "";
     var p = state.profile || {};
@@ -1815,6 +1992,13 @@
         // while it's open — that would wipe fields the user is mid-editing.
         // The form is rebuilt from state.profile each time it's opened.
         state.profile = doc;
+        // First-run: a brand-new user with an empty profile gets the onboarding
+        // wizard once. needsOnboarding() is false once they finish or skip.
+        if (needsOnboarding(doc) && !state._onboardDone && state.view !== "onboard") {
+          state._onboardDone = true;
+          state.view = "onboard";
+          renderSignedIn();
+        }
       });
     }
   }
