@@ -647,3 +647,9 @@ button { font: inherit; cursor: pointer; }
 .rating-pill.verified { background: #e7f6ec; border-color: #b7e3c6; }
 .rating-pill.verified .rp-label, .rating-pill.verified .rp-val { color: #1a7f43; }
 .rating-pill .rp-check { font-size: 0.78rem; font-weight: 900; color: #1a7f43; }
+
+/* auth: forgot-password link (sign-in mode only) */
+.auth-forgot { text-align: right; margin: -6px 0 2px; }
+.link-inline { border: 0; background: none; color: var(--brand); font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; padding: 2px 0; }
+.link-inline:hover { text-decoration: underline; }
+.is-signup .only-signin { display: none; }

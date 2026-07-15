@@ -7,24 +7,46 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
 
+    // Rating/verification fields are owned by the server (Cloud Functions write
+    // them with the Admin SDK, which bypasses these rules). Clients must never
+    // set or change them, or anyone could fake a "verified" DUPR or Lotus Score.
+    function protectedUserFields() {
+      return ['duprLinked', 'duprId', 'duprEmail', 'homeRatingDoubles',
+              'homeRatingSingles', 'duprSyncedAt', 'lotusScore'];
+    }
+
     // Profiles: anyone signed in can read (to show names/ratings on rosters);
-    // only the owner can write their own doc.
-    // NOTE: duprId / rating fields are written server-side by Cloud Functions
-    // using the Admin SDK, which bypasses these rules. Clients must not be
-    // trusted to set their own rating — tighten with a field check before launch.
+    // only the owner can write their own doc — and only the non-protected fields.
+    // duprManual (the self-reported rating) IS client-writable on purpose.
     match /users/{uid} {
       allow read: if signedIn();
-      allow write: if isSelf(uid);
+      // On create the doc may only carry the empty/false defaults for protected
+      // fields (that's what the client's ensureUserDoc writes on first sign-in).
+      allow create: if isSelf(uid)
+        && request.resource.data.get('duprLinked', false) == false
+        && request.resource.data.get('duprId', null) == null
+        && request.resource.data.get('homeRatingDoubles', null) == null
+        && request.resource.data.get('homeRatingSingles', null) == null
+        && request.resource.data.get('lotusScore', null) == null;
+      // On update, none of the protected fields may change.
+      allow update: if isSelf(uid)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+             .hasAny(protectedUserFields());
+      allow delete: if isSelf(uid);
     }
 
     // Sessions: readable by any signed-in user; created by any signed-in user
     // (must set themselves as organizer); only the organizer can edit/delete.
-    // attendeeCount is updated by RSVP transactions, so updates are allowed for
-    // signed-in users but should be locked down further before launch.
     match /sessions/{sessionId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.organizerUid == request.auth.uid;
-      allow update: if signedIn();
+      // The organizer can edit anything; everyone else may only touch the RSVP
+      // bookkeeping fields (attendeeCount/status) that join/leave transactions set.
+      allow update: if signedIn() && (
+        resource.data.organizerUid == request.auth.uid
+        || request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['attendeeCount', 'status'])
+      );
       allow delete: if signedIn() && resource.data.organizerUid == request.auth.uid;
 
       // RSVPs: you can only create/edit/delete your OWN rsvp doc; anyone signed

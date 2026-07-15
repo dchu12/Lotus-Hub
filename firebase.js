@@ -96,6 +96,11 @@
     return ready && auth ? auth.signOut() : Promise.resolve();
   }
 
+  function resetPassword(email) {
+    if (!ready) return Promise.reject(new Error("Sign-in isn't available yet."));
+    return auth.sendPasswordResetEmail(String(email || "").trim());
+  }
+
   // ---- Users ------------------------------------------------------------
   function userDoc(uid) {
     return db.collection("users").doc(uid);
@@ -431,6 +436,7 @@
     signIn: signIn,
     signInWithGoogle: signInWithGoogle,
     signOut: signOut,
+    resetPassword: resetPassword,
     watchUser: watchUser,
     getUserOnce: getUserOnce,
     watchCoaches: watchCoaches,

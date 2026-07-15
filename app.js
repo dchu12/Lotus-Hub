@@ -192,6 +192,25 @@
   }
 
   // ---- auth views -------------------------------------------------------
+  // Turn Firebase's auth error codes into friendly, actionable messages.
+  function authErrorMessage(err) {
+    var code = err && err.code ? String(err.code) : "";
+    var map = {
+      "auth/invalid-email": "That email doesn't look right.",
+      "auth/user-not-found": "No account found with that email.",
+      "auth/wrong-password": "Incorrect password — try again or reset it.",
+      "auth/invalid-credential": "Email or password is incorrect.",
+      "auth/email-already-in-use": "An account already exists with that email — try signing in instead.",
+      "auth/weak-password": "Password should be at least 6 characters.",
+      "auth/missing-password": "Please enter a password.",
+      "auth/too-many-requests": "Too many attempts — wait a moment and try again.",
+      "auth/popup-closed-by-user": "Sign-in was cancelled.",
+      "auth/popup-blocked": "Your browser blocked the sign-in popup — allow popups and try again.",
+      "auth/network-request-failed": "Network problem — check your connection and try again.",
+    };
+    return map[code] || (err && err.message) || "Something went wrong. Please try again.";
+  }
+
   function renderSignedOut() {
     tabs.hidden = true;
     var configured = LH.available;
@@ -209,6 +228,7 @@
             '<input id="f-email" type="email" placeholder="you@example.com" autocomplete="email" required /></div>' +
             '<div class="field"><label>Password</label>' +
             '<input id="f-pass" type="password" placeholder="••••••••" autocomplete="current-password" required /></div>' +
+            '<div class="auth-forgot only-signin"><button type="button" class="link-inline" id="forgot-pass">Forgot password?</button></div>' +
             '<button class="btn-primary" type="submit" id="auth-submit">Sign in</button>' +
             '<button class="btn-ghost full" type="button" id="toggle-mode">New here? Create an account</button>' +
             '<div class="divider"><span>or</span></div>' +
@@ -246,15 +266,22 @@
         mode === "signup" ? LH.signUp(email, pass, name) : LH.signIn(email, pass);
       submit.disabled = true;
       p.catch(function (err) {
-        toast(err.message || "Sign-in failed.");
+        toast(authErrorMessage(err));
       }).finally(function () {
         submit.disabled = false;
       });
     });
     card.querySelector("#google-btn").addEventListener("click", function () {
       LH.signInWithGoogle().catch(function (err) {
-        toast(err.message || "Google sign-in failed.");
+        toast(authErrorMessage(err));
       });
+    });
+    card.querySelector("#forgot-pass").addEventListener("click", function () {
+      var email = card.querySelector("#f-email").value.trim();
+      if (!email) return toast("Enter your email above, then tap Forgot password.");
+      LH.resetPassword(email)
+        .then(function () { toast("Password reset link sent — check your email."); })
+        .catch(function (err) { toast(authErrorMessage(err)); });
     });
   }
 
