@@ -20,6 +20,7 @@
   var auth = null;
   var db = null;
   var fns = null;
+  var analytics = null;
   var ready = false;
 
   function init() {
@@ -30,6 +31,10 @@
       db = firebase.firestore();
       // Cloud Functions (DUPR integration). Only usable once functions deploy.
       try { fns = firebase.functions ? firebase.functions() : null; } catch (e) { fns = null; }
+      // Analytics stays dormant until a measurementId is added to the config.
+      try {
+        analytics = firebase.analytics && window.FIREBASE_CONFIG.measurementId ? firebase.analytics() : null;
+      } catch (e) { analytics = null; }
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
       db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
       ready = true;
@@ -94,6 +99,11 @@
 
   function signOut() {
     return ready && auth ? auth.signOut() : Promise.resolve();
+  }
+
+  // Fire-and-forget analytics event. No-ops safely if analytics isn't set up.
+  function logEvent(name, params) {
+    try { if (analytics) analytics.logEvent(name, params || {}); } catch (e) {}
   }
 
   function resetPassword(email) {
@@ -513,6 +523,7 @@
     signInWithGoogle: signInWithGoogle,
     signOut: signOut,
     resetPassword: resetPassword,
+    logEvent: logEvent,
     watchUser: watchUser,
     getUserOnce: getUserOnce,
     watchCoaches: watchCoaches,

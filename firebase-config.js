@@ -14,6 +14,11 @@ window.FIREBASE_CONFIG = {
   storageBucket: "lots-hub.firebasestorage.app",
   messagingSenderId: "409895305585",
   appId: "1:409895305585:web:30e93ab6598ddd389e36d0",
+  // Analytics: after you enable Google Analytics for this project (Firebase
+  // console → Project settings → Integrations → Google Analytics), copy your
+  // web app's measurement ID here to turn on funnel tracking. Until then
+  // analytics stays dormant and nothing breaks.
+  // measurementId: "G-XXXXXXXXXX",
 };
 
 // True once real values are filled in — the app uses this to show a setup banner.

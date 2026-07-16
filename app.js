@@ -42,6 +42,10 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
+  // Analytics event (no-op until a measurementId is configured).
+  function track(name, params) {
+    if (LH && LH.logEvent) LH.logEvent(name, params);
+  }
   // Pull a flag emoji (two regional-indicator chars) out of a free-text string.
   function flagOf(s) {
     if (!s) return "";
@@ -275,16 +279,18 @@
       var p =
         mode === "signup" ? LH.signUp(email, pass, name) : LH.signIn(email, pass);
       submit.disabled = true;
-      p.catch(function (err) {
+      p.then(function () {
+        track(mode === "signup" ? "sign_up" : "login", { method: "email" });
+      }).catch(function (err) {
         toast(authErrorMessage(err));
       }).finally(function () {
         submit.disabled = false;
       });
     });
     card.querySelector("#google-btn").addEventListener("click", function () {
-      LH.signInWithGoogle().catch(function (err) {
-        toast(authErrorMessage(err));
-      });
+      LH.signInWithGoogle()
+        .then(function () { track("login", { method: "google" }); })
+        .catch(function (err) { toast(authErrorMessage(err)); });
     });
     card.querySelector("#forgot-pass").addEventListener("click", function () {
       var email = card.querySelector("#f-email").value.trim();
@@ -690,18 +696,19 @@
       }
       rsvpBtn.onclick = function () {
         rsvpBtn.disabled = true;
-        var action =
-          status === "going" || status === "waitlist"
-            ? LH.leave(s.id)
-            : LH.join(s.id, {
-                displayName: (state.profile && state.profile.displayName) || "Player",
-                rating: ratingOf(state.profile),
-                photoDataUrl: state.profile ? state.profile.photoDataUrl || state.profile.photoURL : null,
-                skillLevel: state.profile ? state.profile.skillLevel : null,
-                heritageFlag: heritageFlagOf(state.profile) || null,
-              });
+        var isJoin = !(status === "going" || status === "waitlist");
+        var action = isJoin
+          ? LH.join(s.id, {
+              displayName: (state.profile && state.profile.displayName) || "Player",
+              rating: ratingOf(state.profile),
+              photoDataUrl: state.profile ? state.profile.photoDataUrl || state.profile.photoURL : null,
+              skillLevel: state.profile ? state.profile.skillLevel : null,
+              heritageFlag: heritageFlagOf(state.profile) || null,
+            })
+          : LH.leave(s.id);
         action
           .then(function (res) {
+            if (isJoin) track("session_joined", { status: res || "going" });
             if (res === "waitlist") toast("Session full — you're on the waitlist.");
           })
           .catch(function (err) {
@@ -866,6 +873,7 @@
           setStatus("Saving…", "");
           LH.addGame(sessionId, { teamA: teamA, teamB: teamB, scoreA: sa, scoreB: sb })
             .then(function () {
+              track("score_added");
               setStatus("Game added ✓", "ok");
               assign = {};
               drawPicker();
@@ -961,6 +969,7 @@
         organizerName: (state.profile && state.profile.displayName) || undefined,
       })
         .then(function () {
+          track("session_created");
           toast("Session created!");
           state.view = "discover";
           renderSignedIn();
@@ -1156,11 +1165,11 @@
   function handleConnectClick(uid, status) {
     if (status === "none") {
       LH.requestConnection(uid)
-        .then(function () { toast("Connection request sent!"); })
+        .then(function () { track("connect_request"); toast("Connection request sent!"); })
         .catch(function (e) { toast(connErr(e)); });
     } else if (status === "pending-in") {
       LH.acceptConnection(uid)
-        .then(function () { toast("You're connected! 🎉"); })
+        .then(function () { track("connect_accepted"); toast("You're connected! 🎉"); })
         .catch(function (e) { toast(connErr(e)); });
     }
   }
@@ -1681,6 +1690,7 @@
         .doc(u.uid)
         .set(patch, { merge: true })
         .then(function () {
+          track(skip ? "onboarding_skip" : "onboarding_complete");
           toast(skip ? "You can finish your profile anytime." : "You're all set! 🎉");
           state.view = "profile";
           renderSignedIn();
@@ -1959,6 +1969,7 @@
             { merge: true }
           )
           .then(function () {
+            track("profile_saved");
             toast("Saved.");
             // Show the profile as visitors see it after saving.
             state.view = "profile";
@@ -2050,6 +2061,7 @@
         // wizard once. needsOnboarding() is false once they finish or skip.
         if (needsOnboarding(doc) && !state._onboardDone && state.view !== "onboard") {
           state._onboardDone = true;
+          track("onboarding_start");
           state.view = "onboard";
           renderSignedIn();
         }
