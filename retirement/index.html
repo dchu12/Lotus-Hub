@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f766e" />
-  <title>Derek &amp; Kelly · Retirement Goal Status</title>
+  <title>Derek &amp; Kelly · Retirement</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -15,181 +15,137 @@
         <span class="hd-logo" aria-hidden="true">📈</span>
         <div>
           <h1 id="hhTitle">Derek &amp; Kelly</h1>
-          <p class="hd-sub">Retirement Goal Status · <span id="asOf">updated today</span></p>
+          <p class="hd-sub">Are we on track to retire?</p>
         </div>
       </div>
       <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle dark mode" title="Toggle theme">🌙</button>
     </header>
 
-    <!-- ---- Status banner ---- -->
-    <section class="statusbar card" aria-label="Overall status">
-      <div class="status" id="status" role="status">
-        <span class="status-dot"></span>
-        <span class="status-text" id="statusText">—</span>
-      </div>
-      <div class="statusbar-main">
-        <p class="sb-lbl" id="projLbl">On pace for retirement</p>
-        <p class="sb-num" id="projPortfolio">$0</p>
-        <p class="sb-note" id="projNote"></p>
-      </div>
-      <div class="progress" aria-hidden="true">
+    <!-- ---- The answer, first ---- -->
+    <section class="verdict card" aria-label="Where you stand">
+      <div class="status" id="status" role="status"><span class="status-dot"></span><span class="status-text" id="statusText">—</span></div>
+      <p class="verdict-line" id="verdictLine">—</p>
+      <p class="verdict-sub" id="verdictSub"></p>
+      <div class="progress">
         <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-cap"><span id="progressPct">0%</span><span>of goal</span></div>
+        <div class="progress-cap"><span id="progressPct">0%</span><span>of the way to your goal</span></div>
       </div>
     </section>
 
-    <div class="grid">
-      <div class="col">
-        <!-- ---- Money in & out (cash flow) ---- -->
-        <section class="card" aria-label="Income and expenses">
-          <div class="card-head">
-            <h2 class="card-title">Money in &amp; out</h2>
-            <span class="rate-chip" id="saveRate">—</span>
-          </div>
+    <!-- ---- Step 1: earn ---- -->
+    <section class="card step" aria-label="What you earn">
+      <div class="step-head"><span class="step-no">1</span><h2 class="step-title">What you earn</h2><button type="button" class="add-btn" id="addIncome">+ Add</button></div>
+      <p class="step-help">List every source of money coming in. Use the toggle for things that arrive once a year, like a bonus.</p>
+      <div id="incomeList" class="line-list"></div>
+      <div class="subtotal"><span>Coming in</span><b id="incMo">$0<em>/mo</em></b></div>
+    </section>
 
-          <div class="cf-group">
-            <div class="cf-grouphd"><span>Revenue</span><button type="button" class="add-btn" id="addIncome">+ Add</button></div>
-            <div id="incomeList" class="line-list"></div>
-          </div>
+    <!-- ---- Step 2: spend ---- -->
+    <section class="card step" aria-label="What you spend">
+      <div class="step-head"><span class="step-no">2</span><h2 class="step-title">What you spend</h2><button type="button" class="add-btn" id="addFixed">+ Add</button></div>
+      <p class="step-help">Your regular bills. Loan and mortgage payments are set in step 3 and added here for you.</p>
+      <div id="fixedList" class="line-list"></div>
+      <div class="var-row">
+        <span class="var-lbl">Everything else <em>groceries, gas, fun — a rough monthly total</em></span>
+        <div class="money var-money"><span class="money-sym">$</span><input type="number" id="variable" min="0" step="50" inputmode="decimal" /><span class="per">/mo</span></div>
+      </div>
+      <div class="subtotal"><span>Going out</span><b id="expMo">$0<em>/mo</em></b></div>
+      <div class="leaves" id="leaves">—</div>
+    </section>
 
-          <div class="cf-group">
-            <div class="cf-grouphd"><span>Fixed expenses</span><button type="button" class="add-btn" id="addFixed">+ Add</button></div>
-            <div id="fixedList" class="line-list"></div>
-            <p class="hint-sm">Debt payments are set in the Debts section below and counted here automatically.</p>
-          </div>
+    <!-- ---- Step 3: own & owe ---- -->
+    <section class="card step" aria-label="What you own and owe">
+      <div class="step-head"><span class="step-no">3</span><h2 class="step-title">What you own &amp; owe</h2><button type="button" class="add-btn" id="addAcct">+ Add</button></div>
+      <p class="step-help">Your savings and investments — the money that will fund retirement — plus your home and any other assets.</p>
+      <div class="acct-head"><span>Account</span><span>Who</span><span>Kind</span><span class="ah-num">Amount</span><span></span></div>
+      <div id="acctList" class="line-list"></div>
 
-          <div class="cf-group">
-            <div class="cf-grouphd"><span>Variable spending</span></div>
-            <div class="var-row">
-              <span class="var-lbl">Total variable <em>groceries, dining, discretionary…</em></span>
-              <div class="money var-money"><span class="money-sym">$</span><input type="number" id="variable" min="0" step="50" inputmode="decimal" /><span class="per">/mo</span></div>
-            </div>
-          </div>
-
-          <div class="cf-summary" role="table" aria-label="Cash flow summary">
-            <div class="cfs-row cfs-head" role="row"><span>&nbsp;</span><span>Monthly</span><span>Yearly</span></div>
-            <div class="cfs-row" role="row"><span class="cfs-k">Income</span><span id="incMo" class="cfs-in">$0</span><span id="incYr" class="cfs-in">$0</span></div>
-            <div class="cfs-row" role="row"><span class="cfs-k">Expenses</span><span id="expMo" class="cfs-out">$0</span><span id="expYr" class="cfs-out">$0</span></div>
-            <div class="cfs-row cfs-total" role="row"><span class="cfs-k">Surplus</span><span id="surMo">$0</span><span id="surYr">$0</span></div>
-          </div>
-
-          <div class="split">
-            <div class="alloc">
-              <span class="alloc-lbl">Extra debt paydown <em>on top of minimum payments</em></span>
-              <div class="money var-money"><span class="money-sym">$</span><input type="number" id="debtPaydown" min="0" step="50" inputmode="decimal" /><span class="per">/mo</span></div>
-            </div>
-            <label class="split-lbl" for="investPct">Invest <b id="investPctLbl">85%</b> of what's left <em>the rest builds cash</em></label>
-            <input type="range" id="investPct" min="0" max="100" step="5" value="85" />
-            <p class="split-note" id="splitNote"></p>
-          </div>
-        </section>
-
-        <!-- ---- Accounts, assets & debts ---- -->
-        <section class="card" aria-label="Accounts, assets and debts">
-          <div class="card-head">
-            <h2 class="card-title">Assets</h2>
-            <button type="button" id="addAcct" class="add-btn">+ Add</button>
-          </div>
-          <div class="acct-head">
-            <span class="ah-name">Account</span>
-            <span class="ah-owner">Who</span>
-            <span class="ah-type">Type</span>
-            <span class="ah-bal">Balance</span>
-            <span class="ah-x"></span>
-          </div>
-          <div id="acctList" class="acct-list"></div>
-
-          <div class="card-head sub">
-            <h3 class="subhd">Debts</h3>
-            <button type="button" id="addDebt" class="add-btn">+ Add</button>
-          </div>
-          <div class="debt-head">
-            <span>Debt</span><span class="dh-num">Balance</span><span class="dh-num">APR</span><span class="dh-num">Pmt / mo</span><span></span>
-          </div>
-          <div id="debtList" class="acct-list"></div>
-          <p class="debt-note" id="debtNote"></p>
-
-          <div class="totals">
-            <div class="tt"><span class="tt-lbl">Net worth</span><span class="tt-val" id="netWorth">$0</span></div>
-            <div class="tt"><span class="tt-lbl">Retirement portfolio</span><span class="tt-val" id="portfolioNow">$0</span></div>
-            <div class="tt"><span class="tt-lbl">Saving / mo</span><span class="tt-val" id="monthlySave">$0</span></div>
-          </div>
-
-          <div class="owner-split" id="ownerSplit"></div>
-        </section>
+      <div class="sub-block">
+        <div class="step-head sub"><h3 class="sub-title">What you owe</h3><button type="button" class="add-btn" id="addDebt">+ Add</button></div>
+        <div class="debt-head"><span>Debt</span><span class="dh-num">Balance</span><span class="dh-num">Rate</span><span class="dh-num">Payment</span><span></span></div>
+        <div id="debtList" class="line-list"></div>
+        <p class="debt-note" id="debtNote"></p>
       </div>
 
-      <!-- ---- Goal + projection ---- -->
-      <section class="card" aria-label="Goal and projection">
-        <h2 class="card-title">The goal</h2>
-        <div class="goal-grid">
-          <label class="field field-wide">
-            <span class="field-lbl">Household name</span>
-            <input type="text" id="household" autocomplete="off" />
-          </label>
-          <label class="field">
-            <span class="field-lbl">Retire in year</span>
-            <input type="number" id="targetYear" min="2026" max="2100" step="1" inputmode="numeric" />
-          </label>
-          <label class="field">
-            <span class="field-lbl">Income wanted <em>/yr, today's $</em></span>
-            <div class="money"><span class="money-sym">$</span><input type="number" id="targetIncome" min="0" step="1000" inputmode="decimal" /></div>
-          </label>
-          <label class="field">
-            <span class="field-lbl">Return <em>/yr</em></span>
-            <div class="pct"><input type="number" id="rate" min="0" max="20" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-          </label>
-          <label class="field">
-            <span class="field-lbl">Inflation <em>/yr</em></span>
-            <div class="pct"><input type="number" id="inflation" min="0" max="15" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-          </label>
-          <label class="field">
-            <span class="field-lbl">Savings yield <em>cash APY</em></span>
-            <div class="pct"><input type="number" id="cashYield" min="0" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-          </label>
-          <label class="field">
-            <span class="field-lbl">Withdrawal <em>4% rule</em></span>
-            <div class="pct"><input type="number" id="withdrawal" min="2" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-          </label>
-        </div>
+      <div class="totals">
+        <div class="tt"><span class="tt-lbl">Net worth</span><span class="tt-val" id="netWorth">$0</span><span class="tt-hint">everything you own minus what you owe</span></div>
+        <div class="tt"><span class="tt-lbl">Retirement savings</span><span class="tt-val" id="portfolioNow">$0</span><span class="tt-hint">investments &amp; cash that will fund retirement</span></div>
+      </div>
+    </section>
 
-        <label class="toggle-row">
-          <input type="checkbox" id="realDollars" />
-          <span>Show projections in today's dollars <em>(adjusted for inflation)</em></span>
+    <!-- ---- Step 4: goal ---- -->
+    <section class="card step" aria-label="Your goal">
+      <div class="step-head"><span class="step-no">4</span><h2 class="step-title">Your goal</h2></div>
+      <div class="goal-grid">
+        <label class="field">
+          <span class="field-lbl">Retire in the year</span>
+          <input type="number" id="targetYear" min="2026" max="2100" step="1" inputmode="numeric" />
         </label>
+        <label class="field">
+          <span class="field-lbl">Yearly spending you'd want <em>in today's money</em></span>
+          <div class="money"><span class="money-sym">$</span><input type="number" id="targetIncome" min="0" step="1000" inputmode="decimal" /></div>
+        </label>
+      </div>
 
-        <div class="stat-row">
-          <div class="stat">
-            <p class="stat-lbl">Income at retirement / yr</p>
-            <p class="stat-num" id="projIncome">$0</p>
-            <p class="stat-sub" id="incomeSub"></p>
-          </div>
-          <div class="stat">
-            <p class="stat-lbl">You'll need</p>
-            <p class="stat-num" id="needed">$0</p>
-            <p class="stat-sub">to fund your target</p>
-          </div>
+      <div class="result">
+        <div class="result-stat">
+          <span class="rs-lbl">By <b id="goalYear">—</b> you'll be able to spend about</span>
+          <span class="rs-num" id="projIncome">$0<em>/yr</em></span>
+          <span class="rs-sub" id="projSub"></span>
         </div>
+      </div>
 
-        <div class="gap" id="gapBox">
-          <p class="gap-line" id="gapLine">—</p>
-          <p class="gap-hint" id="gapHint"></p>
-        </div>
+      <div class="chart-wrap">
+        <div class="chart-legend"><span class="lg lg-savings"><i></i>Your retirement savings</span><span class="lg lg-target"><i></i>What you'll need</span></div>
+        <div id="chart" class="chart"></div>
+        <div class="chart-x" id="chartX"></div>
+      </div>
+    </section>
 
-        <div class="chart-wrap">
-          <div class="chart-legend">
-            <span class="lg lg-contrib"><i></i>Saved</span>
-            <span class="lg lg-growth"><i></i>Growth</span>
-            <span class="lg lg-target"><i></i>Goal</span>
-          </div>
-          <div id="chart" class="chart"></div>
-          <div class="chart-x" id="chartX"></div>
+    <!-- ---- Advanced (collapsed) ---- -->
+    <details class="advanced card">
+      <summary>Fine-tune the assumptions</summary>
+      <p class="step-help">Sensible defaults are set. Adjust only if you want to.</p>
+
+      <div class="field-wide">
+        <label class="field-lbl" for="household">Household name</label>
+        <input type="text" id="household" autocomplete="off" />
+      </div>
+
+      <div class="adv-grid">
+        <label class="field">
+          <span class="field-lbl">Investment growth <em>per year, before inflation</em></span>
+          <div class="pct"><input type="number" id="rate" min="0" max="20" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
+        </label>
+        <label class="field">
+          <span class="field-lbl">Inflation <em>per year</em></span>
+          <div class="pct"><input type="number" id="inflation" min="0" max="15" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
+        </label>
+        <label class="field">
+          <span class="field-lbl">Savings interest <em>on cash, per year</em></span>
+          <div class="pct"><input type="number" id="cashYield" min="0" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
+        </label>
+        <label class="field">
+          <span class="field-lbl">Safe yearly spending <em>from savings <span class="help" title="A common rule of thumb: you can spend about 4% of your savings in the first year of retirement and adjust for inflation after.">(?)</span></em></span>
+          <div class="pct"><input type="number" id="withdrawal" min="2" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
+        </label>
+      </div>
+
+      <div class="adv-note" id="realNote"></div>
+
+      <div class="alloc-block">
+        <div class="alloc">
+          <span class="alloc-lbl">Extra toward debt <em>on top of your payments, to pay it off faster</em></span>
+          <div class="money var-money"><span class="money-sym">$</span><input type="number" id="debtPaydown" min="0" step="50" inputmode="decimal" /><span class="per">/mo</span></div>
         </div>
-      </section>
-    </div>
+        <label class="split-lbl" for="investPct">Of what's left over, invest <b id="investPctLbl">85%</b> <em>the rest stays as cash</em></label>
+        <input type="range" id="investPct" min="0" max="100" step="5" value="85" />
+        <p class="split-note" id="splitNote"></p>
+      </div>
+    </details>
 
     <footer class="ft">
-      <p>Saved on this device only. Estimates — not financial advice. Revisit as your plan changes.</p>
+      <p>All numbers are in today's money. Saved on this device only — estimates, not financial advice.</p>
     </footer>
   </div>
 
