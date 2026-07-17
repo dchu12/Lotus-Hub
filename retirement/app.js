@@ -1,24 +1,23 @@
 /* Derek & Kelly · Retirement Goal Status
    Cash-flow-driven retirement tracker. The waterfall:
-     revenue − fixed − variable = monthly surplus
-     → surplus is split (invest % / cash) into your accounts
-     → accounts grow to your target year
-     → projection vs. the nest egg your goal needs.
+     revenue − fixed − variable − debt payments = monthly surplus
+     → surplus: extra debt paydown first, then split (invest % / cash)
+     → debts amortize (APR + payment, extra accelerates); a paid-off
+       debt frees its payment into investing. Cash earns a yield.
+     → accounts grow to the target year → projection vs. the goal.
    All data stays in localStorage. */
 (function () {
   "use strict";
 
-  var STORE_KEY = "dk-retire:v3";
+  var STORE_KEY = "dk-retire:v4";
   var THEME_KEY = "dk-retire:theme";
   var THIS_YEAR = new Date().getFullYear();
 
-  // Account types → behavior. grow: 'return'|'inflation'|'none';
-  // income: counts toward retirement portfolio; sign: +asset / -liability.
+  // Asset types. grow: 'return'|'yield'|'inflation'|'none'; income: counts toward portfolio.
   var TYPES = {
-    investment: { label: "Investment", grow: "return",    income: true,  sign: 1 },
-    cash:       { label: "Cash / savings", grow: "none",   income: true,  sign: 1 },
-    realestate: { label: "Real estate", grow: "inflation", income: false, sign: 1 },
-    liability:  { label: "Liability", grow: "none",        income: false, sign: -1 },
+    investment: { label: "Investment", grow: "return",    income: true },
+    cash:       { label: "Cash / savings", grow: "yield",  income: true },
+    realestate: { label: "Real estate", grow: "inflation", income: false },
   };
   var OWNERS = ["Derek", "Kelly", "Joint"];
 
@@ -30,8 +29,10 @@
         targetIncome: 90000,
         rate: 6.0,
         inflation: 2.5,
+        cashYield: 3.5,
         withdrawal: 4,
         investPct: 85,
+        debtPaydown: 300,
         realDollars: true,
       },
       incomes: [
@@ -41,13 +42,11 @@
         { id: "i4", name: "Other income", amount: 250, freq: "mo" },
       ],
       fixed: [
-        { id: "f1", name: "Mortgage", amount: 2600, freq: "mo" },
-        { id: "f2", name: "Utilities & phone", amount: 350, freq: "mo" },
-        { id: "f3", name: "Insurance", amount: 400, freq: "mo" },
-        { id: "f4", name: "Car payment", amount: 500, freq: "mo" },
-        { id: "f5", name: "Childcare", amount: 1300, freq: "mo" },
+        { id: "f1", name: "Utilities & phone", amount: 350, freq: "mo" },
+        { id: "f2", name: "Insurance", amount: 400, freq: "mo" },
+        { id: "f3", name: "Childcare", amount: 1300, freq: "mo" },
       ],
-      variable: 3200, // total variable spending per month
+      variable: 3200,
       accounts: [
         { id: "a1", name: "Derek's 401(k)",     owner: "Derek", type: "investment", balance: 145000 },
         { id: "a2", name: "Kelly's 403(b)",     owner: "Kelly", type: "investment", balance: 98000 },
@@ -56,7 +55,10 @@
         { id: "a5", name: "Brokerage",          owner: "Joint", type: "investment", balance: 60000 },
         { id: "a6", name: "Emergency savings",  owner: "Joint", type: "cash",       balance: 35000 },
         { id: "a7", name: "Home (market value)",owner: "Joint", type: "realestate", balance: 530000 },
-        { id: "a8", name: "Mortgage",           owner: "Joint", type: "liability",  balance: 310000 },
+      ],
+      debts: [
+        { id: "d1", name: "Mortgage", balance: 310000, apr: 6.5, payment: 2600 },
+        { id: "d2", name: "Car loan", balance: 18000,  apr: 7.0, payment: 500 },
       ],
     };
   }
@@ -65,9 +67,9 @@
   var idSeq = 100;
 
   var el = {};
-  ["household", "targetYear", "targetIncome", "rate", "inflation", "withdrawal", "realDollars", "investPct",
-   "investPctLbl", "splitNote", "variable", "saveRate",
-   "addIncome", "addFixed", "addAcct", "incomeList", "fixedList", "acctList",
+  ["household", "targetYear", "targetIncome", "rate", "inflation", "cashYield", "withdrawal", "realDollars",
+   "investPct", "investPctLbl", "splitNote", "variable", "saveRate", "debtPaydown",
+   "addIncome", "addFixed", "addAcct", "addDebt", "incomeList", "fixedList", "acctList", "debtList", "debtNote",
    "theme-toggle", "hhTitle",
    "status", "statusText", "projLbl", "projPortfolio", "projNote", "progressFill", "progressPct",
    "incMo", "incYr", "expMo", "expYr", "surMo", "surYr",
@@ -92,17 +94,21 @@
 
   /* ---------- cash flow ---------- */
   function cashflow() {
-    var incomeMo = state.incomes.reduce(function (s, i) { return s + monthlyOf(i); }, 0);
-    var fixedMo = state.fixed.reduce(function (s, f) { return s + monthlyOf(f); }, 0);
+    var s = state.settings;
+    var incomeMo = state.incomes.reduce(function (a, i) { return a + monthlyOf(i); }, 0);
+    var fixedMo = state.fixed.reduce(function (a, f) { return a + monthlyOf(f); }, 0);
     var varMo = num(state.variable);
-    var expenseMo = fixedMo + varMo;
+    var debtPayMo = state.debts.reduce(function (a, d) { return a + num(d.payment); }, 0);
+    var expenseMo = fixedMo + varMo + debtPayMo;
     var surplusMo = incomeMo - expenseMo;
     var saveRate = incomeMo > 0 ? surplusMo / incomeMo : 0;
-    var pct = Math.max(0, Math.min(100, num(state.settings.investPct, 85))) / 100;
+    var pct = Math.max(0, Math.min(100, num(s.investPct, 85))) / 100;
     var savePos = Math.max(0, surplusMo);
+    var debtMo = Math.min(Math.max(0, num(s.debtPaydown)), savePos);
+    var rem = savePos - debtMo;
     return {
-      incomeMo: incomeMo, expenseMo: expenseMo, surplusMo: surplusMo, saveRate: saveRate,
-      investMo: savePos * pct, cashMo: savePos * (1 - pct), saveMo: savePos,
+      incomeMo: incomeMo, expenseMo: expenseMo, debtPayMo: debtPayMo, surplusMo: surplusMo, saveRate: saveRate,
+      debtMo: debtMo, investMo: rem * pct, cashMo: rem * (1 - pct), saveMo: savePos,
     };
   }
 
@@ -112,30 +118,58 @@
     var years = Math.max(0, Math.round(s.targetYear - THIS_YEAR));
     var months = years * 12;
     var rMonthly = (s.rate / 100) / 12;
+    var cashRate = (num(s.cashYield) / 100) / 12;
     var infl = s.inflation / 100;
 
-    // current tallies
-    var netWorth = 0, invStart = 0, cashStart = 0;
+    var invStart = 0, cashStart = 0, assetTotal = 0;
     var ownerNow = { Derek: 0, Kelly: 0, Joint: 0 };
     state.accounts.forEach(function (a) {
       var t = TYPES[a.type] || TYPES.investment;
       var bal = num(a.balance);
-      netWorth += t.sign * bal;
+      assetTotal += bal;
       if (a.type === "investment") invStart += bal;
       if (a.type === "cash") cashStart += bal;
       if (t.income) { if (ownerNow[a.owner] === undefined) ownerNow[a.owner] = 0; ownerNow[a.owner] += bal; }
     });
+    var debtStart = state.debts.reduce(function (x, d) { return x + num(d.balance); }, 0);
     var portfolioNow = invStart + cashStart;
+    var netWorth = assetTotal - debtStart;
 
-    // Two buckets grown monthly: investments (return + investMo), cash (0% + cashMo).
-    var invBal = invStart, cashBal = cashStart;
-    var invContrib = invStart, cashContrib = cashStart;
+    // Debts to amortize: interest accrues monthly; the regular payment (already
+    // an expense) pays it down; extra paydown accelerates highest-APR first;
+    // a cleared debt frees its payment into investing from the next month.
+    var liabs = state.debts.map(function (d) {
+      return { bal: num(d.balance), rate: (num(d.apr) / 100) / 12, payment: num(d.payment), paidOff: num(d.balance) <= 0 };
+    });
+
+    var invBal = invStart, cashBal = cashStart, invContrib = invStart, cashContrib = cashStart;
+    var debtFreeMonth = liabs.every(function (l) { return l.paidOff; }) ? 0 : null;
     var series = [{ year: 0, balance: portfolioNow, contributed: portfolioNow }];
+
     for (var m = 1; m <= months; m++) {
-      invBal = invBal * (1 + rMonthly) + cf.investMo;
-      invContrib += cf.investMo;
-      cashBal = cashBal + cf.cashMo; // cash: no growth
-      cashContrib += cf.cashMo;
+      var freed = 0;
+      liabs.forEach(function (l) { if (l.paidOff) freed += l.payment; });
+
+      var extra = cf.debtMo;
+      liabs.forEach(function (l) {
+        if (l.paidOff) return;
+        l.bal *= (1 + l.rate);                 // accrue interest
+        if (l.payment >= l.bal) { extra += (l.payment - l.bal); l.bal = 0; l.paidOff = true; }
+        else l.bal -= l.payment;               // regular payment
+      });
+      liabs.filter(function (l) { return !l.paidOff; })
+           .sort(function (a, b) { return b.rate - a.rate; })
+           .forEach(function (l) {
+        if (extra <= 0) return;
+        var ap = Math.min(extra, l.bal); l.bal -= ap; extra -= ap;
+        if (l.bal <= 0) l.paidOff = true;
+      });
+
+      var invThis = cf.investMo + freed + Math.max(0, extra); // freed payments + leftover roll into investing
+      invBal = invBal * (1 + rMonthly) + invThis;  invContrib += invThis;
+      cashBal = cashBal * (1 + cashRate) + cf.cashMo; cashContrib += cf.cashMo;
+
+      if (debtFreeMonth === null && liabs.every(function (l) { return l.paidOff; })) debtFreeMonth = m;
       if (m % 12 === 0) series.push({ year: m / 12, balance: invBal + cashBal, contributed: invContrib + cashContrib });
     }
     if (series.length < 2) series.push({ year: 0, balance: portfolioNow, contributed: portfolioNow });
@@ -149,13 +183,13 @@
 
     return {
       years: years, series: series,
-      netWorth: netWorth, portfolioNow: portfolioNow, ownerNow: ownerNow,
-      invStart: invStart, cashStart: cashStart,
+      netWorth: netWorth, portfolioNow: portfolioNow, ownerNow: ownerNow, debtStart: debtStart,
+      invStart: invStart, cashStart: cashStart, cashRate: cashRate,
       projPortfolio: projPortfolio, projContributed: projContributed,
       projGrowth: Math.max(0, projPortfolio - projContributed),
-      neededReal: neededReal, neededNominal: neededNominal,
-      projIncomeNominal: projPortfolio * wr,
+      neededReal: neededReal, neededNominal: neededNominal, projIncomeNominal: projPortfolio * wr,
       deflator: deflator, wr: wr, infl: infl,
+      debtFreeMonth: debtFreeMonth,
     };
   }
 
@@ -164,14 +198,14 @@
     var months = p.years * 12;
     if (months === 0) return Infinity;
     var r = (state.settings.rate / 100) / 12;
-    var fv = p.invStart * Math.pow(1 + r, months) + p.cashStart; // cash doesn't grow
+    var fv = p.invStart * Math.pow(1 + r, months) + p.cashStart * Math.pow(1 + p.cashRate, months);
     var remaining = p.neededNominal - fv;
     if (remaining <= 0) return 0;
     var factor = r === 0 ? months : (Math.pow(1 + r, months) - 1) / r;
     return remaining / factor;
   }
 
-  /* ---------- render: everything ---------- */
+  /* ---------- render ---------- */
   function renderAll() {
     var s = state.settings;
     var cf = cashflow();
@@ -190,13 +224,27 @@
     el.surMo.textContent = fmtMoney(cf.surplusMo);
     el.surYr.textContent = fmtMoney(cf.surplusMo * 12);
     el.surMo.parentElement.classList.toggle("neg", cf.surplusMo < 0);
-    var rate = Math.round(cf.saveRate * 100);
-    el.saveRate.textContent = (cf.surplusMo >= 0 ? rate + "% savings rate" : "Overspending");
+    el.saveRate.textContent = cf.surplusMo >= 0 ? Math.round(cf.saveRate * 100) + "% savings rate" : "Overspending";
     el.investPctLbl.textContent = Math.round(num(s.investPct, 85)) + "%";
     if (cf.surplusMo <= 0) {
-      el.splitNote.textContent = "No surplus to invest — trim expenses or raise income.";
+      el.splitNote.textContent = "No surplus to allocate — trim expenses or raise income.";
     } else {
-      el.splitNote.textContent = "≈ " + fmtMoney(cf.investMo) + "/mo to investments · " + fmtMoney(cf.cashMo) + "/mo to cash.";
+      el.splitNote.textContent = "≈ " + fmtMoney(cf.debtMo) + "/mo extra to debt · "
+        + fmtMoney(cf.investMo) + "/mo to investments · " + fmtMoney(cf.cashMo) + "/mo to cash.";
+    }
+
+    // debts note
+    if (!state.debts.length) {
+      el.debtNote.textContent = "";
+    } else if (p.debtStart <= 0) {
+      el.debtNote.innerHTML = "<b>Debt-free.</b> No balances to pay down.";
+    } else if (p.debtFreeMonth != null) {
+      var yr = THIS_YEAR + Math.ceil(p.debtFreeMonth / 12);
+      el.debtNote.innerHTML = "Owe <b>" + fmtMoney(p.debtStart) + "</b> today · on track to be <b>debt-free by "
+        + yr + "</b>" + (cf.debtMo > 0 ? " with " + fmtMoney(cf.debtMo) + "/mo extra." : ".")
+        + " Freed payments then flow into investing.";
+    } else {
+      el.debtNote.innerHTML = "Owe <b>" + fmtMoney(p.debtStart) + "</b> today · not fully paid off before retirement at current payments.";
     }
 
     // account totals
@@ -233,13 +281,13 @@
         el.gapBox.className = "gap warn";
         el.gapLine.textContent = "You're spending everything you earn.";
         el.gapHint.textContent = "Expenses of " + fmtMoney(cf.expenseMo) + "/mo meet or exceed income of "
-          + fmtMoney(cf.incomeMo) + "/mo — there's no surplus to invest. Cut spending or raise income to start building toward the goal.";
+          + fmtMoney(cf.incomeMo) + "/mo — no surplus to invest. Cut spending or raise income to start building toward the goal.";
       } else if (surplusGoal >= 0) {
         setStatus(true, "On track");
         el.gapBox.className = "gap good";
         el.gapLine.textContent = "Ahead of goal by " + fmtMoney(surplusGoal * conv) + ".";
         el.gapHint.textContent = "Saving " + fmtMoney(cf.saveMo) + "/mo (a " + Math.round(cf.saveRate * 100)
-          + "% savings rate) gets you to about " + fmtMoney(p.projIncomeNominal * conv) + "/yr — past your "
+          + "% savings rate) reaches about " + fmtMoney(p.projIncomeNominal * conv) + "/yr — past your "
           + fmtMoney(s.targetIncome) + "/yr target, so you could ease off or retire earlier.";
       } else {
         setStatus(false, "Behind goal");
@@ -249,8 +297,8 @@
         if (isFinite(reqInv)) {
           var extra = Math.max(0, reqInv - cf.investMo);
           el.gapHint.textContent = "Invest about " + fmtMoney(reqInv) + "/mo (" + fmtMoney(extra)
-            + " more than today) to close it — find it by trimming the " + fmtMoney(cf.expenseMo)
-            + "/mo of expenses, raising income, or retiring later.";
+            + " more than today) to close it — free it up by paying off debt, trimming the "
+            + fmtMoney(cf.expenseMo) + "/mo of expenses, or retiring later.";
         } else {
           el.gapHint.textContent = "Increase savings or push the retirement year back.";
         }
@@ -313,7 +361,7 @@
     el.chartX.innerHTML = '<span>' + THIS_YEAR + '</span><span>' + midYear + '</span><span>' + state.settings.targetYear + '</span>';
   }
 
-  /* ---------- render: editable line lists ---------- */
+  /* ---------- editable line lists (income / fixed) ---------- */
   function renderLineList(container, arr) {
     if (!arr.length) { container.innerHTML = '<div class="acct-empty">Nothing here yet — add a line.</div>'; return; }
     container.innerHTML = "";
@@ -329,26 +377,13 @@
       + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove">×</button></span>';
       container.appendChild(row);
     });
-    container.querySelectorAll("input, select").forEach(function (input) {
-      input.addEventListener(input.tagName === "SELECT" ? "change" : "input", function () {
-        var it = arr[+input.getAttribute("data-i")]; if (!it) return;
-        var f = input.getAttribute("data-f");
-        it[f] = f === "amount" ? num(input.value) : input.value;
-        save(); renderAll();
-      });
-    });
-    container.querySelectorAll(".del-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        arr.splice(+btn.getAttribute("data-del"), 1);
-        save(); renderLineList(container, arr); renderAll();
-      });
-    });
+    wireRows(container, arr, ["amount"]);
   }
 
-  /* ---------- render: accounts ---------- */
+  /* ---------- accounts (assets) ---------- */
   function renderAccounts() {
     if (!state.accounts.length) {
-      el.acctList.innerHTML = '<div class="acct-empty">No accounts yet — add your 401(k), IRA, brokerage, savings…</div>';
+      el.acctList.innerHTML = '<div class="acct-empty">No assets yet — add your 401(k), IRA, brokerage, savings, home…</div>';
       return;
     }
     el.acctList.innerHTML = "";
@@ -365,18 +400,47 @@
       + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove ' + escapeHtml(a.name) + '">×</button></span>';
       el.acctList.appendChild(row);
     });
-    el.acctList.querySelectorAll("input, select").forEach(function (input) {
+    wireRows(el.acctList, state.accounts, ["balance"], renderAccounts);
+  }
+
+  /* ---------- debts ---------- */
+  function renderDebts() {
+    if (!state.debts.length) {
+      el.debtList.innerHTML = '<div class="acct-empty">No debts — nice. Add a mortgage or loan if you have one.</div>';
+      return;
+    }
+    el.debtList.innerHTML = "";
+    state.debts.forEach(function (d, idx) {
+      var row = document.createElement("div");
+      row.className = "debt-row";
+      row.innerHTML =
+        '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(d.name) + '" placeholder="Debt" autocomplete="off" /></span>'
+      + '<span class="cell-bal"><input type="number" inputmode="decimal" step="100" data-i="' + idx + '" data-f="balance" value="' + d.balance + '" /></span>'
+      + '<span class="cell-apr"><input type="number" inputmode="decimal" step="0.1" data-i="' + idx + '" data-f="apr" value="' + d.apr + '" /></span>'
+      + '<span class="cell-pmt"><input type="number" inputmode="decimal" step="25" data-i="' + idx + '" data-f="payment" value="' + d.payment + '" /></span>'
+      + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove ' + escapeHtml(d.name) + '">×</button></span>';
+      el.debtList.appendChild(row);
+    });
+    wireRows(el.debtList, state.debts, ["balance", "apr", "payment"], renderDebts);
+  }
+
+  // Shared row wiring. numericFields are parsed as numbers; reRender re-draws
+  // the list after a delete (defaults to no structural re-render for line lists).
+  function wireRows(container, arr, numericFields, reRender) {
+    container.querySelectorAll("input, select").forEach(function (input) {
       input.addEventListener(input.tagName === "SELECT" ? "change" : "input", function () {
-        var a = state.accounts[+input.getAttribute("data-i")]; if (!a) return;
+        var it = arr[+input.getAttribute("data-i")]; if (!it) return;
         var f = input.getAttribute("data-f");
-        a[f] = f === "balance" ? num(input.value) : input.value;
+        it[f] = numericFields.indexOf(f) >= 0 ? num(input.value) : input.value;
         save(); renderAll();
       });
     });
-    el.acctList.querySelectorAll(".del-btn").forEach(function (btn) {
+    container.querySelectorAll(".del-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        state.accounts.splice(+btn.getAttribute("data-del"), 1);
-        save(); renderAccounts(); renderAll();
+        arr.splice(+btn.getAttribute("data-del"), 1);
+        save();
+        if (reRender) reRender(); else renderLineList(container, arr);
+        renderAll();
       });
     });
   }
@@ -389,15 +453,18 @@
     el.targetIncome.value = s.targetIncome;
     el.rate.value = s.rate;
     el.inflation.value = s.inflation;
+    el.cashYield.value = s.cashYield;
     el.withdrawal.value = s.withdrawal;
     el.investPct.value = s.investPct;
+    el.debtPaydown.value = s.debtPaydown;
     el.realDollars.checked = !!s.realDollars;
     el.variable.value = state.variable;
   }
 
   function wire() {
     el.household.addEventListener("input", function () { state.settings.household = el.household.value; save(); renderAll(); });
-    [["targetYear", "targetYear"], ["targetIncome", "targetIncome"], ["rate", "rate"], ["inflation", "inflation"], ["withdrawal", "withdrawal"], ["investPct", "investPct"]]
+    [["targetYear", "targetYear"], ["targetIncome", "targetIncome"], ["rate", "rate"], ["inflation", "inflation"],
+     ["cashYield", "cashYield"], ["withdrawal", "withdrawal"], ["investPct", "investPct"], ["debtPaydown", "debtPaydown"]]
       .forEach(function (pair) {
         el[pair[0]].addEventListener("input", function () { state.settings[pair[1]] = num(el[pair[0]].value); save(); renderAll(); });
       });
@@ -416,6 +483,10 @@
       state.accounts.push({ id: "a" + (++idSeq), name: "", owner: "Joint", type: "investment", balance: 0 });
       save(); renderAccounts(); renderAll();
     });
+    el.addDebt.addEventListener("click", function () {
+      state.debts.push({ id: "d" + (++idSeq), name: "", balance: 0, apr: 6, payment: 0 });
+      save(); renderDebts(); renderAll();
+    });
   }
 
   /* ---------- persistence ---------- */
@@ -431,6 +502,7 @@
         fixed: Array.isArray(raw.fixed) ? raw.fixed : d.fixed,
         variable: raw.variable != null ? raw.variable : d.variable,
         accounts: raw.accounts,
+        debts: Array.isArray(raw.debts) ? raw.debts : d.debts,
       };
     } else {
       state = d;
@@ -464,5 +536,6 @@
   renderLineList(el.incomeList, state.incomes);
   renderLineList(el.fixedList, state.fixed);
   renderAccounts();
+  renderDebts();
   renderAll();
 })();
