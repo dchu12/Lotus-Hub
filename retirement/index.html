@@ -28,44 +28,84 @@
         <span class="status-text" id="statusText">—</span>
       </div>
       <div class="statusbar-main">
-        <p class="sb-lbl" id="projLbl">On pace for retirement in <span id="yearsToGo">—</span></p>
+        <p class="sb-lbl" id="projLbl">On pace for retirement</p>
         <p class="sb-num" id="projPortfolio">$0</p>
         <p class="sb-note" id="projNote"></p>
       </div>
       <div class="progress" aria-hidden="true">
-        <div class="progress-track"><div class="progress-fill" id="progressFill"></div><div class="progress-goal"></div></div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
         <div class="progress-cap"><span id="progressPct">0%</span><span>of goal</span></div>
       </div>
     </section>
 
     <div class="grid">
-      <!-- ---- Left: accounts ---- -->
-      <section class="card" aria-label="Accounts and assets">
-        <div class="card-head">
-          <h2 class="card-title">Accounts &amp; assets</h2>
-          <button type="button" id="addAcct" class="add-btn">+ Add</button>
-        </div>
+      <div class="col">
+        <!-- ---- Money in & out (cash flow) ---- -->
+        <section class="card" aria-label="Income and expenses">
+          <div class="card-head">
+            <h2 class="card-title">Money in &amp; out</h2>
+            <span class="rate-chip" id="saveRate">—</span>
+          </div>
 
-        <div class="acct-head">
-          <span class="ah-name">Account</span>
-          <span class="ah-owner">Who</span>
-          <span class="ah-type">Type</span>
-          <span class="ah-bal">Balance</span>
-          <span class="ah-mo">+ / mo</span>
-          <span class="ah-x"></span>
-        </div>
-        <div id="acctList" class="acct-list"><!-- rows rendered by app.js --></div>
+          <div class="cf-group">
+            <div class="cf-grouphd"><span>Revenue</span><button type="button" class="add-btn" id="addIncome">+ Add</button></div>
+            <div id="incomeList" class="line-list"></div>
+          </div>
 
-        <div class="totals">
-          <div class="tt"><span class="tt-lbl">Net worth</span><span class="tt-val" id="netWorth">$0</span></div>
-          <div class="tt"><span class="tt-lbl">Retirement portfolio</span><span class="tt-val" id="portfolioNow">$0</span></div>
-          <div class="tt"><span class="tt-lbl">Contributions / mo</span><span class="tt-val" id="monthlyContrib">$0</span></div>
-        </div>
+          <div class="cf-group">
+            <div class="cf-grouphd"><span>Fixed expenses</span><button type="button" class="add-btn" id="addFixed">+ Add</button></div>
+            <div id="fixedList" class="line-list"></div>
+          </div>
 
-        <div class="owner-split" id="ownerSplit"><!-- rendered by app.js --></div>
-      </section>
+          <div class="cf-group">
+            <div class="cf-grouphd"><span>Variable spending</span></div>
+            <div class="var-row">
+              <span class="var-lbl">Total variable <em>groceries, dining, discretionary…</em></span>
+              <div class="money var-money"><span class="money-sym">$</span><input type="number" id="variable" min="0" step="50" inputmode="decimal" /><span class="per">/mo</span></div>
+            </div>
+          </div>
 
-      <!-- ---- Right: goal + projection ---- -->
+          <div class="cf-summary" role="table" aria-label="Cash flow summary">
+            <div class="cfs-row cfs-head" role="row"><span>&nbsp;</span><span>Monthly</span><span>Yearly</span></div>
+            <div class="cfs-row" role="row"><span class="cfs-k">Income</span><span id="incMo" class="cfs-in">$0</span><span id="incYr" class="cfs-in">$0</span></div>
+            <div class="cfs-row" role="row"><span class="cfs-k">Expenses</span><span id="expMo" class="cfs-out">$0</span><span id="expYr" class="cfs-out">$0</span></div>
+            <div class="cfs-row cfs-total" role="row"><span class="cfs-k">Surplus</span><span id="surMo">$0</span><span id="surYr">$0</span></div>
+          </div>
+
+          <div class="split">
+            <label class="split-lbl" for="investPct">Invest <b id="investPctLbl">85%</b> of surplus <em>the rest builds cash</em></label>
+            <input type="range" id="investPct" min="0" max="100" step="5" value="85" />
+            <p class="split-note" id="splitNote"></p>
+          </div>
+        </section>
+
+        <!-- ---- Accounts & assets ---- -->
+        <section class="card" aria-label="Accounts and assets">
+          <div class="card-head">
+            <h2 class="card-title">Accounts &amp; assets</h2>
+            <button type="button" id="addAcct" class="add-btn">+ Add</button>
+          </div>
+
+          <div class="acct-head">
+            <span class="ah-name">Account</span>
+            <span class="ah-owner">Who</span>
+            <span class="ah-type">Type</span>
+            <span class="ah-bal">Balance</span>
+            <span class="ah-x"></span>
+          </div>
+          <div id="acctList" class="acct-list"></div>
+
+          <div class="totals">
+            <div class="tt"><span class="tt-lbl">Net worth</span><span class="tt-val" id="netWorth">$0</span></div>
+            <div class="tt"><span class="tt-lbl">Retirement portfolio</span><span class="tt-val" id="portfolioNow">$0</span></div>
+            <div class="tt"><span class="tt-lbl">Saving / mo</span><span class="tt-val" id="monthlySave">$0</span></div>
+          </div>
+
+          <div class="owner-split" id="ownerSplit"></div>
+        </section>
+      </div>
+
+      <!-- ---- Goal + projection ---- -->
       <section class="card" aria-label="Goal and projection">
         <h2 class="card-title">The goal</h2>
         <div class="goal-grid">
@@ -120,7 +160,7 @@
 
         <div class="chart-wrap">
           <div class="chart-legend">
-            <span class="lg lg-contrib"><i></i>Contributed</span>
+            <span class="lg lg-contrib"><i></i>Saved</span>
             <span class="lg lg-growth"><i></i>Growth</span>
             <span class="lg lg-target"><i></i>Goal</span>
           </div>
