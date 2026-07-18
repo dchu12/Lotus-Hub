@@ -28,14 +28,14 @@
       <p class="verdict-sub" id="verdictSub"></p>
       <div class="progress">
         <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-cap"><span id="progressPct">0%</span><span>of the way to your goal</span></div>
+        <div class="progress-cap"><span id="progressPct">0%</span><span>of the way to funding your retirement</span></div>
       </div>
     </section>
 
     <!-- ---- Step 1: earn ---- -->
     <section class="card step" aria-label="What you earn">
       <div class="step-head"><span class="step-no">1</span><h2 class="step-title">What you earn</h2><button type="button" class="add-btn" id="addIncome">+ Add</button></div>
-      <p class="step-help">List every source of money coming in. Use the toggle for things that arrive once a year, like a bonus.</p>
+      <p class="step-help">Every source of money coming in now. Use the toggle for things that arrive once a year, like a bonus.</p>
       <div id="incomeList" class="line-list"></div>
       <div class="subtotal"><span>Coming in</span><b id="incMo">$0<em>/mo</em></b></div>
     </section>
@@ -75,28 +75,35 @@
 
     <!-- ---- Step 4: goal ---- -->
     <section class="card step" aria-label="Your goal">
-      <div class="step-head"><span class="step-no">4</span><h2 class="step-title">Your goal</h2></div>
-      <div class="goal-grid">
-        <label class="field">
-          <span class="field-lbl">Retire in the year</span>
-          <input type="number" id="targetYear" min="2026" max="2100" step="1" inputmode="numeric" />
-        </label>
-        <label class="field">
-          <span class="field-lbl">Yearly spending you'd want <em>in today's money</em></span>
-          <div class="money"><span class="money-sym">$</span><input type="number" id="targetIncome" min="0" step="1000" inputmode="decimal" /></div>
-        </label>
+      <div class="step-head"><span class="step-no">4</span><h2 class="step-title">Your plan</h2></div>
+      <div class="goal-grid three">
+        <label class="field"><span class="field-lbl">Your age now</span><input type="number" id="currentAge" min="18" max="90" step="1" inputmode="numeric" /></label>
+        <label class="field"><span class="field-lbl">Retire at age</span><input type="number" id="retireAge" min="30" max="90" step="1" inputmode="numeric" /></label>
+        <label class="field"><span class="field-lbl">Yearly spending <em>today's money</em></span><div class="money"><span class="money-sym">$</span><input type="number" id="targetIncome" min="0" step="1000" inputmode="decimal" /></div></label>
+      </div>
+
+      <div class="sub-block">
+        <div class="step-head sub"><h3 class="sub-title">Money you'll get in retirement</h3><button type="button" class="add-btn" id="addRet">+ Add</button></div>
+        <p class="step-help">Social Security, pensions, annuities — income that isn't from your savings. It lowers how much your savings must cover.</p>
+        <div class="ret-head"><span>Source</span><span class="dh-num">$ / yr</span><span class="dh-num">Starts age</span><span></span></div>
+        <div id="retList" class="line-list"></div>
       </div>
 
       <div class="result">
         <div class="result-stat">
-          <span class="rs-lbl">By <b id="goalYear">—</b> you'll be able to spend about</span>
-          <span class="rs-num" id="projIncome">$0<em>/yr</em></span>
-          <span class="rs-sub" id="projSub"></span>
+          <span class="rs-lbl">Spending <b id="spendLbl">$90,000</b> a year, your savings last to about</span>
+          <span class="rs-num" id="lastsAge">—</span>
+          <span class="rs-sub" id="lastsSub"></span>
         </div>
+        <p class="confidence" id="confidence"></p>
       </div>
 
       <div class="chart-wrap">
-        <div class="chart-legend"><span class="lg lg-savings"><i></i>Your retirement savings</span><span class="lg lg-target"><i></i>What you'll need</span></div>
+        <div class="chart-legend">
+          <span class="lg lg-savings"><i></i>Your savings, over your life</span>
+          <span class="lg lg-band"><i></i>Good–poor market range</span>
+          <span class="lg lg-retire"><i></i>Retire</span>
+        </div>
         <div id="chart" class="chart"></div>
         <div class="chart-x" id="chartX"></div>
       </div>
@@ -105,13 +112,13 @@
     <!-- ---- What if (live scenarios) ---- -->
     <section class="card whatif" aria-label="What if">
       <div class="step-head"><span class="step-ico" aria-hidden="true">🔮</span><h2 class="step-title">What if…</h2></div>
-      <p class="step-help">A few quick scenarios based on your numbers. These don't change your plan — they just show what would happen.</p>
+      <p class="step-help">Quick scenarios based on your numbers — showing the age your money would last to. Nothing here changes your plan.</p>
       <div id="whatifList" class="wi-list"></div>
     </section>
 
     <!-- ---- Advanced (collapsed) ---- -->
     <details class="advanced card">
-      <summary>Fine-tune the assumptions</summary>
+      <summary>Fine-tune &amp; save your plan</summary>
       <p class="step-help">Sensible defaults are set. Adjust only if you want to.</p>
 
       <div class="field-wide">
@@ -120,24 +127,11 @@
       </div>
 
       <div class="adv-grid">
-        <label class="field">
-          <span class="field-lbl">Investment growth <em>per year, before inflation</em></span>
-          <div class="pct"><input type="number" id="rate" min="0" max="20" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-        </label>
-        <label class="field">
-          <span class="field-lbl">Inflation <em>per year</em></span>
-          <div class="pct"><input type="number" id="inflation" min="0" max="15" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-        </label>
-        <label class="field">
-          <span class="field-lbl">Savings interest <em>on cash, per year</em></span>
-          <div class="pct"><input type="number" id="cashYield" min="0" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-        </label>
-        <label class="field">
-          <span class="field-lbl">Safe yearly spending <em>from savings <span class="help" title="A common rule of thumb: you can spend about 4% of your savings in the first year of retirement and adjust for inflation after.">(?)</span></em></span>
-          <div class="pct"><input type="number" id="withdrawal" min="2" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div>
-        </label>
+        <label class="field"><span class="field-lbl">Plan through age <em>life expectancy</em></span><input type="number" id="planThroughAge" min="65" max="110" step="1" inputmode="numeric" /></label>
+        <label class="field"><span class="field-lbl">Investment growth <em>per year, before inflation</em></span><div class="pct"><input type="number" id="rate" min="0" max="20" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div></label>
+        <label class="field"><span class="field-lbl">Inflation <em>per year</em></span><div class="pct"><input type="number" id="inflation" min="0" max="15" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div></label>
+        <label class="field"><span class="field-lbl">Savings interest <em>on cash, per year</em></span><div class="pct"><input type="number" id="cashYield" min="0" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div></label>
       </div>
-
       <div class="adv-note" id="realNote"></div>
 
       <div class="alloc-block">
@@ -148,6 +142,17 @@
         <label class="split-lbl" for="investPct">Of what's left over, invest <b id="investPctLbl">85%</b> <em>the rest stays as cash</em></label>
         <input type="range" id="investPct" min="0" max="100" step="5" value="85" />
         <p class="split-note" id="splitNote"></p>
+      </div>
+
+      <div class="data-block">
+        <h3 class="sub-title">Save or move your plan</h3>
+        <p class="step-help">Your numbers live only in this browser. Make a copy to open them on another device.</p>
+        <div class="data-row">
+          <button type="button" id="copyLink" class="data-btn">Copy shareable link</button>
+          <button type="button" id="downloadData" class="data-btn">Download a copy</button>
+          <label class="data-btn file">Load a copy<input type="file" id="loadData" accept="application/json,.json" hidden /></label>
+        </div>
+        <p class="data-msg" id="dataMsg"></p>
       </div>
 
       <div class="reset-row">

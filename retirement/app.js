@@ -1,17 +1,18 @@
 /* Derek & Kelly · Retirement
-   A plain-language, cash-flow retirement tracker. Everything is modeled and
-   shown in TODAY'S DOLLARS (real terms): every rate is converted to a real
-   rate, so contributions held flat are really "kept up with inflation," and
-   there is no separate nominal/real toggle to confuse anyone.
+   A plain-language retirement tracker. Everything is in TODAY'S DOLLARS
+   (real terms). It models your whole financial life:
      earn − spend = what you save each month
        → extra debt paydown, then split invest / cash
-       → savings grow at real returns; debts pay down; freed payments re-split
-       → compared against what you'll need = desired yearly spending ÷ 4%.
-   All data stays in localStorage. */
+       → savings grow (real returns), debts pay down, freed payments re-split
+       → at retirement, savings are drawn down each year to cover the spending
+         your Social Security / pensions don't already cover
+       → we report the age your money lasts to, across good / expected / poor
+         markets.
+   All data stays in localStorage (or a shareable link you make). */
 (function () {
   "use strict";
 
-  var STORE_KEY = "dk-retire:v5";
+  var STORE_KEY = "dk-retire:v6";
   var THEME_KEY = "dk-retire:theme";
   var THIS_YEAR = new Date().getFullYear();
 
@@ -27,39 +28,42 @@
     return {
       settings: {
         household: "Derek & Kelly",
-        targetYear: THIS_YEAR + 22,
-        targetIncome: 90000,
+        currentAge: 45,
+        retireAge: 65,
+        planThroughAge: 95,
+        targetIncome: 95000,
         rate: 6.0,
         inflation: 2.5,
         cashYield: 3.5,
-        withdrawal: 4,
         investPct: 85,
-        debtPaydown: 300,
+        debtPaydown: 150,
       },
       incomes: [
-        { id: "i1", name: "Derek — salary", amount: 7000, freq: "mo" },
-        { id: "i2", name: "Kelly — salary", amount: 5500, freq: "mo" },
-        { id: "i3", name: "Annual bonus", amount: 15000, freq: "yr" },
-        { id: "i4", name: "Other income", amount: 250, freq: "mo" },
+        { id: "i1", name: "Derek — salary", amount: 5200, freq: "mo" },
+        { id: "i2", name: "Kelly — salary", amount: 4300, freq: "mo" },
+        { id: "i3", name: "Annual bonus", amount: 6000, freq: "yr" },
       ],
       fixed: [
-        { id: "f1", name: "Utilities & phone", amount: 350, freq: "mo" },
-        { id: "f2", name: "Insurance", amount: 400, freq: "mo" },
-        { id: "f3", name: "Childcare", amount: 1300, freq: "mo" },
+        { id: "f1", name: "Utilities & phone", amount: 340, freq: "mo" },
+        { id: "f2", name: "Insurance", amount: 360, freq: "mo" },
+        { id: "f3", name: "Childcare", amount: 1000, freq: "mo" },
       ],
-      variable: 3200,
+      variable: 3100,
       accounts: [
-        { id: "a1", name: "Derek's 401(k)",     owner: "Derek", type: "investment", balance: 145000 },
-        { id: "a2", name: "Kelly's 403(b)",     owner: "Kelly", type: "investment", balance: 98000 },
-        { id: "a3", name: "Roth IRA",           owner: "Derek", type: "investment", balance: 42000 },
-        { id: "a4", name: "Roth IRA",           owner: "Kelly", type: "investment", balance: 38000 },
-        { id: "a5", name: "Brokerage",          owner: "Joint", type: "investment", balance: 60000 },
-        { id: "a6", name: "Emergency savings",  owner: "Joint", type: "cash",       balance: 35000 },
-        { id: "a7", name: "Home",               owner: "Joint", type: "realestate", balance: 530000 },
+        { id: "a1", name: "Derek's 401(k)",     owner: "Derek", type: "investment", balance: 88000 },
+        { id: "a2", name: "Kelly's 403(b)",     owner: "Kelly", type: "investment", balance: 54000 },
+        { id: "a3", name: "Roth IRA",           owner: "Derek", type: "investment", balance: 24000 },
+        { id: "a4", name: "Roth IRA",           owner: "Kelly", type: "investment", balance: 20000 },
+        { id: "a5", name: "Brokerage",          owner: "Joint", type: "investment", balance: 20000 },
+        { id: "a6", name: "Emergency savings",  owner: "Joint", type: "cash",       balance: 22000 },
+        { id: "a7", name: "Home",               owner: "Joint", type: "realestate", balance: 460000 },
       ],
       debts: [
-        { id: "d1", name: "Mortgage", balance: 310000, apr: 6.5, payment: 2600 },
-        { id: "d2", name: "Car loan", balance: 18000,  apr: 7.0, payment: 500 },
+        { id: "d1", name: "Mortgage", balance: 265000, apr: 6.3, payment: 2150 },
+        { id: "d2", name: "Car loan", balance: 14000,  apr: 6.9, payment: 420 },
+      ],
+      retIncomes: [
+        { id: "r1", name: "Social Security (combined)", amount: 38000, startAge: 67 },
       ],
     };
   }
@@ -68,13 +72,15 @@
   var idSeq = 100;
 
   var el = {};
-  ["household", "targetYear", "targetIncome", "rate", "inflation", "cashYield", "withdrawal",
+  ["household", "currentAge", "retireAge", "planThroughAge", "targetIncome", "rate", "inflation", "cashYield",
    "investPct", "investPctLbl", "splitNote", "variable", "debtPaydown", "realNote",
-   "addIncome", "addFixed", "addAcct", "addDebt", "incomeList", "fixedList", "acctList", "debtList", "debtNote",
+   "addIncome", "addFixed", "addAcct", "addDebt", "addRet",
+   "incomeList", "fixedList", "acctList", "debtList", "retList", "debtNote",
    "theme-toggle", "hhTitle",
    "status", "statusText", "verdictLine", "verdictSub", "progressFill", "progressPct",
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
-   "goalYear", "projIncome", "projSub", "chart", "chartX", "whatifList", "resetBtn"].forEach(function (id) {
+   "spendLbl", "lastsAge", "lastsSub", "confidence", "chart", "chartX", "whatifList",
+   "resetBtn", "copyLink", "downloadData", "loadData", "dataMsg"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
 
@@ -84,12 +90,6 @@
     n = Math.round(n);
     return (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("en-US");
   }
-  function fmtK(n) {
-    var a = Math.abs(Math.round(n));
-    if (a >= 1e6) return (n < 0 ? "-$" : "$") + (a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "") + " million";
-    if (a >= 1000) return (n < 0 ? "-$" : "$") + Math.round(a / 1000) + ",000";
-    return fmtMoney(n);
-  }
   function num(v, fb) { var x = parseFloat(v); return isFinite(x) ? x : (fb || 0); }
   function monthlyOf(item) { return item.freq === "yr" ? num(item.amount) / 12 : num(item.amount); }
   function escapeHtml(s) {
@@ -97,10 +97,19 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
     });
   }
-  // Nominal annual % → real monthly rate (adjusted for inflation).
   function realMonthly(nominalPct) {
     var infl = num(state.settings.inflation) / 100;
     return Math.pow((1 + num(nominalPct) / 100) / (1 + infl), 1 / 12) - 1;
+  }
+  function realAnnual(nominalPct) {
+    var infl = num(state.settings.inflation) / 100;
+    return (1 + num(nominalPct) / 100) / (1 + infl) - 1;
+  }
+  // Retirement income (Social Security etc.) active at a given age, $/yr today.
+  function retIncomeAt(age) {
+    return state.retIncomes.reduce(function (s, r) {
+      return s + (age >= num(r.startAge) ? num(r.amount) : 0);
+    }, 0);
   }
 
   /* ---------- cash flow ---------- */
@@ -123,38 +132,32 @@
     };
   }
 
-  /* ---------- projection (all in today's dollars) ---------- */
-  function project(cf, opts) {
+  /* ---------- full-life simulation (accumulate, then draw down) ----------
+     nominalRate lets scenarios/market-range vary the investment return.
+     Returns a per-age balance series covering the whole plan, plus the
+     retirement balance and the age (if any) the money runs out. */
+  function simulate(cf, nominalRate) {
     var s = state.settings;
-    var targetYear = (opts && opts.targetYear) || s.targetYear;
-    var years = Math.max(0, Math.round(targetYear - THIS_YEAR));
-    var months = years * 12;
-    var rReturn = realMonthly(s.rate);
-    var rCash = realMonthly(s.cashYield);
+    var currentAge = num(s.currentAge), retireAge = num(s.retireAge), endAge = num(s.planThroughAge);
+    var accumYears = Math.max(0, Math.round(retireAge - currentAge));
+    var months = accumYears * 12;
+    var rRet = realMonthly(nominalRate), rCash = realMonthly(s.cashYield), rDraw = realAnnual(nominalRate);
 
-    var invStart = 0, cashStart = 0, assetTotal = 0;
+    var invStart = 0, cashStart = 0;
     state.accounts.forEach(function (a) {
-      var bal = num(a.balance);
-      assetTotal += bal;
-      if (a.type === "investment") invStart += bal;
-      if (a.type === "cash") cashStart += bal;
+      var b = num(a.balance);
+      if (a.type === "investment") invStart += b;
+      if (a.type === "cash") cashStart += b;
     });
-    var debtStart = state.debts.reduce(function (x, d) { return x + num(d.balance); }, 0);
-    var portfolioNow = invStart + cashStart;
-    var netWorth = assetTotal - debtStart;
-
     var liabs = state.debts.map(function (d) {
       return { bal: num(d.balance), rate: realMonthly(d.apr), payment: num(d.payment), paidOff: num(d.balance) <= 0 };
     });
 
-    var invBal = invStart, cashBal = cashStart, contributed = portfolioNow;
-    var debtFreeMonth = liabs.every(function (l) { return l.paidOff; }) ? 0 : null;
-    var series = [{ year: 0, balance: portfolioNow }];
-
+    var invBal = invStart, cashBal = cashStart;
+    var series = [{ age: currentAge, bal: invStart + cashStart }];
     for (var m = 1; m <= months; m++) {
       var freed = 0;
       liabs.forEach(function (l) { if (l.paidOff) freed += l.payment; });
-
       var extra = cf.debtMo;
       liabs.forEach(function (l) {
         if (l.paidOff) return;
@@ -162,211 +165,249 @@
         if (l.payment >= l.bal) { extra += (l.payment - l.bal); l.bal = 0; l.paidOff = true; }
         else l.bal -= l.payment;
       });
-      liabs.filter(function (l) { return !l.paidOff; })
-           .sort(function (a, b) { return b.rate - a.rate; })
-           .forEach(function (l) {
-        if (extra <= 0) return;
-        var ap = Math.min(extra, l.bal); l.bal -= ap; extra -= ap;
-        if (l.bal <= 0) l.paidOff = true;
-      });
-
-      // freed payments + any leftover extra flow back through the invest/cash split
+      liabs.filter(function (l) { return !l.paidOff; }).sort(function (a, b) { return b.rate - a.rate; })
+           .forEach(function (l) { if (extra <= 0) return; var ap = Math.min(extra, l.bal); l.bal -= ap; extra -= ap; if (l.bal <= 0) l.paidOff = true; });
       var pool = freed + Math.max(0, extra);
-      var investThis = cf.investMo + pool * cf.pct;
-      var cashThis = cf.cashMo + pool * (1 - cf.pct);
-      invBal = invBal * (1 + rReturn) + investThis;
-      cashBal = cashBal * (1 + rCash) + cashThis;
-      contributed += investThis + cashThis;
-
-      if (debtFreeMonth === null && liabs.every(function (l) { return l.paidOff; })) debtFreeMonth = m;
-      if (m % 12 === 0) series.push({ year: m / 12, balance: invBal + cashBal });
+      invBal = invBal * (1 + rRet) + cf.investMo + pool * cf.pct;
+      cashBal = cashBal * (1 + rCash) + cf.cashMo + pool * (1 - cf.pct);
+      if (m % 12 === 0) series.push({ age: currentAge + m / 12, bal: invBal + cashBal });
     }
-    if (series.length < 2) series.push({ year: 0, balance: portfolioNow });
 
-    var projPortfolio = series[series.length - 1].balance;
-    var wr = Math.max(0.01, s.withdrawal / 100);
-    var needed = s.targetIncome / wr; // today's dollars
-
-    return {
-      years: years, series: series, netWorth: netWorth, portfolioNow: portfolioNow, debtStart: debtStart,
-      invStart: invStart, cashStart: cashStart, rReturn: rReturn,
-      projPortfolio: projPortfolio, contributed: contributed, needed: needed,
-      projIncome: projPortfolio * wr, wr: wr, debtFreeMonth: debtFreeMonth,
-    };
+    var retireBal = invBal + cashBal;
+    var bal = retireBal, runOutAge = null;
+    for (var age = retireAge; age < endAge; age++) {
+      if (bal > 0) {
+        var w = Math.max(0, num(s.targetIncome) - retIncomeAt(age));
+        bal -= w;
+        if (bal <= 0) { bal = 0; if (runOutAge === null) runOutAge = age; }
+        else bal *= (1 + rDraw);
+      }
+      series.push({ age: age + 1, bal: Math.max(0, bal) });
+    }
+    return { series: series, retireBal: retireBal, runOutAge: runOutAge, leftover: bal,
+             lastsToEnd: runOutAge === null, rDraw: rDraw, accumYears: accumYears };
   }
 
-  // Real monthly investing needed to reach the goal from today's balances.
-  function requiredInvestMonthly(p) {
-    var months = p.years * 12;
-    if (months === 0) return Infinity;
-    var r = p.rReturn;
-    var rc = realMonthly(state.settings.cashYield);
-    var fv = p.invStart * Math.pow(1 + r, months) + p.cashStart * Math.pow(1 + rc, months);
-    var remaining = p.needed - fv;
-    if (remaining <= 0) return 0;
-    var factor = r === 0 ? months : (Math.pow(1 + r, months) - 1) / r;
-    return remaining / factor;
+  // Portfolio needed at retirement so savings last exactly to the plan age
+  // (present value of the withdrawals Social Security won't cover).
+  function neededAtRetirement(rDraw) {
+    var s = state.settings, retireAge = num(s.retireAge), endAge = num(s.planThroughAge), needed = 0;
+    for (var t = 0; t < Math.max(0, endAge - retireAge); t++) {
+      var w = Math.max(0, num(s.targetIncome) - retIncomeAt(retireAge + t));
+      needed += w / Math.pow(1 + rDraw, t);
+    }
+    return needed;
+  }
+
+  // Largest yearly spending the retirement balance can sustain to the plan age.
+  function maxSpend(retireBal, rDraw) {
+    var s = state.settings, retireAge = num(s.retireAge), endAge = num(s.planThroughAge);
+    function lasts(spend) {
+      var bal = retireBal;
+      for (var age = retireAge; age < endAge; age++) {
+        bal -= Math.max(0, spend - retIncomeAt(age));
+        if (bal < 0) return false;
+        bal *= (1 + rDraw);
+      }
+      return true;
+    }
+    var lo = 0, hi = Math.max(num(s.targetIncome) * 3, retireBal / 2 + 1);
+    for (var i = 0; i < 44; i++) { var mid = (lo + hi) / 2; if (lasts(mid)) lo = mid; else hi = mid; }
+    return lo;
   }
 
   /* ---------- render ---------- */
   function renderAll() {
     var s = state.settings;
     var cf = cashflow();
-    var p = project(cf);
-
     el.hhTitle.textContent = s.household || "Retirement";
     document.title = (s.household || "Retirement") + " · Retirement";
 
-    // step 1 & 2 subtotals
+    // step 1 & 2
     el.incMo.innerHTML = fmtMoney(cf.incomeMo) + "<em>/mo</em>";
     el.expMo.innerHTML = fmtMoney(cf.expenseMo) + "<em>/mo</em>";
     if (cf.surplusMo > 0) {
       el.leaves.className = "leaves";
-      el.leaves.textContent = "That leaves " + fmtMoney(cf.surplusMo) + " a month to save — "
-        + Math.round(cf.saveRate * 100) + "% of what you earn. 💪";
+      el.leaves.textContent = "That leaves " + fmtMoney(cf.surplusMo) + " a month to save — " + Math.round(cf.saveRate * 100) + "% of what you earn. 💪";
     } else {
       el.leaves.className = "leaves neg";
-      el.leaves.textContent = "You're spending about as much as you earn — nothing left to save yet.";
+      el.leaves.textContent = "You're spending about as much as you earn — nothing left to save right now.";
     }
 
-    // step 3 totals
-    el.netWorth.textContent = fmtMoney(p.netWorth);
-    el.portfolioNow.textContent = fmtMoney(p.portfolioNow);
-    if (!state.debts.length || p.debtStart <= 0) {
-      el.debtNote.innerHTML = state.debts.length ? "<b>No debt.</b> Nicely done." : "";
-    } else if (p.debtFreeMonth != null) {
-      var yr = THIS_YEAR + Math.ceil(p.debtFreeMonth / 12);
-      el.debtNote.innerHTML = "You owe <b>" + fmtMoney(p.debtStart) + "</b> today — on track to be <b>debt-free by " + yr + "</b>"
-        + (cf.debtMo > 0 ? " with your " + fmtMoney(cf.debtMo) + "/mo extra" : "") + ". After that, those payments go toward savings.";
-    } else {
-      el.debtNote.innerHTML = "You owe <b>" + fmtMoney(p.debtStart) + "</b> today — not fully paid off by " + s.targetYear + " at current payments.";
+    // step 3
+    var netWorth = 0, portfolioNow = 0, debtStart = 0;
+    state.accounts.forEach(function (a) { netWorth += num(a.balance); if (a.type === "investment" || a.type === "cash") portfolioNow += num(a.balance); });
+    state.debts.forEach(function (d) { debtStart += num(d.balance); netWorth -= num(d.balance); });
+    el.netWorth.textContent = fmtMoney(netWorth);
+    el.portfolioNow.textContent = fmtMoney(portfolioNow);
+
+    var validAges = s.retireAge > s.currentAge && s.planThroughAge > s.retireAge;
+    var retireYear = THIS_YEAR + Math.round(s.retireAge - s.currentAge);
+
+    // debt-free note (from expected sim's amortization — recompute payoff quickly)
+    renderDebtNote(cf, debtStart, retireYear);
+
+    if (!validAges) {
+      setStatus(false, "Check the ages");
+      el.verdictLine.textContent = "Enter your age now, a later retirement age, and a plan-through age to see where you stand.";
+      el.verdictSub.textContent = "";
+      el.progressFill.style.width = "0%"; el.progressPct.textContent = "—";
+      el.spendLbl.textContent = fmtMoney(s.targetIncome);
+      el.lastsAge.textContent = "—"; el.lastsSub.textContent = ""; el.confidence.textContent = "";
+      el.chart.innerHTML = ""; el.chartX.innerHTML = "";
+      renderWhatif(); renderAdvancedNote(cf);
+      return;
     }
 
-    // step 4 result
-    el.goalYear.textContent = s.targetYear;
-    el.projIncome.innerHTML = fmtMoney(p.projIncome) + "<em>/yr</em>";
-    el.projSub.textContent = "from about " + fmtMoney(p.projPortfolio) + " in savings · you'd need about "
-      + fmtMoney(p.needed) + " for your " + fmtMoney(s.targetIncome) + "/yr goal";
+    var exp = simulate(cf, s.rate);
+    var poor = simulate(cf, s.rate - 2);
+    var good = simulate(cf, s.rate + 2);
+    var endAge = num(s.planThroughAge);
+    var msMax = maxSpend(exp.retireBal, exp.rDraw);
+    var needed = neededAtRetirement(exp.rDraw);
 
-    // progress
-    var ratio = p.needed > 0 ? p.projPortfolio / p.needed : 0;
+    // progress = how much of your retirement your savings can fund
+    var ratio = needed > 0 ? exp.retireBal / needed : (num(s.targetIncome) <= retIncomeAt(s.retireAge) ? 1 : 0);
     el.progressFill.style.width = Math.max(0, Math.min(100, ratio * 100)) + "%";
     el.progressPct.textContent = Math.round(ratio * 100) + "%";
 
-    // verdict (plain English)
-    var gap = p.projPortfolio - p.needed;
-    if (s.targetYear <= THIS_YEAR) {
-      setStatus(false, "Check the year");
-      el.verdictLine.textContent = "Pick a retirement year in the future to see where you stand.";
-      el.verdictSub.textContent = "";
-    } else if (cf.surplusMo <= 0) {
-      setStatus(false, "Nothing to save yet");
-      el.verdictLine.textContent = "Right now you're spending about as much as you earn, so there's nothing left to put toward retirement.";
-      el.verdictSub.textContent = "Trim spending or add income in steps 1–2, and the plan comes to life.";
-    } else if (gap >= 0) {
-      setStatus(true, "On track");
-      var overBy = p.projIncome - s.targetIncome;
-      var margin = overBy > s.targetIncome * 0.15 ? "comfortably above" : "just above";
-      el.verdictLine.textContent = "Saving " + fmtMoney(cf.saveMo) + " a month, you're on pace to retire in "
-        + s.targetYear + " with about " + fmtMoney(p.projIncome) + " a year to spend — " + margin + " your "
-        + fmtMoney(s.targetIncome) + " goal. 🎉";
-      el.verdictSub.textContent = "You've got room to spare — you could spend a little more now, or retire a bit earlier.";
+    // result block
+    el.spendLbl.textContent = fmtMoney(s.targetIncome);
+    if (exp.lastsToEnd) {
+      el.lastsAge.textContent = "age " + endAge + "+";
+      el.lastsSub.textContent = "with about " + fmtMoney(exp.leftover) + " still left at " + endAge + " · you could spend up to about " + fmtMoney(msMax) + "/yr and still reach " + endAge;
     } else {
-      setStatus(false, "A bit behind");
-      var reqInv = requiredInvestMonthly(p);
-      var incomeShort = s.targetIncome - p.projIncome;
-      el.verdictLine.textContent = "Saving " + fmtMoney(cf.saveMo) + " a month, by " + s.targetYear
-        + " you'd have about " + fmtMoney(p.projIncome) + " a year to spend — short of your "
-        + fmtMoney(s.targetIncome) + " goal by roughly " + fmtMoney(incomeShort) + " a year.";
-      if (isFinite(reqInv)) {
-        var extra = Math.max(0, reqInv - cf.investMo);
-        el.verdictSub.textContent = "To close it: save about " + fmtMoney(extra) + " more a month, retire a little later, or aim for a bit less. Small changes add up.";
-      } else {
-        el.verdictSub.textContent = "Try saving more, or giving yourself more time.";
-      }
+      el.lastsAge.textContent = "age " + exp.runOutAge;
+      el.lastsSub.textContent = "that's short of your plan through " + endAge + " · about " + fmtMoney(msMax) + "/yr would last the whole way";
     }
 
-    // advanced note: real return
-    var realR = (Math.pow(1 + realMonthly(s.rate), 12) - 1) * 100;
-    el.realNote.textContent = "After " + s.inflation + "% inflation, your investments grow about "
-      + realR.toFixed(1) + "% a year in today's money — that's what the projection uses.";
-    el.investPctLbl.textContent = Math.round(num(s.investPct, 85)) + "%";
-    el.splitNote.textContent = cf.surplusMo <= 0
-      ? "No surplus to allocate yet."
-      : "≈ " + fmtMoney(cf.debtMo) + "/mo extra to debt · " + fmtMoney(cf.investMo) + "/mo invested · " + fmtMoney(cf.cashMo) + "/mo to cash.";
+    // confidence (poor market)
+    if (poor.lastsToEnd) {
+      el.confidence.className = "confidence good";
+      el.confidence.textContent = "Even in a poor market, your money still lasts through " + endAge + ". 👍";
+    } else {
+      el.confidence.className = "confidence warn";
+      el.confidence.textContent = "Heads up: in a poor market it could run short around age " + poor.runOutAge + " — worth keeping a cushion.";
+    }
 
-    drawChart(p);
+    // verdict
+    if (exp.lastsToEnd) {
+      setStatus(true, "On track");
+      el.verdictLine.textContent = "Retiring at " + s.retireAge + " in " + retireYear + " and spending " + fmtMoney(s.targetIncome)
+        + " a year, your savings comfortably last through age " + endAge + ". You're on track. 🎉";
+      el.verdictSub.textContent = "You could spend up to about " + fmtMoney(msMax) + " a year and still make it — room to enjoy more now, or retire earlier.";
+    } else {
+      setStatus(false, "Falls short");
+      var shortBy = num(s.targetIncome) - msMax;
+      el.verdictLine.textContent = "Retiring at " + s.retireAge + " and spending " + fmtMoney(s.targetIncome)
+        + " a year, your savings would run out around age " + exp.runOutAge + " — before your plan of " + endAge + ".";
+      el.verdictSub.textContent = "To make it last: spend about " + fmtMoney(msMax) + " a year instead (roughly " + fmtMoney(shortBy)
+        + " less), retire a little later, add income, or save more. Small changes add up.";
+    }
+    if (cf.surplusMo <= 0) {
+      el.verdictSub.textContent += " Note: right now you're not saving anything each month — freeing up some surplus in steps 1–2 helps a lot.";
+    }
+
+    drawChart(exp, poor, good, s);
     renderWhatif();
+    renderAdvancedNote(cf);
   }
 
   function setStatus(ok, text) { el.status.className = "status" + (ok ? "" : " warn"); el.statusText.textContent = text; }
 
-  /* ---------- chart: single savings area toward the goal line ---------- */
-  function drawChart(p) {
-    var W = 500, H = 180, padL = 4, padR = 4, padT = 10, padB = 4;
-    var iw = W - padL - padR, ih = H - padT - padB;
-    var pts = p.series, n = pts.length;
-    if (n < 2) { el.chart.innerHTML = ""; el.chartX.innerHTML = ""; return; }
-    var maxBal = 0; pts.forEach(function (d) { if (d.balance > maxBal) maxBal = d.balance; });
-    var top = Math.max(maxBal, p.needed) * 1.08 || 1;
-    function x(i) { return padL + (iw * i) / (n - 1); }
-    function y(v) { return padT + ih - (ih * v) / top; }
-    var base = padT + ih;
-
-    var line = pts.map(function (d, i) { return x(i) + "," + y(d.balance); });
-    var area = "M " + padL + "," + base + " L " + line.join(" L ") + " L " + x(n - 1) + "," + base + " Z";
-    var stroke = "M " + line.join(" L ");
-    var ty = y(p.needed);
-    var showTarget = p.needed > 0 && p.needed <= top;
-
-    el.chart.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Your retirement savings growing toward your goal">'
-      + '<path d="' + area + '" fill="var(--savings)" opacity="0.16"/>'
-      + '<path d="' + stroke + '" fill="none" stroke="var(--savings)" stroke-width="2.5"/>'
-      + (showTarget ? '<line x1="' + padL + '" y1="' + ty + '" x2="' + (W - padR) + '" y2="' + ty + '" stroke="var(--target)" stroke-width="2" stroke-dasharray="6 5"/>' : '')
-      + '</svg>';
-    var midYear = THIS_YEAR + Math.round(p.years / 2);
-    el.chartX.innerHTML = '<span>' + THIS_YEAR + '</span><span>' + midYear + '</span><span>' + state.settings.targetYear + '</span>';
+  function renderDebtNote(cf, debtStart, retireYear) {
+    if (!state.debts.length) { el.debtNote.textContent = ""; return; }
+    if (debtStart <= 0) { el.debtNote.innerHTML = "<b>No debt.</b> Nicely done."; return; }
+    // quick payoff scan using the expected real rates
+    var liabs = state.debts.map(function (d) { return { bal: num(d.balance), rate: realMonthly(d.apr), payment: num(d.payment), paidOff: num(d.balance) <= 0 }; });
+    var freeMonth = null;
+    for (var m = 1; m <= 12 * 60; m++) {
+      var extra = cf.debtMo;
+      liabs.forEach(function (l) { if (l.paidOff) return; l.bal *= (1 + l.rate); if (l.payment >= l.bal) { extra += l.payment - l.bal; l.bal = 0; l.paidOff = true; } else l.bal -= l.payment; });
+      liabs.filter(function (l) { return !l.paidOff; }).sort(function (a, b) { return b.rate - a.rate; })
+           .forEach(function (l) { if (extra <= 0) return; var ap = Math.min(extra, l.bal); l.bal -= ap; extra -= ap; if (l.bal <= 0) l.paidOff = true; });
+      if (liabs.every(function (l) { return l.paidOff; })) { freeMonth = m; break; }
+    }
+    if (freeMonth) {
+      el.debtNote.innerHTML = "You owe <b>" + fmtMoney(debtStart) + "</b> today — debt-free by <b>" + (THIS_YEAR + Math.ceil(freeMonth / 12))
+        + "</b>" + (cf.debtMo > 0 ? " with your " + fmtMoney(cf.debtMo) + "/mo extra" : "") + ". After that, those payments go toward savings.";
+    } else {
+      el.debtNote.innerHTML = "You owe <b>" + fmtMoney(debtStart) + "</b> today.";
+    }
   }
 
-  /* ---------- "what if" scenarios (non-destructive) ---------- */
-  var SCENARIOS = [
-    { label: "Retire 3 years earlier", yearsDelta: -3 },
-    { label: "Retire 3 years later", yearsDelta: 3 },
-    { label: "Save $300 more a month", extraMonthly: 300 },
-    { label: "If investments grow slower", rateDelta: -2 },
-  ];
+  function renderAdvancedNote(cf) {
+    var s = state.settings;
+    var realR = realAnnual(s.rate) * 100;
+    el.realNote.textContent = "After " + s.inflation + "% inflation, investments grow about " + realR.toFixed(1) + "% a year in today's money — that's what the projection uses.";
+    el.investPctLbl.textContent = Math.round(num(s.investPct, 85)) + "%";
+    el.splitNote.textContent = cf.surplusMo <= 0 ? "No surplus to allocate yet."
+      : "≈ " + fmtMoney(cf.debtMo) + "/mo extra to debt · " + fmtMoney(cf.investMo) + "/mo invested · " + fmtMoney(cf.cashMo) + "/mo to cash.";
+  }
 
+  /* ---------- what-if (durability framing) ---------- */
+  var SCENARIOS = [
+    { label: "Retire 2 years earlier", retireDelta: -2 },
+    { label: "Retire 2 years later", retireDelta: 2 },
+    { label: "Spend $10k less a year", spendDelta: -10000 },
+    { label: "If markets do poorly", rateDelta: -2 },
+  ];
   function renderWhatif() {
     var s = state.settings;
     var base = cashflow();
     el.whatifList.innerHTML = SCENARIOS.map(function (sc) {
-      var cf2 = base, detail = "", year = s.targetYear, savedRate = s.rate;
-      if (sc.extraMonthly) {
-        cf2 = Object.assign({}, base, {
-          investMo: base.investMo + sc.extraMonthly * base.pct,
-          cashMo: base.cashMo + sc.extraMonthly * (1 - base.pct),
-          saveMo: base.saveMo + sc.extraMonthly,
-        });
-      }
-      if (sc.yearsDelta) { year = s.targetYear + sc.yearsDelta; detail = String(year); }
+      var savedRetire = s.retireAge, savedSpend = s.targetIncome, savedRate = s.rate, detail = "";
+      if (sc.retireDelta) { s.retireAge = savedRetire + sc.retireDelta; detail = "age " + s.retireAge; }
+      if (sc.spendDelta) { s.targetIncome = Math.max(0, savedSpend + sc.spendDelta); detail = fmtMoney(s.targetIncome) + "/yr"; }
+      if (sc.rateDelta) s.rate = savedRate + sc.rateDelta;
 
       var out, cls, pill;
-      if (year <= THIS_YEAR) {
-        out = "—"; cls = "mute"; pill = "too soon";
+      if (!(s.retireAge > s.currentAge && s.planThroughAge > s.retireAge)) {
+        out = "—"; cls = "mute"; pill = "n/a";
       } else {
-        if (sc.rateDelta) s.rate = savedRate + sc.rateDelta;   // temporary tweak for the sim
-        var p = project(cf2, { targetYear: year });
-        if (sc.rateDelta) s.rate = savedRate;                  // restore immediately
-        var meets = p.projPortfolio >= p.needed;
-        out = fmtMoney(p.projIncome) + "<em>/yr</em>";
-        cls = meets ? "good" : "warn";
-        pill = meets ? "Meets goal" : "Falls short";
+        var sim = simulate(base, s.rate);
+        var ok = sim.lastsToEnd;
+        out = ok ? "to " + s.planThroughAge + "+" : "to age " + sim.runOutAge;
+        cls = ok ? "good" : "warn"; pill = ok ? "Lasts" : "Runs short";
       }
-      return '<div class="wi-row"><span class="wi-label">' + escapeHtml(sc.label)
-        + (detail ? ' <em>(' + detail + ')</em>' : '') + '</span>'
-        + '<span class="wi-out"><span class="wi-income">' + out + '</span>'
-        + '<span class="wi-pill ' + cls + '">' + pill + '</span></span></div>';
+      s.retireAge = savedRetire; s.targetIncome = savedSpend; s.rate = savedRate; // restore
+
+      return '<div class="wi-row"><span class="wi-label">' + escapeHtml(sc.label) + (detail ? ' <em>(' + detail + ')</em>' : '')
+        + '</span><span class="wi-out"><span class="wi-income">' + out + '</span><span class="wi-pill ' + cls + '">' + pill + '</span></span></div>';
     }).join("");
+  }
+
+  /* ---------- chart: whole-life balance with a good/poor band ---------- */
+  function drawChart(exp, poor, good, s) {
+    var W = 500, H = 190, padL = 4, padR = 4, padT = 10, padB = 4;
+    var iw = W - padL - padR, ih = H - padT - padB;
+    var e = exp.series, n = e.length;
+    if (n < 2) { el.chart.innerHTML = ""; el.chartX.innerHTML = ""; return; }
+    var top = 0;
+    good.series.forEach(function (d) { if (d.bal > top) top = d.bal; });
+    e.forEach(function (d) { if (d.bal > top) top = d.bal; });
+    top = top * 1.06 || 1;
+    function x(i) { return padL + (iw * i) / (n - 1); }
+    function y(v) { return padT + ih - (ih * v) / top; }
+
+    // band between good (upper) and poor (lower)
+    var up = good.series.map(function (d, i) { return x(i) + "," + y(d.bal); });
+    var band = "M " + up.join(" L ");
+    for (var i = n - 1; i >= 0; i--) band += " L " + x(i) + "," + y((poor.series[i] || { bal: 0 }).bal);
+    band += " Z";
+    var line = "M " + e.map(function (d, i) { return x(i) + "," + y(d.bal); }).join(" L ");
+
+    // retirement marker
+    var retIdx = 0;
+    for (var k = 0; k < n; k++) { if (e[k].age >= s.retireAge) { retIdx = k; break; } }
+    var rx = x(retIdx);
+
+    el.chart.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Your savings over your life, with a good-to-poor market range">'
+      + '<path d="' + band + '" fill="var(--savings)" opacity="0.14"/>'
+      + '<line x1="' + rx + '" y1="' + padT + '" x2="' + rx + '" y2="' + (padT + ih) + '" stroke="var(--faint)" stroke-width="1" stroke-dasharray="3 4"/>'
+      + '<path d="' + line + '" fill="none" stroke="var(--savings)" stroke-width="2.5"/>'
+      + '</svg>';
+    el.chartX.innerHTML = '<span>age ' + Math.round(s.currentAge) + '</span><span>retire ' + Math.round(s.retireAge) + '</span><span>' + Math.round(s.planThroughAge) + '</span>';
   }
 
   /* ---------- editable lists ---------- */
@@ -384,6 +425,23 @@
       container.appendChild(row);
     });
     wireRows(container, arr, ["amount"], function () { renderLineList(container, arr); });
+  }
+
+  function renderRet() {
+    var c = el.retList;
+    if (!state.retIncomes.length) { c.innerHTML = '<div class="acct-empty">None? Leave empty. Most people add Social Security here.</div>'; return; }
+    c.innerHTML = "";
+    state.retIncomes.forEach(function (r, idx) {
+      var row = document.createElement("div");
+      row.className = "ret-row";
+      row.innerHTML =
+        '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(r.name) + '" placeholder="e.g. Social Security" autocomplete="off" /></span>'
+      + '<span class="cell-amt"><input type="number" inputmode="decimal" step="500" data-i="' + idx + '" data-f="amount" value="' + r.amount + '" /></span>'
+      + '<span class="cell-age"><input type="number" inputmode="numeric" step="1" data-i="' + idx + '" data-f="startAge" value="' + r.startAge + '" /></span>'
+      + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove">×</button></span>';
+      c.appendChild(row);
+    });
+    wireRows(c, state.retIncomes, ["amount", "startAge"], renderRet);
   }
 
   function renderAccounts() {
@@ -434,10 +492,7 @@
       });
     });
     container.querySelectorAll(".del-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        arr.splice(+btn.getAttribute("data-del"), 1);
-        save(); reRender(); renderAll();
-      });
+      btn.addEventListener("click", function () { arr.splice(+btn.getAttribute("data-del"), 1); save(); reRender(); renderAll(); });
     });
   }
 
@@ -445,57 +500,101 @@
   function syncSettingsToForm() {
     var s = state.settings;
     el.household.value = s.household;
-    el.targetYear.value = s.targetYear;
+    el.currentAge.value = s.currentAge;
+    el.retireAge.value = s.retireAge;
+    el.planThroughAge.value = s.planThroughAge;
     el.targetIncome.value = s.targetIncome;
     el.rate.value = s.rate;
     el.inflation.value = s.inflation;
     el.cashYield.value = s.cashYield;
-    el.withdrawal.value = s.withdrawal;
     el.investPct.value = s.investPct;
     el.debtPaydown.value = s.debtPaydown;
     el.variable.value = state.variable;
   }
   function wire() {
     el.household.addEventListener("input", function () { state.settings.household = el.household.value; save(); renderAll(); });
-    [["targetYear", "targetYear"], ["targetIncome", "targetIncome"], ["rate", "rate"], ["inflation", "inflation"],
-     ["cashYield", "cashYield"], ["withdrawal", "withdrawal"], ["investPct", "investPct"], ["debtPaydown", "debtPaydown"]]
-      .forEach(function (pair) {
-        el[pair[0]].addEventListener("input", function () { state.settings[pair[1]] = num(el[pair[0]].value); save(); renderAll(); });
-      });
+    [["currentAge", "currentAge"], ["retireAge", "retireAge"], ["planThroughAge", "planThroughAge"], ["targetIncome", "targetIncome"],
+     ["rate", "rate"], ["inflation", "inflation"], ["cashYield", "cashYield"], ["investPct", "investPct"], ["debtPaydown", "debtPaydown"]]
+      .forEach(function (pair) { el[pair[0]].addEventListener("input", function () { state.settings[pair[1]] = num(el[pair[0]].value); save(); renderAll(); }); });
     el.variable.addEventListener("input", function () { state.variable = num(el.variable.value); save(); renderAll(); });
     el.addIncome.addEventListener("click", function () { state.incomes.push({ id: "i" + (++idSeq), name: "", amount: 0, freq: "mo" }); save(); renderLineList(el.incomeList, state.incomes); renderAll(); });
     el.addFixed.addEventListener("click", function () { state.fixed.push({ id: "f" + (++idSeq), name: "", amount: 0, freq: "mo" }); save(); renderLineList(el.fixedList, state.fixed); renderAll(); });
+    el.addRet.addEventListener("click", function () { state.retIncomes.push({ id: "r" + (++idSeq), name: "", amount: 0, startAge: state.settings.retireAge }); save(); renderRet(); renderAll(); });
     el.addAcct.addEventListener("click", function () { state.accounts.push({ id: "a" + (++idSeq), name: "", owner: "Joint", type: "investment", balance: 0 }); save(); renderAccounts(); renderAll(); });
     el.addDebt.addEventListener("click", function () { state.debts.push({ id: "d" + (++idSeq), name: "", balance: 0, apr: 6, payment: 0 }); save(); renderDebts(); renderAll(); });
     el.resetBtn.addEventListener("click", function () {
       if (!window.confirm("Reset everything back to the example household? This clears the numbers you've entered.")) return;
-      state = defaults();
-      save();
-      syncSettingsToForm();
-      renderLineList(el.incomeList, state.incomes);
-      renderLineList(el.fixedList, state.fixed);
-      renderAccounts();
-      renderDebts();
-      renderAll();
+      state = defaults(); save(); syncSettingsToForm(); renderAllLists(); renderAll();
     });
+
+    // data: copy link / download / load
+    el.copyLink.addEventListener("click", function () {
+      var link = location.origin + location.pathname + "#d=" + encodeData();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(function () { flash("Link copied — paste it anywhere to open your plan on another device."); },
+          function () { promptLink(link); });
+      } else { promptLink(link); }
+    });
+    el.downloadData.addEventListener("click", function () {
+      try {
+        var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+        var url = URL.createObjectURL(blob), a = document.createElement("a");
+        a.href = url; a.download = "retirement-plan.json"; document.body.appendChild(a); a.click();
+        document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        flash("Saved a copy to your device.");
+      } catch (e) { flash("Couldn't download here — try the shareable link instead."); }
+    });
+    el.loadData.addEventListener("change", function () {
+      var file = el.loadData.files && el.loadData.files[0]; if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () { if (importData(reader.result)) { syncSettingsToForm(); renderAllLists(); renderAll(); flash("Loaded your saved plan."); } else flash("That file didn't look like a saved plan."); el.loadData.value = ""; };
+      reader.readAsText(file);
+    });
+  }
+  function flash(msg) { el.dataMsg.textContent = msg; }
+  function promptLink(link) { try { window.prompt("Copy this link to open your plan elsewhere:", link); } catch (e) { flash("Copy failed."); } }
+  function renderAllLists() {
+    renderLineList(el.incomeList, state.incomes);
+    renderLineList(el.fixedList, state.fixed);
+    renderRet(); renderAccounts(); renderDebts();
+  }
+
+  /* ---------- data encode / decode ---------- */
+  function encodeData() { try { return btoa(unescape(encodeURIComponent(JSON.stringify(state)))); } catch (e) { return ""; } }
+  function importData(text) {
+    try {
+      var obj = typeof text === "string" && text.charAt(0) !== "{" ? JSON.parse(decodeURIComponent(escape(atob(text)))) : JSON.parse(text);
+      if (!obj || !obj.settings || !Array.isArray(obj.accounts)) return false;
+      state = mergeState(obj); save(); return true;
+    } catch (e) { return false; }
+  }
+  function mergeState(raw) {
+    var d = defaults();
+    return {
+      settings: Object.assign(d.settings, raw.settings),
+      incomes: Array.isArray(raw.incomes) ? raw.incomes : d.incomes,
+      fixed: Array.isArray(raw.fixed) ? raw.fixed : d.fixed,
+      variable: raw.variable != null ? raw.variable : d.variable,
+      accounts: raw.accounts,
+      debts: Array.isArray(raw.debts) ? raw.debts : d.debts,
+      retIncomes: Array.isArray(raw.retIncomes) ? raw.retIncomes : d.retIncomes,
+    };
   }
 
   /* ---------- persistence ---------- */
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
   function load() {
+    // a shared link wins over local storage
+    if (location.hash.indexOf("#d=") === 0) {
+      if (importData(location.hash.slice(3))) {
+        try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+        return;
+      }
+    }
     var raw = null;
     try { raw = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) {}
-    var d = defaults();
-    if (raw && raw.settings && Array.isArray(raw.accounts)) {
-      state = {
-        settings: Object.assign(d.settings, raw.settings),
-        incomes: Array.isArray(raw.incomes) ? raw.incomes : d.incomes,
-        fixed: Array.isArray(raw.fixed) ? raw.fixed : d.fixed,
-        variable: raw.variable != null ? raw.variable : d.variable,
-        accounts: raw.accounts,
-        debts: Array.isArray(raw.debts) ? raw.debts : d.debts,
-      };
-    } else { state = d; }
+    if (raw && raw.settings && Array.isArray(raw.accounts)) state = mergeState(raw);
+    else state = defaults();
   }
 
   /* ---------- theme ---------- */
@@ -513,8 +612,7 @@
   }
   el.themeToggle.addEventListener("click", function () {
     var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    applyTheme(next);
-    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+    applyTheme(next); try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
   });
 
   /* ---------- boot ---------- */
@@ -522,9 +620,6 @@
   load();
   syncSettingsToForm();
   wire();
-  renderLineList(el.incomeList, state.incomes);
-  renderLineList(el.fixedList, state.fixed);
-  renderAccounts();
-  renderDebts();
+  renderAllLists();
   renderAll();
 })();
