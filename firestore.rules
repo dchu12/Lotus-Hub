@@ -46,12 +46,12 @@ service cloud.firestore {
     match /sessions/{sessionId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.organizerUid == request.auth.uid;
-      // The organizer can edit anything; everyone else may only touch the RSVP
-      // bookkeeping fields (attendeeCount/status) that join/leave transactions set.
+      // The organizer can edit anything (including cancelling); everyone else may
+      // only touch attendeeCount, which join/leave transactions maintain.
       allow update: if signedIn() && (
         resource.data.organizerUid == request.auth.uid
         || request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['attendeeCount', 'status'])
+             .hasOnly(['attendeeCount'])
       );
       allow delete: if signedIn() && resource.data.organizerUid == request.auth.uid;
 

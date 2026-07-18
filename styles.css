@@ -696,3 +696,12 @@ a.drawer-item { text-decoration: none; color: var(--ink); }
 .btn-connect.is-accept, .va-connect.is-accept { background: #1a7f43; color: #fff; }
 .va-connect.is-requested { background: #fff; color: var(--muted); border: 1.5px solid var(--line-strong); }
 .btn-connect:disabled, .va-connect:disabled { cursor: default; opacity: 1; }
+
+/* session filter + waitlist in roster */
+.session-filter { margin-bottom: 2px; }
+.roster-divider {
+  list-style: none; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 9px 0 3px; margin-top: 6px; border-top: 1px dashed var(--line-strong);
+}
+.roster-wait { font-size: 0.72rem; font-weight: 800; color: var(--muted); min-width: 20px; text-align: center; }

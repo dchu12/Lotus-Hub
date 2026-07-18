@@ -26,9 +26,11 @@
     viewingPlayerUid: null, // which player's profile is open (visitor view)
     playerBackView: "discover", // where "‹ Back" returns from a player view
     scoresSessionId: null, // which session's scores view is open
+    editingSession: null, // session being edited (Host form in edit mode)
+    sessionFilter: "all", // "all" | "hosting"
     _onboardDone: false, // first-run onboarding shown/dismissed this session
     connections: [], // my connection docs (pending/accepted)
-    unsub: { sessions: null, profile: null, coaches: null, scores: null, players: null, connections: null, rank: null },
+    unsub: { sessions: null, profile: null, coaches: null, scores: null, players: null, connections: null, rank: null, cards: [] },
   };
 
   // ---- helpers ----------------------------------------------------------
@@ -318,6 +320,7 @@
       state.unsub.rank();
       state.unsub.rank = null;
     }
+    if (state.view !== "discover") clearCardSubs();
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
     var isPlay = state.view === "discover" || state.view === "create" || state.view === "player-view" || state.view === "scores";
     var isProfile = state.view === "profile" || state.view === "profile-edit";
@@ -598,38 +601,80 @@
     }
   }
 
+  // Stop all per-card roster listeners (called when the list re-renders / we
+  // leave the Play view).
+  function clearCardSubs() {
+    (state.unsub.cards || []).forEach(function (fn) { try { fn(); } catch (e) {} });
+    state.unsub.cards = [];
+  }
+  // Split an ordered roster into confirmed (within capacity) and waitlist.
+  function rosterSplit(list, capacity) {
+    var cap = capacity || 8;
+    return { confirmed: list.slice(0, cap), waitlist: list.slice(cap) };
+  }
+
   function renderDiscover() {
     main.innerHTML = "";
+    clearCardSubs();
+    var me = LH.currentUser();
     var wrap = el('<section class="stack"></section>');
-    var head = el(
-      '<div class="view-head"><h2>Open Play</h2>' +
-        '<p class="muted">Upcoming sessions you can join.</p></div>'
+    wrap.appendChild(
+      el('<div class="view-head"><h2>Open Play</h2><p class="muted">Upcoming sessions you can join.</p></div>')
     );
-    wrap.appendChild(head);
 
     var hostBtn = el('<button class="btn-primary" type="button">＋ Host an open play</button>');
     hostBtn.addEventListener("click", function () {
+      state.editingSession = null;
       state.view = "create";
       renderSignedIn();
     });
     wrap.appendChild(hostBtn);
 
-    if (!state.sessions.length) {
+    // Filter: all upcoming vs. only ones I'm hosting.
+    var hostingCount = state.sessions.filter(function (s) { return me && s.organizerUid === me.uid; }).length;
+    if (hostingCount) {
+      var seg = el(
+        '<div class="segmented session-filter" role="group" aria-label="Filter sessions">' +
+          '<button type="button" class="seg' + (state.sessionFilter === "all" ? " active" : "") + '" data-f="all">All upcoming</button>' +
+          '<button type="button" class="seg' + (state.sessionFilter === "hosting" ? " active" : "") + '" data-f="hosting">Hosting (' + hostingCount + ")</button>" +
+          "</div>"
+      );
+      seg.addEventListener("click", function (e) {
+        var b = e.target.closest(".seg");
+        if (!b) return;
+        state.sessionFilter = b.dataset.f;
+        renderDiscover();
+      });
+      wrap.appendChild(seg);
+    } else if (state.sessionFilter === "hosting") {
+      state.sessionFilter = "all";
+    }
+
+    var list = state.sessions.filter(function (s) {
+      return state.sessionFilter !== "hosting" || (me && s.organizerUid === me.uid);
+    });
+
+    if (!list.length) {
       wrap.appendChild(
         el(
-          '<div class="empty">No upcoming sessions yet. ' +
-            "Tap <strong>Host an open play</strong> above to create the first one.</div>"
+          '<div class="empty">' +
+            (state.sessionFilter === "hosting"
+              ? "You're not hosting any upcoming sessions."
+              : "No upcoming sessions yet. Tap <strong>Host an open play</strong> above to create the first one.") +
+            "</div>"
         )
       );
     }
-    state.sessions.forEach(function (s) {
-      wrap.appendChild(sessionCard(s));
+    list.forEach(function (s) {
+      wrap.appendChild(sessionCard(s, state.unsub.cards));
     });
     main.appendChild(wrap);
   }
 
-  function sessionCard(s) {
-    var spots = Math.max(0, (s.capacity || 8) - (s.attendeeCount || 0));
+  function sessionCard(s, subs) {
+    var me = LH.currentUser();
+    var isOrganizer = !!(me && s.organizerUid === me.uid);
+    var cap = s.capacity || 8;
     var card = el(
       '<article class="card session-card">' +
         '<div class="session-top">' +
@@ -637,20 +682,18 @@
         '<p class="muted">' + esc(s.venueName || "TBD") + " · " + fmtWhen(s.startAt) + "</p></div>" +
         '<span class="pill">' + esc(skillLabel(s)) + "</span>" +
         "</div>" +
-        '<div class="session-meta">' +
-        "<span>👥 " + (s.attendeeCount || 0) + "/" + (s.capacity || 8) + "</span>" +
-        "<span>🎾 " + (s.courtCount || 1) + " court" + ((s.courtCount || 1) > 1 ? "s" : "") + "</span>" +
-        "<span>" + (spots > 0 ? spots + " spots left" : "Waitlist only") + "</span>" +
-        "</div>" +
+        '<div class="session-meta"></div>' +
         '<ul class="roster" hidden></ul>' +
         '<div class="session-actions">' +
         '<button class="btn-ghost btn-roster">Show players</button>' +
         '<button class="btn-ghost btn-scores">🏓 Scores</button>' +
+        (isOrganizer ? '<button class="btn-ghost btn-edit">✎ Manage</button>' : "") +
         '<button class="btn-primary btn-rsvp">Join</button>' +
         "</div>" +
         "</article>"
     );
 
+    var metaEl = card.querySelector(".session-meta");
     var rosterEl = card.querySelector(".roster");
     var rosterBtn = card.querySelector(".btn-roster");
     var rsvpBtn = card.querySelector(".btn-rsvp");
@@ -659,24 +702,103 @@
       state.view = "scores";
       renderSignedIn();
     });
+    var editBtn = card.querySelector(".btn-edit");
+    if (editBtn) {
+      editBtn.addEventListener("click", function () {
+        state.editingSession = s;
+        state.view = "create";
+        renderSignedIn();
+      });
+    }
 
-    // Live roster.
     var rosterOpen = false;
-    var unsubRoster = null;
+    var lastSplit = { confirmed: [], waitlist: [] };
+
+    function drawRoster() {
+      if (!rosterOpen) return;
+      var total = lastSplit.confirmed.length + lastSplit.waitlist.length;
+      if (!total) {
+        rosterEl.innerHTML = '<li class="muted">No one yet — be first!</li>';
+        return;
+      }
+      var html = lastSplit.confirmed.map(function (r) { return rosterItem(r); }).join("");
+      if (lastSplit.waitlist.length) {
+        html += '<li class="roster-divider">Waitlist</li>';
+        html += lastSplit.waitlist.map(function (r, i) { return rosterItem(r, i + 1); }).join("");
+      }
+      rosterEl.innerHTML = html;
+    }
+
+    function updateButton() {
+      var uid = me && me.uid;
+      var all = lastSplit.confirmed.concat(lastSplit.waitlist);
+      var idx = -1;
+      for (var i = 0; i < all.length; i++) { if (all[i].uid === uid) { idx = i; break; } }
+      var joined = idx > -1;
+      var confirmed = joined && idx < cap;
+      if (confirmed) {
+        rsvpBtn.textContent = "Leave";
+        rsvpBtn.classList.add("is-joined");
+      } else if (joined) {
+        rsvpBtn.textContent = "Waitlist #" + (idx - cap + 1) + " — leave";
+        rsvpBtn.classList.add("is-joined");
+      } else {
+        var spotsLeft = Math.max(0, cap - lastSplit.confirmed.length);
+        rsvpBtn.textContent = spotsLeft > 0 ? "Join" : "Join waitlist";
+        rsvpBtn.classList.remove("is-joined");
+      }
+      rsvpBtn.onclick = function () {
+        rsvpBtn.disabled = true;
+        var action = joined
+          ? LH.leave(s.id)
+          : LH.join(s.id, {
+              displayName: (state.profile && state.profile.displayName) || "Player",
+              rating: ratingOf(state.profile),
+              photoDataUrl: state.profile ? state.profile.photoDataUrl || state.profile.photoURL : null,
+              skillLevel: state.profile ? state.profile.skillLevel : null,
+              heritageFlag: heritageFlagOf(state.profile) || null,
+            });
+        action
+          .then(function (res) {
+            if (!joined) {
+              track("session_joined", { status: res || "going" });
+              if (res === "waitlist") toast("Session full — you're on the waitlist.");
+            }
+          })
+          .catch(function (err) { toast(err.message || "Something went wrong."); })
+          .finally(function () { rsvpBtn.disabled = false; });
+      };
+    }
+
+    function renderMeta() {
+      var confirmedCount = lastSplit.confirmed.length;
+      var waitCount = lastSplit.waitlist.length;
+      var spotsLeft = Math.max(0, cap - confirmedCount);
+      var courts = s.courtCount || 1;
+      metaEl.innerHTML =
+        "<span>👥 " + confirmedCount + "/" + cap + "</span>" +
+        "<span>🎾 " + courts + " court" + (courts > 1 ? "s" : "") + "</span>" +
+        "<span>" + (spotsLeft > 0 ? spotsLeft + " spots left" : waitCount > 0 ? waitCount + " waitlisted" : "Full") + "</span>";
+    }
+
+    // One live subscription drives the count, the button, and the roster.
+    var unsub = LH.watchRsvps(s.id, function (listRsvps) {
+      lastSplit = rosterSplit(listRsvps, cap);
+      renderMeta();
+      updateButton();
+      drawRoster();
+    });
+    if (subs) subs.push(unsub);
+    // seed meta before first snapshot
+    renderMeta();
+    updateButton();
+
     rosterBtn.addEventListener("click", function () {
       rosterOpen = !rosterOpen;
       rosterEl.hidden = !rosterOpen;
       rosterBtn.textContent = rosterOpen ? "Hide players" : "Show players";
-      if (rosterOpen && !unsubRoster) {
-        unsubRoster = LH.watchRsvps(s.id, function (list) {
-          rosterEl.innerHTML = list.length
-            ? list.map(rosterItem).join("")
-            : '<li class="muted">No one yet — be first!</li>';
-        });
-      }
+      drawRoster();
     });
-
-    // Tap a player in the roster to open their profile.
     rosterEl.addEventListener("click", function (e) {
       var li = e.target.closest("[data-uid]");
       if (!li || !li.dataset.uid) return;
@@ -684,44 +806,6 @@
       state.viewingPlayerUid = li.dataset.uid;
       state.view = "player-view";
       renderSignedIn();
-    });
-
-    // My RSVP state drives the button.
-    LH.myRsvpStatus(s.id, function (status) {
-      if (status === "going") {
-        rsvpBtn.textContent = "Leave";
-        rsvpBtn.classList.add("is-joined");
-      } else if (status === "waitlist") {
-        rsvpBtn.textContent = "On waitlist — leave";
-        rsvpBtn.classList.add("is-joined");
-      } else {
-        rsvpBtn.textContent = spots > 0 ? "Join" : "Join waitlist";
-        rsvpBtn.classList.remove("is-joined");
-      }
-      rsvpBtn.onclick = function () {
-        rsvpBtn.disabled = true;
-        var isJoin = !(status === "going" || status === "waitlist");
-        var action = isJoin
-          ? LH.join(s.id, {
-              displayName: (state.profile && state.profile.displayName) || "Player",
-              rating: ratingOf(state.profile),
-              photoDataUrl: state.profile ? state.profile.photoDataUrl || state.profile.photoURL : null,
-              skillLevel: state.profile ? state.profile.skillLevel : null,
-              heritageFlag: heritageFlagOf(state.profile) || null,
-            })
-          : LH.leave(s.id);
-        action
-          .then(function (res) {
-            if (isJoin) track("session_joined", { status: res || "going" });
-            if (res === "waitlist") toast("Session full — you're on the waitlist.");
-          })
-          .catch(function (err) {
-            toast(err.message || "Something went wrong.");
-          })
-          .finally(function () {
-            rsvpBtn.disabled = false;
-          });
-      };
     });
 
     return card;
@@ -919,38 +1003,50 @@
       .catch(function () {});
   }
 
+  // Format a Timestamp/Date as a value for <input type="datetime-local">.
+  function toLocalInput(ts) {
+    var d = ts && ts.toDate ? ts.toDate() : ts ? new Date(ts) : null;
+    if (!d || isNaN(d.getTime())) return "";
+    var pad = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
   function renderCreate() {
     main.innerHTML = "";
+    var editing = state.editingSession; // session object or null
+    var e0 = editing || {};
     var wrap = el('<section class="stack"></section>');
     var back = el('<div class="view-head"><button class="link-back" id="back" type="button">‹ Play</button></div>');
     wrap.appendChild(back);
     back.querySelector("#back").addEventListener("click", function () {
+      state.editingSession = null;
       state.view = "discover";
       renderSignedIn();
     });
     var card = el(
       '<section class="card">' +
-        "<h2>Host an open play</h2>" +
+        "<h2>" + (editing ? "Manage session" : "Host an open play") + "</h2>" +
         '<form id="create-form" class="stack">' +
         '<div class="field"><label>Title</label>' +
-        '<input id="c-title" type="text" placeholder="Saturday morning doubles" required /></div>' +
+        '<input id="c-title" type="text" placeholder="Saturday morning doubles" value="' + esc(e0.title || "") + '" required /></div>' +
         '<div class="field"><label>Venue</label>' +
-        '<input id="c-venue" type="text" placeholder="Riverside Courts" required /></div>' +
+        '<input id="c-venue" type="text" placeholder="Riverside Courts" value="' + esc(e0.venueName || "") + '" required /></div>' +
         '<div class="field"><label>Date &amp; time</label>' +
-        '<input id="c-when" type="datetime-local" required /></div>' +
+        '<input id="c-when" type="datetime-local" value="' + esc(editing ? toLocalInput(e0.startAt) : "") + '" required /></div>' +
         '<div class="row">' +
         '<div class="field"><label>Courts</label>' +
-        '<input id="c-courts" type="number" min="1" value="2" /></div>' +
+        '<input id="c-courts" type="number" min="1" value="' + esc(editing ? e0.courtCount || 1 : 2) + '" /></div>' +
         '<div class="field"><label>Capacity</label>' +
-        '<input id="c-cap" type="number" min="2" value="8" /></div>' +
+        '<input id="c-cap" type="number" min="2" value="' + esc(editing ? e0.capacity || 8 : 8) + '" /></div>' +
         "</div>" +
         '<div class="row">' +
         '<div class="field"><label>Min DUPR</label>' +
-        '<input id="c-min" type="number" step="0.1" min="2" max="8" placeholder="any" /></div>' +
+        '<input id="c-min" type="number" step="0.1" min="2" max="8" placeholder="any" value="' + esc(e0.skillMin != null ? e0.skillMin : "") + '" /></div>' +
         '<div class="field"><label>Max DUPR</label>' +
-        '<input id="c-max" type="number" step="0.1" min="2" max="8" placeholder="any" /></div>' +
+        '<input id="c-max" type="number" step="0.1" min="2" max="8" placeholder="any" value="' + esc(e0.skillMax != null ? e0.skillMax : "") + '" /></div>' +
         "</div>" +
-        '<button class="btn-primary" type="submit">Create session</button>' +
+        '<button class="btn-primary" type="submit">' + (editing ? "Save changes" : "Create session") + "</button>" +
+        (editing ? '<button class="btn-signout" id="cancel-session" type="button">Cancel this session</button>' : "") +
         "</form></section>"
     );
     wrap.appendChild(card);
@@ -962,7 +1058,7 @@
       if (!whenVal) return toast("Pick a date and time.");
       var min = parseFloat(card.querySelector("#c-min").value);
       var max = parseFloat(card.querySelector("#c-max").value);
-      LH.createSession({
+      var data = {
         title: card.querySelector("#c-title").value.trim(),
         venueName: card.querySelector("#c-venue").value.trim(),
         startAt: new Date(whenVal),
@@ -971,17 +1067,35 @@
         skillMin: isNaN(min) ? null : min,
         skillMax: isNaN(max) ? null : max,
         organizerName: (state.profile && state.profile.displayName) || undefined,
-      })
+      };
+      var action = editing ? LH.updateSession(editing.id, data) : LH.createSession(data);
+      action
         .then(function () {
-          track("session_created");
-          toast("Session created!");
+          if (!editing) track("session_created");
+          state.editingSession = null;
+          toast(editing ? "Session updated." : "Session created!");
           state.view = "discover";
           renderSignedIn();
         })
         .catch(function (err) {
-          toast(err.message || "Could not create session.");
+          toast(err.message || (editing ? "Could not update session." : "Could not create session."));
         });
     });
+
+    var cancelBtn = card.querySelector("#cancel-session");
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        if (!window.confirm("Cancel this session? Players who joined will no longer see it.")) return;
+        LH.cancelSession(editing.id)
+          .then(function () {
+            state.editingSession = null;
+            toast("Session cancelled.");
+            state.view = "discover";
+            renderSignedIn();
+          })
+          .catch(function (err) { toast(err.message || "Couldn't cancel the session."); });
+      });
+    }
   }
 
   // Resize/crop an image File to a square dataURL (keeps Firestore docs small).
@@ -1085,9 +1199,10 @@
     return '<span class="roster-avatar">' + inner + flagBadge(r.heritageFlag) + "</span>";
   }
 
-  function rosterItem(r) {
+  function rosterItem(r, waitPos) {
     return (
       '<li class="roster-item is-clickable" role="button" tabindex="0" data-uid="' + esc(r.uid) + '">' +
+      (waitPos ? '<span class="roster-wait">#' + waitPos + "</span>" : "") +
       miniAvatar(r) +
       '<span class="roster-name">' + esc(r.displayName) + "</span>" +
       (r.skillLevel ? '<span class="roster-skill">' + esc(r.skillLevel) + "</span>" : "") +

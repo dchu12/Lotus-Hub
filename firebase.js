@@ -375,12 +375,15 @@
     return sessionsCol().doc(sessionId).collection("rsvps").doc(uid);
   }
 
+  // All RSVPs for a session, oldest-first. Confirmed vs. waitlist is DERIVED by
+  // the client from this order + the session capacity — so when someone leaves,
+  // everyone behind them shifts up automatically (free waitlist promotion).
   function watchRsvps(sessionId, cb) {
     if (!ready) return function () {};
     return sessionsCol()
       .doc(sessionId)
       .collection("rsvps")
-      .where("status", "==", "going")
+      .orderBy("joinedAt", "asc")
       .onSnapshot(
         function (qs) {
           var out = [];
@@ -406,10 +409,11 @@
         if (!sessSnap.exists) throw new Error("Session no longer exists.");
         var s = sessSnap.data();
         return tx.get(myRsvp).then(function (rsvpSnap) {
-          var already = rsvpSnap.exists && rsvpSnap.data().status === "going";
+          var already = rsvpSnap.exists;
           var count = s.attendeeCount || 0;
-          var full = count >= (s.capacity || 8);
-          var status = already ? "going" : full ? "waitlist" : "going";
+          // As the newest RSVP, my slot is the current total; confirmed if that
+          // is still within capacity.
+          var confirmed = count < (s.capacity || 8);
           tx.set(myRsvp, {
             uid: u.uid,
             displayName: profile.displayName || u.displayName || "Player",
@@ -417,16 +421,10 @@
             photoDataUrl: profile.photoDataUrl || profile.photoURL || null,
             skillLevel: profile.skillLevel || null,
             heritageFlag: profile.heritageFlag || null,
-            status: status,
             joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
           });
-          if (!already && status === "going") {
-            tx.update(sessRef, {
-              attendeeCount: count + 1,
-              status: count + 1 >= (s.capacity || 8) ? "full" : "open",
-            });
-          }
-          return status;
+          if (!already) tx.update(sessRef, { attendeeCount: count + 1 });
+          return already ? "already" : confirmed ? "going" : "waitlist";
         });
       });
     });
@@ -441,17 +439,36 @@
     return db.runTransaction(function (tx) {
       return tx.get(myRsvp).then(function (rsvpSnap) {
         if (!rsvpSnap.exists) return;
-        var wasGoing = rsvpSnap.data().status === "going";
         tx.delete(myRsvp);
-        if (wasGoing) {
-          return tx.get(sessRef).then(function (sessSnap) {
-            if (!sessSnap.exists) return;
-            var count = Math.max(0, (sessSnap.data().attendeeCount || 0) - 1);
-            tx.update(sessRef, { attendeeCount: count, status: "open" });
-          });
-        }
+        return tx.get(sessRef).then(function (sessSnap) {
+          if (!sessSnap.exists) return;
+          var count = Math.max(0, (sessSnap.data().attendeeCount || 0) - 1);
+          tx.update(sessRef, { attendeeCount: count });
+        });
       });
     });
+  }
+
+  // Organizer edits the session's details.
+  function updateSession(sessionId, data) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    if (!auth.currentUser) return Promise.reject(new Error("Sign in first."));
+    return sessionsCol().doc(sessionId).update({
+      title: data.title,
+      venueName: data.venueName,
+      startAt: firebase.firestore.Timestamp.fromDate(data.startAt),
+      courtCount: data.courtCount || 1,
+      capacity: data.capacity || 8,
+      skillMin: data.skillMin != null ? data.skillMin : null,
+      skillMax: data.skillMax != null ? data.skillMax : null,
+    });
+  }
+
+  // Organizer cancels the session (drops it from the upcoming list).
+  function cancelSession(sessionId) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    if (!auth.currentUser) return Promise.reject(new Error("Sign in first."));
+    return sessionsCol().doc(sessionId).update({ status: "cancelled" });
   }
 
   function myRsvpStatus(sessionId, cb) {
@@ -625,6 +642,8 @@
     refreshDuprRating: refreshDuprRating,
     watchUpcomingSessions: watchUpcomingSessions,
     createSession: createSession,
+    updateSession: updateSession,
+    cancelSession: cancelSession,
     watchRsvps: watchRsvps,
     join: join,
     leave: leave,
