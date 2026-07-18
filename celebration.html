@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#fff5f7" />
+<title>Congratulations Jennifer & Dustin! 🎉</title>
+<link rel="icon" type="image/png" href="favicon-64.png" />
+<style>
+  :root{
+    --blush:#ffd9e2;
+    --rose:#e8567f;
+    --rose-deep:#c01f4a;
+    --gold:#f5b301;
+    --gold-soft:#ffe9a8;
+    --cream:#fff8f2;
+    --ink:#3a2028;
+    --muted:#7a5c63;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(160deg,#fff5f7 0%,#fff1e8 42%,#fdeef4 100%);
+    min-height:100dvh;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    position:relative;
+  }
+
+  /* Soft glowing blobs behind everything */
+  .glow{position:fixed;border-radius:50%;filter:blur(70px);opacity:.55;pointer-events:none;z-index:0}
+  .glow.g1{width:46vmin;height:46vmin;background:#ffc2d4;top:-8vmin;left:-6vmin;animation:float1 14s ease-in-out infinite}
+  .glow.g2{width:40vmin;height:40vmin;background:#ffe4a3;bottom:-10vmin;right:-6vmin;animation:float2 17s ease-in-out infinite}
+  .glow.g3{width:34vmin;height:34vmin;background:#ffd0e6;bottom:20vmin;left:8vmin;animation:float1 20s ease-in-out infinite}
+  @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(4vmin,5vmin)}}
+  @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-5vmin,-4vmin)}}
+
+  /* Canvases / layers */
+  #confetti,#petals{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+  #petals{z-index:2}
+
+  .wrap{
+    position:relative;z-index:3;
+    max-width:760px;margin:0 auto;
+    padding:clamp(28px,6vw,64px) clamp(20px,5vw,40px) 80px;
+    text-align:center;
+  }
+
+  /* Entrance animation helper */
+  .reveal{opacity:0;transform:translateY(24px);animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:9px 18px;border-radius:999px;
+    background:rgba(255,255,255,.72);backdrop-filter:blur(8px);
+    border:1px solid rgba(224,86,127,.28);
+    box-shadow:0 6px 18px rgba(192,31,74,.10);
+    font-size:clamp(12px,3.4vw,15px);font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--rose-deep);
+    animation-delay:.05s;
+  }
+
+  .stork{font-size:clamp(52px,15vw,88px);line-height:1;margin:18px 0 6px;display:inline-block;
+    animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards,bob 3.4s ease-in-out 1s infinite;animation-delay:.1s}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}}
+
+  h1{
+    font-size:clamp(40px,11vw,84px);
+    line-height:1.02;font-weight:800;letter-spacing:-.02em;
+    margin:6px 0 4px;animation-delay:.18s;
+  }
+  .names{
+    display:block;
+    background:linear-gradient(100deg,#c01f4a 0%,#e8567f 30%,#f5b301 62%,#e8567f 100%);
+    background-size:220% auto;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:shine 6s linear infinite;
+    padding-bottom:.06em;
+  }
+  @keyframes shine{to{background-position:220% center}}
+
+  .sub{
+    font-size:clamp(17px,4.6vw,24px);font-weight:600;color:var(--rose-deep);
+    margin:10px 0 2px;animation-delay:.26s;
+  }
+  .lead{
+    font-size:clamp(15px,4.2vw,19px);color:var(--muted);line-height:1.6;
+    max-width:52ch;margin:16px auto 0;animation-delay:.34s;
+  }
+
+  .divider{display:flex;align-items:center;justify-content:center;gap:14px;margin:30px auto 26px;
+    max-width:340px;animation-delay:.4s}
+  .divider .line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(224,86,127,.5),transparent)}
+  .divider .dot{font-size:20px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-top:8px}
+  .card{
+    background:rgba(255,255,255,.78);backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.9);
+    border-radius:20px;padding:22px 18px;
+    box-shadow:0 10px 30px rgba(192,31,74,.10);
+    animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards;opacity:0;transform:translateY(24px);
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .card:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(192,31,74,.18)}
+  .card .emo{font-size:34px;display:block;margin-bottom:8px}
+  .card .ct{font-weight:800;font-size:16px;margin-bottom:4px;color:var(--ink)}
+  .card .cd{font-size:13.5px;color:var(--muted);line-height:1.5}
+  .card:nth-child(1){animation-delay:.46s}
+  .card:nth-child(2){animation-delay:.56s}
+  .card:nth-child(3){animation-delay:.66s}
+
+  .note{
+    margin:34px auto 0;max-width:60ch;
+    background:linear-gradient(135deg,rgba(255,233,168,.55),rgba(255,210,230,.55));
+    border:1px solid rgba(245,179,1,.35);
+    border-radius:22px;padding:26px 26px;
+    font-size:clamp(15px,4.2vw,18px);line-height:1.7;color:var(--ink);
+    box-shadow:0 10px 30px rgba(192,31,74,.08);
+    animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards;opacity:0;transform:translateY(24px);animation-delay:.76s;
+  }
+  .note strong{color:var(--rose-deep)}
+  .sig{margin-top:16px;font-weight:700;color:var(--rose-deep);font-size:15px}
+
+  .tap{
+    margin-top:34px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);font-weight:700;animation-delay:.9s;
+  }
+  .heartbeat{display:inline-block;animation:beat 1.3s ease-in-out infinite}
+  @keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.25)}30%{transform:scale(1)}45%{transform:scale(1.18)}}
+
+  .footer{margin-top:44px;font-size:12.5px;color:var(--muted);opacity:.85;animation-delay:1s}
+  .footer .lotus{color:var(--rose-deep);font-weight:700}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001s!important;animation-iteration-count:1!important}
+  }
+</style>
+</head>
+<body>
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+  <div class="glow g3"></div>
+
+  <canvas id="confetti"></canvas>
+  <canvas id="petals"></canvas>
+
+  <main class="wrap">
+    <span class="badge reveal">✨ A Little Miracle Is On The Way ✨</span>
+
+    <div class="stork">🍼</div>
+
+    <h1 class="reveal">
+      Congratulations
+      <span class="names">Jennifer &amp; Dustin!</span>
+    </h1>
+
+    <p class="sub reveal">You're going to be the most amazing parents 💕</p>
+
+    <p class="lead reveal">
+      The most beautiful adventure of your lives is just beginning. Here's to tiny toes,
+      sleepy cuddles, and a whole new chapter overflowing with love.
+    </p>
+
+    <div class="divider reveal"><span class="line"></span><span class="dot">🌸</span><span class="line"></span></div>
+
+    <section class="cards">
+      <div class="card">
+        <span class="emo">👶</span>
+        <div class="ct">A New Little One</div>
+        <div class="cd">Soon there will be one more heart to love and a lifetime of firsts to treasure.</div>
+      </div>
+      <div class="card">
+        <span class="emo">💗</span>
+        <div class="ct">For Jennifer</div>
+        <div class="cd">Wishing you a healthy, happy, glowing pregnancy journey every step of the way.</div>
+      </div>
+      <div class="card">
+        <span class="emo">🎉</span>
+        <div class="ct">For Dustin</div>
+        <div class="cd">Get ready, dad — the best job you'll ever have starts right here. You've got this!</div>
+      </div>
+    </section>
+
+    <div class="note reveal">
+      <strong>Jennifer &amp; Dustin</strong> — what wonderful, joyful news! 🥳
+      We are absolutely thrilled for you both. Watching your family grow is such a gift,
+      and we can't wait to meet the newest little member. Sending all our love,
+      excitement, and every best wish for the beautiful journey ahead.
+      <div class="sig">All the best — always cheering you on 🌟</div>
+    </div>
+
+    <p class="tap reveal">Tap anywhere for a little celebration <span class="heartbeat">❤️</span></p>
+
+    <p class="footer reveal">Made with love on <span class="lotus">Claude Code</span> · Lotus Hub 🪷</p>
+  </main>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  /* ---------- Confetti ---------- */
+  var cc = document.getElementById('confetti'), ctx = cc.getContext('2d');
+  var pc = document.getElementById('petals'), pctx = pc.getContext('2d');
+  var W,H,DPR;
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio||1,2);
+    W = window.innerWidth; H = window.innerHeight;
+    [cc,pc].forEach(function(c){ c.width=W*DPR; c.height=H*DPR; c.style.width=W+'px'; c.style.height=H+'px'; });
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    pctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var colors = ['#e8567f','#c01f4a','#f5b301','#ffd9e2','#ffe9a8','#ff8fab','#ffffff'];
+  var confetti = [];
+  function addConfetti(n, x, y){
+    for(var i=0;i<n;i++){
+      confetti.push({
+        x: x!=null? x : Math.random()*W,
+        y: y!=null? y : -20,
+        vx:(Math.random()-.5)*6,
+        vy: x!=null? (Math.random()*-9-3) : (Math.random()*3+2),
+        g: .16+Math.random()*.12,
+        size: 5+Math.random()*7,
+        rot: Math.random()*Math.PI,
+        vr:(Math.random()-.5)*.3,
+        color: colors[(Math.random()*colors.length)|0],
+        shape: Math.random()<.5?'rect':'circ',
+        life: 0, max: 260+Math.random()*120
+      });
+    }
+  }
+
+  /* ---------- Falling lotus petals / hearts (ambient) ---------- */
+  var petals = [];
+  var petalGlyphs = ['🌸','💕','🌷','✨','🪷'];
+  function seedPetals(){
+    for(var i=0;i<16;i++){
+      petals.push(makePetal(Math.random()*H));
+    }
+  }
+  function makePetal(startY){
+    return {
+      x: Math.random()*W,
+      y: startY!=null? startY : -30,
+      vy: .5+Math.random()*.9,
+      sway: 20+Math.random()*40,
+      phase: Math.random()*Math.PI*2,
+      sp: .01+Math.random()*.02,
+      size: 16+Math.random()*16,
+      glyph: petalGlyphs[(Math.random()*petalGlyphs.length)|0],
+      alpha: .55+Math.random()*.35
+    };
+  }
+
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    for(var i=confetti.length-1;i>=0;i--){
+      var p=confetti[i];
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life++;
+      if(p.y>H+30 || p.life>p.max){ confetti.splice(i,1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0,1-p.life/p.max);
+      ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.color;
+      if(p.shape==='rect'){ ctx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2); }
+      else{ ctx.beginPath(); ctx.arc(0,0,p.size/2,0,7); ctx.fill(); }
+      ctx.restore();
+    }
+
+    pctx.clearRect(0,0,W,H);
+    if(!reduce){
+      for(var j=0;j<petals.length;j++){
+        var q=petals[j];
+        q.phase+=q.sp; q.y+=q.vy; q.x+=Math.cos(q.phase)*.6;
+        if(q.y>H+40){ petals[j]=makePetal(-30); continue; }
+        pctx.save();
+        pctx.globalAlpha=q.alpha;
+        pctx.font=q.size+'px serif';
+        pctx.textAlign='center';
+        pctx.fillText(q.glyph, q.x+Math.sin(q.phase)*q.sway*.15, q.y);
+        pctx.restore();
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  if(!reduce){ seedPetals(); addConfetti(140); }
+  loop();
+
+  /* ---------- Interaction: tap to celebrate ---------- */
+  function burst(x,y){ addConfetti(40, x, y); }
+  window.addEventListener('pointerdown', function(e){ burst(e.clientX, e.clientY); });
+
+  /* A welcoming double-burst on load */
+  if(!reduce){
+    setTimeout(function(){ addConfetti(60, W*0.5, H*0.35); }, 500);
+    setTimeout(function(){ addConfetti(50, W*0.25, H*0.4); addConfetti(50, W*0.75, H*0.4); }, 1200);
+  }
+})();
+</script>
+</body>
+</html>
