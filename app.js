@@ -28,7 +28,7 @@
     scoresSessionId: null, // which session's scores view is open
     _onboardDone: false, // first-run onboarding shown/dismissed this session
     connections: [], // my connection docs (pending/accepted)
-    unsub: { sessions: null, profile: null, coaches: null, scores: null, players: null, connections: null },
+    unsub: { sessions: null, profile: null, coaches: null, scores: null, players: null, connections: null, rank: null },
   };
 
   // ---- helpers ----------------------------------------------------------
@@ -314,6 +314,10 @@
       state.unsub.players = null;
     }
     if (state.view !== "connect") connectRefresh = null;
+    if (state.view !== "rank" && state.unsub.rank) {
+      state.unsub.rank();
+      state.unsub.rank = null;
+    }
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
     var isPlay = state.view === "discover" || state.view === "create" || state.view === "player-view" || state.view === "scores";
     var isProfile = state.view === "profile" || state.view === "profile-edit";
@@ -1092,25 +1096,18 @@
     );
   }
 
-  // ---- Connect: DUPR leaderboard (sample data for now) ----
-  // TODO: replace with real players once the DUPR integration lands.
-  var LEADERBOARD = [
-    { name: "Derek Chu", flag: "🇨🇳", dupr: 3.10, lotus: 888 },
-    { name: "Ralph Llacar", flag: "🇨🇦", dupr: 6.82, lotus: 800 },
-    { name: "Jeremy Lin", flag: "🇹🇼", dupr: 6.50, lotus: 750 },
-    { name: "Priya Nair", flag: "🇮🇳", dupr: 6.61, lotus: 720 },
-    { name: "Marco Silva", flag: "🇧🇷", dupr: 6.75, lotus: 700 },
-    { name: "Leo Tanaka", flag: "🇯🇵", dupr: 6.40, lotus: 680 },
-    { name: "Sofia Rossi", flag: "🇮🇹", dupr: 6.28, lotus: 660 },
-    { name: "James Park", flag: "🇰🇷", dupr: 6.15, lotus: 640 },
-    { name: "Emma Müller", flag: "🇩🇪", dupr: 6.03, lotus: 620 },
-    { name: "Noah Smith", flag: "🇺🇸", dupr: 5.77, lotus: 600 },
-  ];
+  // ---- Leaderboard (real, computed from recorded games) ----
   // Which metric the leaderboard is ranked by ("dupr" | "lotus"). Lotus Score
   // is the default view.
   var rankMetric = "lotus";
   function rankValueStr(pl) {
     return rankMetric === "lotus" ? String(pl.lotus) : pl.dupr.toFixed(2);
+  }
+  // Lotus Score = performance + activity from recorded games (tunable). 0 until
+  // a player has logged games, so unranked players don't clutter the board.
+  function lotusScore(st) {
+    if (!st || !st.games) return 0;
+    return Math.round(st.wins * 30 + st.games * 8 + st.winRate);
   }
 
   function podiumCol(pl, rank) {
@@ -1287,44 +1284,72 @@
     if (isLotus) {
       wrap.appendChild(
         el(
-          '<div class="lotus-note"><strong>Lotus Score</strong> is your overall player rating — combining your ' +
-            "skill, performance, activity, and community involvement into one score.</div>"
+          '<div class="lotus-note"><strong>Lotus Score</strong> rewards playing and winning — ' +
+            "it's built from the open-play games you log scores for.</div>"
         )
       );
     }
 
-    var ranked = LEADERBOARD.slice().sort(function (a, b) {
-      return (isLotus ? b.lotus - a.lotus : b.dupr - a.dupr);
-    });
-    var top3 = ranked.slice(0, 3);
-    var podium = el(
-      '<div class="card podium-card"><div class="podium">' +
+    var bodyEl = el('<div id="rank-body"><div class="card"><p class="muted" style="text-align:center;padding:14px 0">Loading leaderboard…</p></div></div>');
+    wrap.appendChild(bodyEl);
+    main.appendChild(wrap);
+
+    // Build the board from real players + their recorded-game stats.
+    var players = null;
+    var stats = null;
+    function build() {
+      if (players == null || stats == null) return;
+      var entries = players.map(function (u) {
+        var st = stats[u.uid] || { games: 0, wins: 0, losses: 0, winRate: 0 };
+        return {
+          uid: u.uid,
+          name: u.displayName || "Player",
+          flag: heritageFlagOf(u),
+          dupr: ratingOf(u),
+          lotus: lotusScore(st),
+          games: st.games,
+        };
+      });
+      var ranked = isLotus
+        ? entries.filter(function (e) { return e.games > 0; }).sort(function (a, b) { return b.lotus - a.lotus; })
+        : entries.filter(function (e) { return e.dupr != null; }).sort(function (a, b) { return b.dupr - a.dupr; });
+
+      if (!ranked.length) {
+        bodyEl.innerHTML =
+          '<div class="empty">' +
+          (isLotus
+            ? "No ranked games yet — play an open-play session and log the scores to climb the Lotus leaderboard. 🏓"
+            : "No rated players yet — add your DUPR rating on your profile to appear here.") +
+          "</div>";
+        return;
+      }
+      var top3 = ranked.slice(0, 3);
+      var podium =
+        '<div class="card podium-card"><div class="podium">' +
         (top3[1] ? podiumCol(top3[1], 2) : "") +
         (top3[0] ? podiumCol(top3[0], 1) : "") +
         (top3[2] ? podiumCol(top3[2], 3) : "") +
-        "</div></div>"
-    );
-    wrap.appendChild(podium);
+        "</div></div>";
+      var rows = ranked
+        .slice(3)
+        .map(function (pl, i) {
+          var rank = i + 4;
+          return (
+            '<div class="lb-row">' +
+            '<span class="lb-rank">' + rank + "</span>" +
+            '<span class="lb-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + flagBadge(pl.flag) + "</span>" +
+            '<span class="lb-name">' + esc(pl.name) + "</span>" +
+            '<span class="lb-dupr">' + esc(rankValueStr(pl)) + "</span>" +
+            "</div>"
+          );
+        })
+        .join("");
+      bodyEl.innerHTML = podium + (rows ? '<div class="card lb-list">' + rows + "</div>" : "");
+    }
 
-    var rows = ranked
-      .slice(3)
-      .map(function (pl, i) {
-        var rank = i + 4;
-        return (
-          '<div class="lb-row">' +
-          '<span class="lb-rank">' + rank + "</span>" +
-          '<span class="lb-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + flagBadge(pl.flag) + "</span>" +
-          '<span class="lb-name">' + esc(pl.name) + "</span>" +
-          '<span class="lb-dupr">' + esc(rankValueStr(pl)) + "</span>" +
-          "</div>"
-        );
-      })
-      .join("");
-    wrap.appendChild(el('<div class="card lb-list">' + rows + "</div>"));
-    wrap.appendChild(
-      el('<p class="muted" style="text-align:center">Sample rankings — real standings arrive with the DUPR integration.</p>')
-    );
-    main.appendChild(wrap);
+    if (state.unsub.rank) state.unsub.rank();
+    state.unsub.rank = LH.watchPlayers(function (list) { players = list; build(); });
+    LH.getAllPlayerStats().then(function (map) { stats = map; build(); });
 
     var filterBtn = wrap.querySelector("#rank-filter");
     var filterMenu = wrap.querySelector("#rank-menu");

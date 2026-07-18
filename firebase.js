@@ -533,6 +533,35 @@
       });
   }
 
+  // Every player's record in one pass, for the leaderboard. Returns a map of
+  // uid -> { games, wins, losses, winRate }.
+  function getAllPlayerStats() {
+    if (!ready) return Promise.resolve({});
+    return db
+      .collectionGroup("games")
+      .get()
+      .then(function (qs) {
+        var map = {};
+        qs.forEach(function (d) {
+          var g = d.data();
+          var teamA = g.teamA || [];
+          (g.players || []).forEach(function (uid) {
+            var m = map[uid] || (map[uid] = { games: 0, wins: 0, losses: 0, winRate: 0 });
+            m.games++;
+            var inA = teamA.indexOf(uid) > -1;
+            if ((inA && g.winner === "A") || (!inA && g.winner === "B")) m.wins++;
+          });
+        });
+        Object.keys(map).forEach(function (uid) {
+          var m = map[uid];
+          m.losses = m.games - m.wins;
+          m.winRate = m.games ? Math.round((m.wins / m.games) * 100) : 0;
+        });
+        return map;
+      })
+      .catch(function () { return {}; });
+  }
+
   // A player's cross-session record, computed from every game they appear in.
   function getPlayerStats(uid) {
     if (!ready || !uid) return Promise.resolve({ games: 0, wins: 0, losses: 0, winRate: 0 });
@@ -605,5 +634,6 @@
     deleteGame: deleteGame,
     getSessionOnce: getSessionOnce,
     getPlayerStats: getPlayerStats,
+    getAllPlayerStats: getAllPlayerStats,
   };
 })();
