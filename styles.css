@@ -2,6 +2,9 @@
    crimson red (primary), golden yellow (accent), clean white surfaces.
    Light mode only, by design — no dark-mode overrides. */
 :root {
+  /* Opt out of browser auto-dark-theme so a phone in dark mode doesn't
+     force-darken (which turned the warm background black). */
+  color-scheme: light;
   --bg: #faf8f6;          /* warm off-white page */
   --card: #ffffff;        /* card surface */
   --ink: #201a1a;         /* warm near-black text */
@@ -31,6 +34,7 @@
    override [hidden] and leave signed-out controls visible). */
 [hidden] { display: none !important; }
 html, body { margin: 0; padding: 0; }
+html { background: var(--bg); } /* keeps overscroll / safe areas light too */
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg);
