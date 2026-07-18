@@ -33,6 +33,12 @@ service cloud.firestore {
         && !request.resource.data.diff(resource.data).affectedKeys()
              .hasAny(protectedUserFields());
       allow delete: if isSelf(uid);
+
+      // Push-notification device tokens — private to the owner. The reminder
+      // Cloud Function reads them with the Admin SDK (which bypasses rules).
+      match /tokens/{tokenId} {
+        allow read, write: if isSelf(uid);
+      }
     }
 
     // Sessions: readable by any signed-in user; created by any signed-in user

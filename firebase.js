@@ -21,6 +21,7 @@
   var db = null;
   var fns = null;
   var analytics = null;
+  var messaging = null;
   var ready = false;
 
   function init() {
@@ -35,6 +36,8 @@
       try {
         analytics = firebase.analytics && window.FIREBASE_CONFIG.measurementId ? firebase.analytics() : null;
       } catch (e) { analytics = null; }
+      // Cloud Messaging (push). Dormant until a vapidKey is added to the config.
+      try { messaging = firebase.messaging ? firebase.messaging() : null; } catch (e) { messaging = null; }
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
       db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
       ready = true;
@@ -104,6 +107,58 @@
   // Fire-and-forget analytics event. No-ops safely if analytics isn't set up.
   function logEvent(name, params) {
     try { if (analytics) analytics.logEvent(name, params || {}); } catch (e) {}
+  }
+
+  // ---- Push notifications (session reminders) ---------------------------
+  function notificationsSupported() {
+    return !!(
+      ready && messaging &&
+      typeof window !== "undefined" && "Notification" in window &&
+      "serviceWorker" in navigator &&
+      window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.vapidKey
+    );
+  }
+  function notificationPermission() {
+    return typeof Notification !== "undefined" ? Notification.permission : "unsupported";
+  }
+
+  // Ask permission, get an FCM token, and store it under the user's tokens
+  // subcollection so the reminder function can reach this device.
+  function enableNotifications() {
+    if (!notificationsSupported()) return Promise.reject(new Error("Notifications aren't set up yet."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return Notification.requestPermission().then(function (perm) {
+      if (perm !== "granted") {
+        throw new Error("Notifications are blocked — allow them for this site in your browser settings.");
+      }
+      return messaging.getToken({ vapidKey: window.FIREBASE_CONFIG.vapidKey });
+    }).then(function (token) {
+      if (!token) throw new Error("Couldn't register this device for notifications.");
+      return userDoc(u.uid).collection("tokens").doc(token).set({
+        token: token,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        ua: (typeof navigator !== "undefined" && navigator.userAgent) || null,
+      }).then(function () { return token; });
+    });
+  }
+
+  // Turn off: delete the current token doc and the FCM token.
+  function disableNotifications() {
+    if (!ready || !messaging) return Promise.resolve();
+    var u = auth.currentUser;
+    return messaging.getToken({ vapidKey: (window.FIREBASE_CONFIG || {}).vapidKey }).then(function (token) {
+      var work = [];
+      if (token && u) work.push(userDoc(u.uid).collection("tokens").doc(token).delete().catch(function () {}));
+      work.push(messaging.deleteToken().catch(function () {}));
+      return Promise.all(work);
+    }).catch(function () {});
+  }
+
+  function onForegroundMessage(cb) {
+    if (!ready || !messaging) return function () {};
+    try { return messaging.onMessage(function (payload) { cb(payload); }); }
+    catch (e) { return function () {}; }
   }
 
   function resetPassword(email) {
@@ -524,6 +579,11 @@
     signOut: signOut,
     resetPassword: resetPassword,
     logEvent: logEvent,
+    notificationsSupported: notificationsSupported,
+    notificationPermission: notificationPermission,
+    enableNotifications: enableNotifications,
+    disableNotifications: disableNotifications,
+    onForegroundMessage: onForegroundMessage,
     watchUser: watchUser,
     getUserOnce: getUserOnce,
     watchCoaches: watchCoaches,

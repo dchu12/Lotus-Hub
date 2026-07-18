@@ -1828,6 +1828,12 @@
         '<input id="p-avail" type="text" placeholder="e.g. Evenings &amp; weekends" value="' + esc(p.availability || "") + '" /></div>' +
         '<button class="btn-primary" id="save-profile" type="button">Save profile</button>' +
         '<p class="save-status" id="save-status" hidden></p>' +
+        '<div class="notif-box">' +
+        '<div class="dupr-head"><h3>🔔 Session reminders</h3><span class="chip" id="notif-chip"></span></div>' +
+        '<p class="muted">Get a heads-up about an hour before open-play sessions you\'ve joined.</p>' +
+        '<div id="notif-body"></div>' +
+        '<p class="save-status" id="notif-status" hidden></p>' +
+        "</div>" +
         '<div class="dupr-box">' +
         '<div class="dupr-head"><h3>DUPR rating</h3>' +
         '<span class="chip ' + (linked ? "chip-ok" : manualVal ? "chip-warn" : "chip-muted") + '">' +
@@ -1849,6 +1855,56 @@
         "</section>"
     );
     main.appendChild(card);
+
+    // ---- session reminders (push notifications) ----
+    function setNotifStatus(msg, kind) {
+      var s = card.querySelector("#notif-status");
+      if (!s) return;
+      s.hidden = false;
+      s.textContent = msg;
+      s.className = "save-status" + (kind ? " " + kind : "");
+    }
+    function renderNotif() {
+      var chip = card.querySelector("#notif-chip");
+      var body = card.querySelector("#notif-body");
+      if (!chip || !body) return;
+      if (!LH.notificationsSupported || !LH.notificationsSupported()) {
+        chip.className = "chip chip-muted";
+        chip.textContent = "Coming soon";
+        body.innerHTML = '<div class="dupr-soon">🔒 Session reminders — coming soon</div>';
+        return;
+      }
+      var perm = LH.notificationPermission();
+      if (perm === "granted") {
+        chip.className = "chip chip-ok";
+        chip.textContent = "On";
+        body.innerHTML =
+          '<p class="muted">Reminders are on for this device.</p>' +
+          '<button class="btn-ghost" id="notif-off" type="button">Turn off on this device</button>';
+        body.querySelector("#notif-off").addEventListener("click", function () {
+          setNotifStatus("Turning off…", "");
+          LH.disableNotifications().then(function () {
+            setNotifStatus("Reminders turned off on this device.", "ok");
+            renderNotif();
+          });
+        });
+      } else if (perm === "denied") {
+        chip.className = "chip chip-warn";
+        chip.textContent = "Blocked";
+        body.innerHTML = '<p class="muted">Notifications are blocked. Allow them for this site in your browser settings, then reload.</p>';
+      } else {
+        chip.className = "chip chip-muted";
+        chip.textContent = "Off";
+        body.innerHTML = '<button class="btn-primary" id="notif-on" type="button">Enable reminders</button>';
+        body.querySelector("#notif-on").addEventListener("click", function () {
+          setNotifStatus("Enabling…", "");
+          LH.enableNotifications()
+            .then(function () { track("notifications_enabled"); setNotifStatus("Reminders enabled ✓", "ok"); renderNotif(); })
+            .catch(function (err) { setNotifStatus((err && err.message) || "Couldn't enable reminders.", "err"); });
+        });
+      }
+    }
+    renderNotif();
 
     card.querySelector("#signout-btn").addEventListener("click", function () {
       // Reload to a clean state afterward so a stale/invalid session can't leave
@@ -2114,6 +2170,13 @@
         renderSignedOut();
       }
     });
+    // Show a toast if a push arrives while the app is open (foreground).
+    if (LH.onForegroundMessage) {
+      LH.onForegroundMessage(function (payload) {
+        var n = (payload && payload.notification) || {};
+        toast((n.title ? n.title + " — " : "") + (n.body || "New notification"));
+      });
+    }
   }
 
   start();

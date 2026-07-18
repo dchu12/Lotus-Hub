@@ -19,6 +19,10 @@ window.FIREBASE_CONFIG = {
   // web app's measurement ID here to turn on funnel tracking. Until then
   // analytics stays dormant and nothing breaks.
   // measurementId: "G-XXXXXXXXXX",
+  // Push notifications: paste your Web Push certificate key pair (VAPID key)
+  // from Firebase console → Project settings → Cloud Messaging → Web Push
+  // certificates. Until this is set, the reminders toggle shows "coming soon".
+  // vapidKey: "BPaste_your_public_VAPID_key_here",
 };
 
 // True once real values are filled in — the app uses this to show a setup banner.

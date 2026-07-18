@@ -353,12 +353,13 @@ button { font: inherit; cursor: pointer; }
 }
 .roster-rating { font-size: 0.82rem; font-weight: 700; color: var(--muted); }
 
-.dupr-box {
+.dupr-box, .notif-box {
   margin-top: 4px; padding: 16px;
   background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
 }
 .dupr-box .field:last-of-type { margin-bottom: 12px; }
-.dupr-box .muted { margin-top: 0; }
+.dupr-box .muted, .notif-box .muted { margin-top: 0; }
+.notif-box #notif-body .btn-primary, .notif-box #notif-body .btn-ghost { margin-top: 4px; }
 
 /* coaching cards */
 .coach-card { display: flex; align-items: center; gap: 14px; border-top: 3px solid var(--accent); }
