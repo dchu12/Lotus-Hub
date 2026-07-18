@@ -20,6 +20,8 @@
   var auth = null;
   var db = null;
   var fns = null;
+  var analytics = null;
+  var messaging = null;
   var ready = false;
 
   function init() {
@@ -30,6 +32,12 @@
       db = firebase.firestore();
       // Cloud Functions (DUPR integration). Only usable once functions deploy.
       try { fns = firebase.functions ? firebase.functions() : null; } catch (e) { fns = null; }
+      // Analytics stays dormant until a measurementId is added to the config.
+      try {
+        analytics = firebase.analytics && window.FIREBASE_CONFIG.measurementId ? firebase.analytics() : null;
+      } catch (e) { analytics = null; }
+      // Cloud Messaging (push). Dormant until a vapidKey is added to the config.
+      try { messaging = firebase.messaging ? firebase.messaging() : null; } catch (e) { messaging = null; }
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
       db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
       ready = true;
@@ -96,6 +104,68 @@
     return ready && auth ? auth.signOut() : Promise.resolve();
   }
 
+  // Fire-and-forget analytics event. No-ops safely if analytics isn't set up.
+  function logEvent(name, params) {
+    try { if (analytics) analytics.logEvent(name, params || {}); } catch (e) {}
+  }
+
+  // ---- Push notifications (session reminders) ---------------------------
+  function notificationsSupported() {
+    return !!(
+      ready && messaging &&
+      typeof window !== "undefined" && "Notification" in window &&
+      "serviceWorker" in navigator &&
+      window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.vapidKey
+    );
+  }
+  function notificationPermission() {
+    return typeof Notification !== "undefined" ? Notification.permission : "unsupported";
+  }
+
+  // Ask permission, get an FCM token, and store it under the user's tokens
+  // subcollection so the reminder function can reach this device.
+  function enableNotifications() {
+    if (!notificationsSupported()) return Promise.reject(new Error("Notifications aren't set up yet."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return Notification.requestPermission().then(function (perm) {
+      if (perm !== "granted") {
+        throw new Error("Notifications are blocked — allow them for this site in your browser settings.");
+      }
+      return messaging.getToken({ vapidKey: window.FIREBASE_CONFIG.vapidKey });
+    }).then(function (token) {
+      if (!token) throw new Error("Couldn't register this device for notifications.");
+      return userDoc(u.uid).collection("tokens").doc(token).set({
+        token: token,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        ua: (typeof navigator !== "undefined" && navigator.userAgent) || null,
+      }).then(function () { return token; });
+    });
+  }
+
+  // Turn off: delete the current token doc and the FCM token.
+  function disableNotifications() {
+    if (!ready || !messaging) return Promise.resolve();
+    var u = auth.currentUser;
+    return messaging.getToken({ vapidKey: (window.FIREBASE_CONFIG || {}).vapidKey }).then(function (token) {
+      var work = [];
+      if (token && u) work.push(userDoc(u.uid).collection("tokens").doc(token).delete().catch(function () {}));
+      work.push(messaging.deleteToken().catch(function () {}));
+      return Promise.all(work);
+    }).catch(function () {});
+  }
+
+  function onForegroundMessage(cb) {
+    if (!ready || !messaging) return function () {};
+    try { return messaging.onMessage(function (payload) { cb(payload); }); }
+    catch (e) { return function () {}; }
+  }
+
+  function resetPassword(email) {
+    if (!ready) return Promise.reject(new Error("Sign-in isn't available yet."));
+    return auth.sendPasswordResetEmail(String(email || "").trim());
+  }
+
   // ---- Users ------------------------------------------------------------
   function userDoc(uid) {
     return db.collection("users").doc(uid);
@@ -155,6 +225,27 @@
       });
   }
 
+  // Realtime list of players for the Connect tab (bounded for read cost;
+  // filtered/sorted client-side).
+  function watchPlayers(cb) {
+    if (!ready) return function () {};
+    return db
+      .collection("users")
+      .limit(200)
+      .onSnapshot(
+        function (qs) {
+          var out = [];
+          qs.forEach(function (d) {
+            out.push(Object.assign({ uid: d.id }, d.data()));
+          });
+          cb(out);
+        },
+        function () {
+          cb([]);
+        }
+      );
+  }
+
   // Realtime list of users who have opted in as coaches.
   function watchCoaches(cb) {
     if (!ready) return function () {};
@@ -173,6 +264,97 @@
           cb([]);
         }
       );
+  }
+
+  // ---- Connections (player-to-player friend requests) -------------------
+  // One doc per pair, keyed by the two uids sorted + joined so a pair can't be
+  // duplicated regardless of who initiates.
+  function pairId(a, b) {
+    return [a, b].sort().join("__");
+  }
+
+  function watchConnections(cb) {
+    if (!ready) return function () {};
+    var u = auth.currentUser;
+    if (!u) { cb([]); return function () {}; }
+    return db
+      .collection("connections")
+      .where("users", "array-contains", u.uid)
+      .onSnapshot(
+        function (qs) {
+          var out = [];
+          qs.forEach(function (d) { out.push(Object.assign({ id: d.id }, d.data())); });
+          cb(out);
+        },
+        function () { cb([]); }
+      );
+  }
+
+  function requestConnection(otherUid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    if (otherUid === u.uid) return Promise.reject(new Error("That's your own profile."));
+    return db.collection("connections").doc(pairId(u.uid, otherUid)).set({
+      users: [u.uid, otherUid].sort(),
+      requestedBy: u.uid,
+      status: "pending",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  function acceptConnection(otherUid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return db.collection("connections").doc(pairId(u.uid, otherUid)).update({
+      status: "accepted",
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  function removeConnection(otherUid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return db.collection("connections").doc(pairId(u.uid, otherUid)).delete();
+  }
+
+  // ---- Reports & blocks -------------------------------------------------
+  function reportUser(uid, reason) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return db.collection("reports").add({
+      reporterUid: u.uid,
+      reportedUid: uid,
+      reason: reason || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+  function blockUser(uid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return userDoc(u.uid).collection("blocks").doc(uid).set({
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+  function unblockUser(uid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return userDoc(u.uid).collection("blocks").doc(uid).delete();
+  }
+  function watchBlocks(cb) {
+    if (!ready) return function () {};
+    var u = auth.currentUser;
+    if (!u) { cb([]); return function () {}; }
+    return userDoc(u.uid).collection("blocks").onSnapshot(
+      function (qs) { var out = []; qs.forEach(function (d) { out.push(d.id); }); cb(out); },
+      function () { cb([]); }
+    );
   }
 
   // ---- Sessions (open play) --------------------------------------------
@@ -229,12 +411,15 @@
     return sessionsCol().doc(sessionId).collection("rsvps").doc(uid);
   }
 
+  // All RSVPs for a session, oldest-first. Confirmed vs. waitlist is DERIVED by
+  // the client from this order + the session capacity — so when someone leaves,
+  // everyone behind them shifts up automatically (free waitlist promotion).
   function watchRsvps(sessionId, cb) {
     if (!ready) return function () {};
     return sessionsCol()
       .doc(sessionId)
       .collection("rsvps")
-      .where("status", "==", "going")
+      .orderBy("joinedAt", "asc")
       .onSnapshot(
         function (qs) {
           var out = [];
@@ -260,10 +445,11 @@
         if (!sessSnap.exists) throw new Error("Session no longer exists.");
         var s = sessSnap.data();
         return tx.get(myRsvp).then(function (rsvpSnap) {
-          var already = rsvpSnap.exists && rsvpSnap.data().status === "going";
+          var already = rsvpSnap.exists;
           var count = s.attendeeCount || 0;
-          var full = count >= (s.capacity || 8);
-          var status = already ? "going" : full ? "waitlist" : "going";
+          // As the newest RSVP, my slot is the current total; confirmed if that
+          // is still within capacity.
+          var confirmed = count < (s.capacity || 8);
           tx.set(myRsvp, {
             uid: u.uid,
             displayName: profile.displayName || u.displayName || "Player",
@@ -271,16 +457,10 @@
             photoDataUrl: profile.photoDataUrl || profile.photoURL || null,
             skillLevel: profile.skillLevel || null,
             heritageFlag: profile.heritageFlag || null,
-            status: status,
             joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
           });
-          if (!already && status === "going") {
-            tx.update(sessRef, {
-              attendeeCount: count + 1,
-              status: count + 1 >= (s.capacity || 8) ? "full" : "open",
-            });
-          }
-          return status;
+          if (!already) tx.update(sessRef, { attendeeCount: count + 1 });
+          return already ? "already" : confirmed ? "going" : "waitlist";
         });
       });
     });
@@ -295,17 +475,36 @@
     return db.runTransaction(function (tx) {
       return tx.get(myRsvp).then(function (rsvpSnap) {
         if (!rsvpSnap.exists) return;
-        var wasGoing = rsvpSnap.data().status === "going";
         tx.delete(myRsvp);
-        if (wasGoing) {
-          return tx.get(sessRef).then(function (sessSnap) {
-            if (!sessSnap.exists) return;
-            var count = Math.max(0, (sessSnap.data().attendeeCount || 0) - 1);
-            tx.update(sessRef, { attendeeCount: count, status: "open" });
-          });
-        }
+        return tx.get(sessRef).then(function (sessSnap) {
+          if (!sessSnap.exists) return;
+          var count = Math.max(0, (sessSnap.data().attendeeCount || 0) - 1);
+          tx.update(sessRef, { attendeeCount: count });
+        });
       });
     });
+  }
+
+  // Organizer edits the session's details.
+  function updateSession(sessionId, data) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    if (!auth.currentUser) return Promise.reject(new Error("Sign in first."));
+    return sessionsCol().doc(sessionId).update({
+      title: data.title,
+      venueName: data.venueName,
+      startAt: firebase.firestore.Timestamp.fromDate(data.startAt),
+      courtCount: data.courtCount || 1,
+      capacity: data.capacity || 8,
+      skillMin: data.skillMin != null ? data.skillMin : null,
+      skillMax: data.skillMax != null ? data.skillMax : null,
+    });
+  }
+
+  // Organizer cancels the session (drops it from the upcoming list).
+  function cancelSession(sessionId) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    if (!auth.currentUser) return Promise.reject(new Error("Sign in first."));
+    return sessionsCol().doc(sessionId).update({ status: "cancelled" });
   }
 
   function myRsvpStatus(sessionId, cb) {
@@ -321,6 +520,124 @@
       },
       function () {}
     );
+  }
+
+  // ---- Games / scores (open-play results) -------------------------------
+  // Stored as sessions/{id}/games/{gameId}; organizer-entered (see rules).
+  // These power player stats now and bridge to DUPR (matches) later.
+  function sessionGames(sessionId) {
+    return sessionsCol().doc(sessionId).collection("games");
+  }
+
+  function watchSessionGames(sessionId, cb) {
+    if (!ready) return function () {};
+    return sessionGames(sessionId)
+      .orderBy("createdAt", "asc")
+      .onSnapshot(
+        function (qs) {
+          var out = [];
+          qs.forEach(function (d) {
+            out.push(Object.assign({ id: d.id }, d.data()));
+          });
+          cb(out);
+        },
+        function () {
+          cb([]);
+        }
+      );
+  }
+
+  // game: { teamA: [{uid,displayName}], teamB: [...], scoreA, scoreB }
+  function addGame(sessionId, game) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    var teamA = (game.teamA || []).slice(0, 2);
+    var teamB = (game.teamB || []).slice(0, 2);
+    var uidOf = function (p) { return p.uid; };
+    var nameOf = function (p) { return p.displayName || "Player"; };
+    return sessionGames(sessionId).add({
+      teamA: teamA.map(uidOf),
+      teamB: teamB.map(uidOf),
+      teamANames: teamA.map(nameOf),
+      teamBNames: teamB.map(nameOf),
+      players: teamA.concat(teamB).map(uidOf), // flat list for array-contains
+      scoreA: game.scoreA,
+      scoreB: game.scoreB,
+      winner: game.scoreA > game.scoreB ? "A" : "B",
+      enteredBy: u.uid,
+      duprStatus: "pending", // picked up by submitSessionMatches once DUPR is live
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  function deleteGame(sessionId, gameId) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    return sessionGames(sessionId).doc(gameId).delete();
+  }
+
+  function getSessionOnce(sessionId) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    return sessionsCol()
+      .doc(sessionId)
+      .get()
+      .then(function (s) {
+        return s.exists ? Object.assign({ id: s.id }, s.data()) : null;
+      });
+  }
+
+  // Every player's record in one pass, for the leaderboard. Returns a map of
+  // uid -> { games, wins, losses, winRate }.
+  function getAllPlayerStats() {
+    if (!ready) return Promise.resolve({});
+    return db
+      .collectionGroup("games")
+      .get()
+      .then(function (qs) {
+        var map = {};
+        qs.forEach(function (d) {
+          var g = d.data();
+          var teamA = g.teamA || [];
+          (g.players || []).forEach(function (uid) {
+            var m = map[uid] || (map[uid] = { games: 0, wins: 0, losses: 0, winRate: 0 });
+            m.games++;
+            var inA = teamA.indexOf(uid) > -1;
+            if ((inA && g.winner === "A") || (!inA && g.winner === "B")) m.wins++;
+          });
+        });
+        Object.keys(map).forEach(function (uid) {
+          var m = map[uid];
+          m.losses = m.games - m.wins;
+          m.winRate = m.games ? Math.round((m.wins / m.games) * 100) : 0;
+        });
+        return map;
+      })
+      .catch(function () { return {}; });
+  }
+
+  // A player's cross-session record, computed from every game they appear in.
+  function getPlayerStats(uid) {
+    if (!ready || !uid) return Promise.resolve({ games: 0, wins: 0, losses: 0, winRate: 0 });
+    return db
+      .collectionGroup("games")
+      .where("players", "array-contains", uid)
+      .get()
+      .then(function (qs) {
+        var games = 0;
+        var wins = 0;
+        qs.forEach(function (d) {
+          var g = d.data();
+          games++;
+          var inA = (g.teamA || []).indexOf(uid) > -1;
+          if ((inA && g.winner === "A") || (!inA && g.winner === "B")) wins++;
+        });
+        return {
+          games: games,
+          wins: wins,
+          losses: games - wins,
+          winRate: games ? Math.round((wins / games) * 100) : 0,
+        };
+      });
   }
 
   window.LH = {
@@ -342,16 +659,40 @@
     signIn: signIn,
     signInWithGoogle: signInWithGoogle,
     signOut: signOut,
+    resetPassword: resetPassword,
+    logEvent: logEvent,
+    notificationsSupported: notificationsSupported,
+    notificationPermission: notificationPermission,
+    enableNotifications: enableNotifications,
+    disableNotifications: disableNotifications,
+    onForegroundMessage: onForegroundMessage,
     watchUser: watchUser,
     getUserOnce: getUserOnce,
     watchCoaches: watchCoaches,
+    watchPlayers: watchPlayers,
+    watchConnections: watchConnections,
+    requestConnection: requestConnection,
+    acceptConnection: acceptConnection,
+    removeConnection: removeConnection,
+    reportUser: reportUser,
+    blockUser: blockUser,
+    unblockUser: unblockUser,
+    watchBlocks: watchBlocks,
     linkDupr: linkDupr,
     refreshDuprRating: refreshDuprRating,
     watchUpcomingSessions: watchUpcomingSessions,
     createSession: createSession,
+    updateSession: updateSession,
+    cancelSession: cancelSession,
     watchRsvps: watchRsvps,
     join: join,
     leave: leave,
     myRsvpStatus: myRsvpStatus,
+    watchSessionGames: watchSessionGames,
+    addGame: addGame,
+    deleteGame: deleteGame,
+    getSessionOnce: getSessionOnce,
+    getPlayerStats: getPlayerStats,
+    getAllPlayerStats: getAllPlayerStats,
   };
 })();

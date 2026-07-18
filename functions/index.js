@@ -20,12 +20,54 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
 const db = admin.firestore();
+
+/* ── Scheduled: push a reminder ~1h before each open-play session ──────────────
+ * Runs every 15 min (needs the Blaze plan + Cloud Scheduler). Finds sessions
+ * starting in ~1 hour that haven't been reminded, collects the FCM tokens of
+ * everyone marked "going", sends a push, and marks the session reminded. */
+exports.sendSessionReminders = onSchedule("every 15 minutes", async () => {
+  const now = Date.now();
+  const from = admin.firestore.Timestamp.fromMillis(now + 55 * 60 * 1000);
+  const to = admin.firestore.Timestamp.fromMillis(now + 70 * 60 * 1000);
+
+  const sessions = await db
+    .collection("sessions")
+    .where("startAt", ">=", from)
+    .where("startAt", "<=", to)
+    .get();
+
+  for (const doc of sessions.docs) {
+    const s = doc.data();
+    if (s.reminderSent) continue;
+
+    const rsvps = await doc.ref.collection("rsvps").where("status", "==", "going").get();
+    const tokens = [];
+    for (const r of rsvps.docs) {
+      const tks = await db.collection("users").doc(r.id).collection("tokens").get();
+      tks.forEach((t) => { if (t.data().token) tokens.push(t.data().token); });
+    }
+
+    if (tokens.length) {
+      const res = await admin.messaging().sendEachForMulticast({
+        tokens,
+        notification: {
+          title: "Game soon 🏓",
+          body: `${s.title || "Your session"} at ${s.venueName || "your court"} starts in about an hour.`,
+        },
+        webpush: { fcmOptions: { link: "https://lots-hub.web.app/" } },
+      });
+      logger.info("Session reminder sent", { sessionId: doc.id, sent: res.successCount, failed: res.failureCount });
+    }
+    await doc.ref.update({ reminderSent: true });
+  }
+});
 
 const DUPR_CLIENT_KEY = defineSecret("DUPR_CLIENT_KEY");
 const DUPR_CLIENT_SECRET = defineSecret("DUPR_CLIENT_SECRET");

@@ -1,0 +1,7 @@
+# Firebase CLI local deploy cache (machine-local, never commit)
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# Node
+node_modules/

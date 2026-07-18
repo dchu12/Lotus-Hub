@@ -23,7 +23,15 @@
     view: "discover",
     sessions: [],
     viewingCoachUid: null, // which coach's profile is open
-    unsub: { sessions: null, profile: null, coaches: null },
+    viewingPlayerUid: null, // which player's profile is open (visitor view)
+    playerBackView: "discover", // where "‹ Back" returns from a player view
+    scoresSessionId: null, // which session's scores view is open
+    editingSession: null, // session being edited (Host form in edit mode)
+    sessionFilter: "all", // "all" | "hosting"
+    _onboardDone: false, // first-run onboarding shown/dismissed this session
+    connections: [], // my connection docs (pending/accepted)
+    blocks: [], // uids I've blocked
+    unsub: { sessions: null, profile: null, coaches: null, scores: null, players: null, connections: null, rank: null, cards: [], blocks: null },
   };
 
   // ---- helpers ----------------------------------------------------------
@@ -37,6 +45,10 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
+  // Analytics event (no-op until a measurementId is configured).
+  function track(name, params) {
+    if (LH && LH.logEvent) LH.logEvent(name, params);
+  }
   // Pull a flag emoji (two regional-indicator chars) out of a free-text string.
   function flagOf(s) {
     if (!s) return "";
@@ -48,6 +60,14 @@
   function heritageFlagOf(o) {
     if (!o) return "";
     return o.flag || flagOf(o.heritage != null ? o.heritage : o.ethnicity);
+  }
+  // The rating to display for a player: verified DUPR (when linked) wins,
+  // otherwise the self-reported one. Mirrors what the profile view shows so a
+  // self-rated player's number isn't dropped on rosters.
+  function ratingOf(p) {
+    if (!p) return null;
+    if (p.duprLinked && p.homeRatingDoubles != null) return p.homeRatingDoubles;
+    return p.duprManual != null ? p.duprManual : null;
   }
   // Small flag badge that sits at ~5 o'clock on an avatar circle.
   function flagBadge(flag) {
@@ -181,6 +201,25 @@
   }
 
   // ---- auth views -------------------------------------------------------
+  // Turn Firebase's auth error codes into friendly, actionable messages.
+  function authErrorMessage(err) {
+    var code = err && err.code ? String(err.code) : "";
+    var map = {
+      "auth/invalid-email": "That email doesn't look right.",
+      "auth/user-not-found": "No account found with that email.",
+      "auth/wrong-password": "Incorrect password — try again or reset it.",
+      "auth/invalid-credential": "Email or password is incorrect.",
+      "auth/email-already-in-use": "An account already exists with that email — try signing in instead.",
+      "auth/weak-password": "Password should be at least 6 characters.",
+      "auth/missing-password": "Please enter a password.",
+      "auth/too-many-requests": "Too many attempts — wait a moment and try again.",
+      "auth/popup-closed-by-user": "Sign-in was cancelled.",
+      "auth/popup-blocked": "Your browser blocked the sign-in popup — allow popups and try again.",
+      "auth/network-request-failed": "Network problem — check your connection and try again.",
+    };
+    return map[code] || (err && err.message) || "Something went wrong. Please try again.";
+  }
+
   function renderSignedOut() {
     tabs.hidden = true;
     var configured = LH.available;
@@ -198,10 +237,13 @@
             '<input id="f-email" type="email" placeholder="you@example.com" autocomplete="email" required /></div>' +
             '<div class="field"><label>Password</label>' +
             '<input id="f-pass" type="password" placeholder="••••••••" autocomplete="current-password" required /></div>' +
+            '<div class="auth-forgot only-signin"><button type="button" class="link-inline" id="forgot-pass">Forgot password?</button></div>' +
+            '<label class="consent-row"><input type="checkbox" id="agree" /><span>I agree to the <a href="privacy.html" target="_blank" rel="noopener noreferrer">Terms &amp; Privacy Policy</a></span></label>' +
             '<button class="btn-primary" type="submit" id="auth-submit">Sign in</button>' +
             '<button class="btn-ghost full" type="button" id="toggle-mode">New here? Create an account</button>' +
             '<div class="divider"><span>or</span></div>' +
             '<button class="btn-google full" type="button" id="google-btn">Continue with Google</button>' +
+            '<p class="auth-legal">By continuing you agree to our <a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy &amp; Terms</a>.</p>' +
             "</form>"
           : LH.configured
           ? '<p class="muted">Can\'t connect right now — check your internet, then reload.</p>' +
@@ -228,30 +270,60 @@
     });
     form.addEventListener("submit", function (e) {
       e.preventDefault();
+      if (mode === "signup") {
+        var agree = card.querySelector("#agree");
+        if (!agree || !agree.checked) {
+          return toast("Please agree to the Terms & Privacy Policy to create an account.");
+        }
+      }
       var name = card.querySelector("#f-name").value.trim();
       var email = card.querySelector("#f-email").value.trim();
       var pass = card.querySelector("#f-pass").value;
       var p =
         mode === "signup" ? LH.signUp(email, pass, name) : LH.signIn(email, pass);
       submit.disabled = true;
-      p.catch(function (err) {
-        toast(err.message || "Sign-in failed.");
+      p.then(function () {
+        track(mode === "signup" ? "sign_up" : "login", { method: "email" });
+      }).catch(function (err) {
+        toast(authErrorMessage(err));
       }).finally(function () {
         submit.disabled = false;
       });
     });
     card.querySelector("#google-btn").addEventListener("click", function () {
-      LH.signInWithGoogle().catch(function (err) {
-        toast(err.message || "Google sign-in failed.");
-      });
+      LH.signInWithGoogle()
+        .then(function () { track("login", { method: "google" }); })
+        .catch(function (err) { toast(authErrorMessage(err)); });
+    });
+    card.querySelector("#forgot-pass").addEventListener("click", function () {
+      var email = card.querySelector("#f-email").value.trim();
+      if (!email) return toast("Enter your email above, then tap Forgot password.");
+      LH.resetPassword(email)
+        .then(function () { toast("Password reset link sent — check your email."); })
+        .catch(function (err) { toast(authErrorMessage(err)); });
     });
   }
 
   // ---- signed-in shell --------------------------------------------------
   function renderSignedIn() {
     tabs.hidden = false;
+    // Stop per-view listeners when leaving those views (tab switch or otherwise).
+    if (state.view !== "scores" && state.unsub.scores) {
+      state.unsub.scores();
+      state.unsub.scores = null;
+    }
+    if (state.view !== "connect" && state.unsub.players) {
+      state.unsub.players();
+      state.unsub.players = null;
+    }
+    if (state.view !== "connect") connectRefresh = null;
+    if (state.view !== "rank" && state.unsub.rank) {
+      state.unsub.rank();
+      state.unsub.rank = null;
+    }
+    if (state.view !== "discover") clearCardSubs();
     var isCoaching = state.view === "coaching" || state.view.indexOf("coach") === 0;
-    var isPlay = state.view === "discover" || state.view === "create";
+    var isPlay = state.view === "discover" || state.view === "create" || state.view === "player-view" || state.view === "scores";
     var isProfile = state.view === "profile" || state.view === "profile-edit";
     Array.prototype.forEach.call(tabs.querySelectorAll(".tab"), function (t) {
       var v = t.dataset.view;
@@ -272,6 +344,9 @@
     else if (state.view === "rank") renderRank();
     else if (state.view === "profile-edit") renderProfileEdit();
     else if (state.view === "profile") renderProfileView();
+    else if (state.view === "player-view") renderPlayerView(state.viewingPlayerUid);
+    else if (state.view === "scores") renderScores(state.scoresSessionId);
+    else if (state.view === "onboard") renderOnboard();
   }
 
   function renderCoaching() {
@@ -527,38 +602,80 @@
     }
   }
 
+  // Stop all per-card roster listeners (called when the list re-renders / we
+  // leave the Play view).
+  function clearCardSubs() {
+    (state.unsub.cards || []).forEach(function (fn) { try { fn(); } catch (e) {} });
+    state.unsub.cards = [];
+  }
+  // Split an ordered roster into confirmed (within capacity) and waitlist.
+  function rosterSplit(list, capacity) {
+    var cap = capacity || 8;
+    return { confirmed: list.slice(0, cap), waitlist: list.slice(cap) };
+  }
+
   function renderDiscover() {
     main.innerHTML = "";
+    clearCardSubs();
+    var me = LH.currentUser();
     var wrap = el('<section class="stack"></section>');
-    var head = el(
-      '<div class="view-head"><h2>Open Play</h2>' +
-        '<p class="muted">Upcoming sessions you can join.</p></div>'
+    wrap.appendChild(
+      el('<div class="view-head"><h2>Open Play</h2><p class="muted">Upcoming sessions you can join.</p></div>')
     );
-    wrap.appendChild(head);
 
     var hostBtn = el('<button class="btn-primary" type="button">＋ Host an open play</button>');
     hostBtn.addEventListener("click", function () {
+      state.editingSession = null;
       state.view = "create";
       renderSignedIn();
     });
     wrap.appendChild(hostBtn);
 
-    if (!state.sessions.length) {
+    // Filter: all upcoming vs. only ones I'm hosting.
+    var hostingCount = state.sessions.filter(function (s) { return me && s.organizerUid === me.uid; }).length;
+    if (hostingCount) {
+      var seg = el(
+        '<div class="segmented session-filter" role="group" aria-label="Filter sessions">' +
+          '<button type="button" class="seg' + (state.sessionFilter === "all" ? " active" : "") + '" data-f="all">All upcoming</button>' +
+          '<button type="button" class="seg' + (state.sessionFilter === "hosting" ? " active" : "") + '" data-f="hosting">Hosting (' + hostingCount + ")</button>" +
+          "</div>"
+      );
+      seg.addEventListener("click", function (e) {
+        var b = e.target.closest(".seg");
+        if (!b) return;
+        state.sessionFilter = b.dataset.f;
+        renderDiscover();
+      });
+      wrap.appendChild(seg);
+    } else if (state.sessionFilter === "hosting") {
+      state.sessionFilter = "all";
+    }
+
+    var list = state.sessions.filter(function (s) {
+      return state.sessionFilter !== "hosting" || (me && s.organizerUid === me.uid);
+    });
+
+    if (!list.length) {
       wrap.appendChild(
         el(
-          '<div class="empty">No upcoming sessions yet. ' +
-            "Tap <strong>Host an open play</strong> above to create the first one.</div>"
+          '<div class="empty">' +
+            (state.sessionFilter === "hosting"
+              ? "You're not hosting any upcoming sessions."
+              : "No upcoming sessions yet. Tap <strong>Host an open play</strong> above to create the first one.") +
+            "</div>"
         )
       );
     }
-    state.sessions.forEach(function (s) {
-      wrap.appendChild(sessionCard(s));
+    list.forEach(function (s) {
+      wrap.appendChild(sessionCard(s, state.unsub.cards));
     });
     main.appendChild(wrap);
   }
 
-  function sessionCard(s) {
-    var spots = Math.max(0, (s.capacity || 8) - (s.attendeeCount || 0));
+  function sessionCard(s, subs) {
+    var me = LH.currentUser();
+    var isOrganizer = !!(me && s.organizerUid === me.uid);
+    var cap = s.capacity || 8;
     var card = el(
       '<article class="card session-card">' +
         '<div class="session-top">' +
@@ -566,111 +683,371 @@
         '<p class="muted">' + esc(s.venueName || "TBD") + " · " + fmtWhen(s.startAt) + "</p></div>" +
         '<span class="pill">' + esc(skillLabel(s)) + "</span>" +
         "</div>" +
-        '<div class="session-meta">' +
-        "<span>👥 " + (s.attendeeCount || 0) + "/" + (s.capacity || 8) + "</span>" +
-        "<span>🎾 " + (s.courtCount || 1) + " court" + ((s.courtCount || 1) > 1 ? "s" : "") + "</span>" +
-        "<span>" + (spots > 0 ? spots + " spots left" : "Waitlist only") + "</span>" +
-        "</div>" +
+        '<div class="session-meta"></div>' +
         '<ul class="roster" hidden></ul>' +
         '<div class="session-actions">' +
         '<button class="btn-ghost btn-roster">Show players</button>' +
+        '<button class="btn-ghost btn-scores">🏓 Scores</button>' +
+        (isOrganizer ? '<button class="btn-ghost btn-edit">✎ Manage</button>' : "") +
         '<button class="btn-primary btn-rsvp">Join</button>' +
         "</div>" +
         "</article>"
     );
 
+    var metaEl = card.querySelector(".session-meta");
     var rosterEl = card.querySelector(".roster");
     var rosterBtn = card.querySelector(".btn-roster");
     var rsvpBtn = card.querySelector(".btn-rsvp");
-
-    // Live roster.
-    var rosterOpen = false;
-    var unsubRoster = null;
-    rosterBtn.addEventListener("click", function () {
-      rosterOpen = !rosterOpen;
-      rosterEl.hidden = !rosterOpen;
-      rosterBtn.textContent = rosterOpen ? "Hide players" : "Show players";
-      if (rosterOpen && !unsubRoster) {
-        unsubRoster = LH.watchRsvps(s.id, function (list) {
-          rosterEl.innerHTML = list.length
-            ? list.map(rosterItem).join("")
-            : '<li class="muted">No one yet — be first!</li>';
-        });
-      }
+    card.querySelector(".btn-scores").addEventListener("click", function () {
+      state.scoresSessionId = s.id;
+      state.view = "scores";
+      renderSignedIn();
     });
+    var editBtn = card.querySelector(".btn-edit");
+    if (editBtn) {
+      editBtn.addEventListener("click", function () {
+        state.editingSession = s;
+        state.view = "create";
+        renderSignedIn();
+      });
+    }
 
-    // My RSVP state drives the button.
-    LH.myRsvpStatus(s.id, function (status) {
-      if (status === "going") {
+    var rosterOpen = false;
+    var lastSplit = { confirmed: [], waitlist: [] };
+
+    function drawRoster() {
+      if (!rosterOpen) return;
+      var total = lastSplit.confirmed.length + lastSplit.waitlist.length;
+      if (!total) {
+        rosterEl.innerHTML = '<li class="muted">No one yet — be first!</li>';
+        return;
+      }
+      var html = lastSplit.confirmed.map(function (r) { return rosterItem(r); }).join("");
+      if (lastSplit.waitlist.length) {
+        html += '<li class="roster-divider">Waitlist</li>';
+        html += lastSplit.waitlist.map(function (r, i) { return rosterItem(r, i + 1); }).join("");
+      }
+      rosterEl.innerHTML = html;
+    }
+
+    function updateButton() {
+      var uid = me && me.uid;
+      var all = lastSplit.confirmed.concat(lastSplit.waitlist);
+      var idx = -1;
+      for (var i = 0; i < all.length; i++) { if (all[i].uid === uid) { idx = i; break; } }
+      var joined = idx > -1;
+      var confirmed = joined && idx < cap;
+      if (confirmed) {
         rsvpBtn.textContent = "Leave";
         rsvpBtn.classList.add("is-joined");
-      } else if (status === "waitlist") {
-        rsvpBtn.textContent = "On waitlist — leave";
+      } else if (joined) {
+        rsvpBtn.textContent = "Waitlist #" + (idx - cap + 1) + " — leave";
         rsvpBtn.classList.add("is-joined");
       } else {
-        rsvpBtn.textContent = spots > 0 ? "Join" : "Join waitlist";
+        var spotsLeft = Math.max(0, cap - lastSplit.confirmed.length);
+        rsvpBtn.textContent = spotsLeft > 0 ? "Join" : "Join waitlist";
         rsvpBtn.classList.remove("is-joined");
       }
       rsvpBtn.onclick = function () {
         rsvpBtn.disabled = true;
-        var action =
-          status === "going" || status === "waitlist"
-            ? LH.leave(s.id)
-            : LH.join(s.id, {
-                displayName: (state.profile && state.profile.displayName) || "Player",
-                rating: state.profile ? state.profile.homeRatingDoubles : null,
-                photoDataUrl: state.profile ? state.profile.photoDataUrl || state.profile.photoURL : null,
-                skillLevel: state.profile ? state.profile.skillLevel : null,
-                heritageFlag: heritageFlagOf(state.profile) || null,
-              });
+        var action = joined
+          ? LH.leave(s.id)
+          : LH.join(s.id, {
+              displayName: (state.profile && state.profile.displayName) || "Player",
+              rating: ratingOf(state.profile),
+              photoDataUrl: state.profile ? state.profile.photoDataUrl || state.profile.photoURL : null,
+              skillLevel: state.profile ? state.profile.skillLevel : null,
+              heritageFlag: heritageFlagOf(state.profile) || null,
+            });
         action
           .then(function (res) {
-            if (res === "waitlist") toast("Session full — you're on the waitlist.");
+            if (!joined) {
+              track("session_joined", { status: res || "going" });
+              if (res === "waitlist") toast("Session full — you're on the waitlist.");
+            }
           })
-          .catch(function (err) {
-            toast(err.message || "Something went wrong.");
-          })
-          .finally(function () {
-            rsvpBtn.disabled = false;
-          });
+          .catch(function (err) { toast(err.message || "Something went wrong."); })
+          .finally(function () { rsvpBtn.disabled = false; });
       };
+    }
+
+    function renderMeta() {
+      var confirmedCount = lastSplit.confirmed.length;
+      var waitCount = lastSplit.waitlist.length;
+      var spotsLeft = Math.max(0, cap - confirmedCount);
+      var courts = s.courtCount || 1;
+      metaEl.innerHTML =
+        "<span>👥 " + confirmedCount + "/" + cap + "</span>" +
+        "<span>🎾 " + courts + " court" + (courts > 1 ? "s" : "") + "</span>" +
+        "<span>" + (spotsLeft > 0 ? spotsLeft + " spots left" : waitCount > 0 ? waitCount + " waitlisted" : "Full") + "</span>";
+    }
+
+    // One live subscription drives the count, the button, and the roster.
+    var unsub = LH.watchRsvps(s.id, function (listRsvps) {
+      lastSplit = rosterSplit(listRsvps, cap);
+      renderMeta();
+      updateButton();
+      drawRoster();
+    });
+    if (subs) subs.push(unsub);
+    // seed meta before first snapshot
+    renderMeta();
+    updateButton();
+
+    rosterBtn.addEventListener("click", function () {
+      rosterOpen = !rosterOpen;
+      rosterEl.hidden = !rosterOpen;
+      rosterBtn.textContent = rosterOpen ? "Hide players" : "Show players";
+      drawRoster();
+    });
+    rosterEl.addEventListener("click", function (e) {
+      var li = e.target.closest("[data-uid]");
+      if (!li || !li.dataset.uid) return;
+      state.playerBackView = "discover";
+      state.viewingPlayerUid = li.dataset.uid;
+      state.view = "player-view";
+      renderSignedIn();
     });
 
     return card;
   }
 
+  // ---- session scores: view results + (organizer) enter games ----
+  function renderScores(sessionId) {
+    main.innerHTML = "";
+    if (state.unsub.scores) { state.unsub.scores(); state.unsub.scores = null; }
+
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el('<div class="view-head"><button class="link-back" id="back" type="button">‹ Play</button><h2>Session scores</h2></div>')
+    );
+    var card = el('<section class="card stack"><p class="muted">Loading…</p></section>');
+    wrap.appendChild(card);
+    main.appendChild(wrap);
+
+    wrap.querySelector("#back").addEventListener("click", function () {
+      if (state.unsub.scores) { state.unsub.scores(); state.unsub.scores = null; }
+      state.view = "discover";
+      renderSignedIn();
+    });
+
+    if (!sessionId) { card.innerHTML = '<p class="muted">Session not found.</p>'; return; }
+    var me = LH.currentUser();
+
+    LH.getSessionOnce(sessionId).then(function (s) {
+      if (!s) { card.innerHTML = '<p class="muted">This session no longer exists.</p>'; return; }
+      var isOrganizer = !!(me && me.uid === s.organizerUid);
+      var roster = [];
+      var assign = {}; // uid -> "A" | "B"
+
+      card.innerHTML =
+        '<div class="scores-head"><h2>' + esc(s.title) + "</h2>" +
+        '<p class="muted">' + esc(s.venueName || "TBD") + " · " + fmtWhen(s.startAt) + "</p></div>" +
+        '<div class="section-title">Games</div>' +
+        '<div id="games-list" class="games-list"><p class="muted">Loading games…</p></div>' +
+        (isOrganizer
+          ? '<div class="score-entry">' +
+              '<div class="section-title">Add a game</div>' +
+              '<p class="muted small">Tap players to set Team A (red) or Team B (gold). Tap again to switch teams, once more to clear.</p>' +
+              '<div id="picker" class="pk-grid"></div>' +
+              '<div class="score-inputs">' +
+                '<div class="si"><label>Team A</label><input id="score-a" type="number" min="0" max="99" inputmode="numeric" placeholder="0" /></div>' +
+                '<span class="si-dash">–</span>' +
+                '<div class="si"><label>Team B</label><input id="score-b" type="number" min="0" max="99" inputmode="numeric" placeholder="0" /></div>' +
+              "</div>" +
+              '<button class="btn-primary" id="add-game" type="button">Add game</button>' +
+              '<p class="save-status" id="score-status" hidden></p>' +
+            "</div>"
+          : '<p class="muted">Only the organizer can enter scores for this session.</p>');
+
+      var gamesList = card.querySelector("#games-list");
+
+      function gameRow(g) {
+        var aWin = g.winner === "A", bWin = g.winner === "B";
+        var namesA = (g.teamANames || []).join(" & ") || "Team A";
+        var namesB = (g.teamBNames || []).join(" & ") || "Team B";
+        return (
+          '<div class="game-row">' +
+          '<div class="game-side game-a' + (aWin ? " win" : "") + '">' +
+          '<span class="gt-names">' + esc(namesA) + (aWin ? " 🏆" : "") + "</span>" +
+          '<span class="gt-score">' + esc(g.scoreA) + "</span></div>" +
+          '<span class="game-vs">vs</span>' +
+          '<div class="game-side game-b' + (bWin ? " win" : "") + '">' +
+          '<span class="gt-score">' + esc(g.scoreB) + "</span>" +
+          '<span class="gt-names">' + (bWin ? "🏆 " : "") + esc(namesB) + "</span></div>" +
+          (isOrganizer ? '<button class="game-del" type="button" data-gid="' + esc(g.id) + '" aria-label="Delete game">✕</button>' : "") +
+          "</div>"
+        );
+      }
+
+      var unsubGames = LH.watchSessionGames(sessionId, function (games) {
+        gamesList.innerHTML = games.length
+          ? games.map(gameRow).join("")
+          : '<p class="empty">No games recorded yet.' + (isOrganizer ? " Add the first one below." : "") + "</p>";
+      });
+      var unsubRoster = isOrganizer
+        ? LH.watchRsvps(sessionId, function (list) { roster = list; drawPicker(); })
+        : null;
+      state.unsub.scores = function () {
+        if (unsubGames) unsubGames();
+        if (unsubRoster) unsubRoster();
+      };
+
+      gamesList.addEventListener("click", function (e) {
+        var del = e.target.closest(".game-del");
+        if (!del) return;
+        if (!window.confirm("Delete this game?")) return;
+        LH.deleteGame(sessionId, del.dataset.gid).catch(function () { toast("Couldn't delete game."); });
+      });
+
+      // ---- organizer: player picker + add-game ----
+      var pickerEl = card.querySelector("#picker");
+      function drawPicker() {
+        if (!pickerEl) return;
+        if (!roster.length) {
+          pickerEl.innerHTML = '<p class="muted small">No players have joined yet — the roster fills in as people RSVP.</p>';
+          return;
+        }
+        pickerEl.innerHTML = roster
+          .map(function (p) {
+            var a = assign[p.uid];
+            return (
+              '<button type="button" class="pk-chip' + (a === "A" ? " pk-a" : a === "B" ? " pk-b" : "") + '" data-uid="' + esc(p.uid) + '">' +
+              esc(p.displayName || "Player") + (a ? '<span class="pk-tag">' + a + "</span>" : "") + "</button>"
+            );
+          })
+          .join("");
+      }
+      if (pickerEl) {
+        var teamCount = function (t) {
+          return roster.filter(function (p) { return assign[p.uid] === t; }).length;
+        };
+        pickerEl.addEventListener("click", function (e) {
+          var chip = e.target.closest(".pk-chip");
+          if (!chip) return;
+          var uid = chip.dataset.uid;
+          var cur = assign[uid];
+          // Cycle unassigned → A → B → unassigned, skipping any full (2-player)
+          // team so a full Team A never blocks reaching Team B.
+          var next;
+          if (cur === "A") next = teamCount("B") < 2 ? "B" : null;
+          else if (cur === "B") next = null;
+          else if (teamCount("A") < 2) next = "A";
+          else if (teamCount("B") < 2) next = "B";
+          else { toast("Both teams are full — clear a player first."); return; }
+          if (next) assign[uid] = next;
+          else delete assign[uid];
+          drawPicker();
+        });
+        drawPicker();
+      }
+
+      var addBtn = card.querySelector("#add-game");
+      if (addBtn) {
+        var statusEl = card.querySelector("#score-status");
+        var setStatus = function (msg, kind) {
+          statusEl.hidden = false;
+          statusEl.textContent = msg;
+          statusEl.className = "save-status" + (kind ? " " + kind : "");
+        };
+        addBtn.addEventListener("click", function () {
+          var teamA = roster.filter(function (p) { return assign[p.uid] === "A"; });
+          var teamB = roster.filter(function (p) { return assign[p.uid] === "B"; });
+          if (!teamA.length || !teamB.length) return setStatus("Put at least one player on each team.", "err");
+          var sa = parseInt(card.querySelector("#score-a").value, 10);
+          var sb = parseInt(card.querySelector("#score-b").value, 10);
+          if (isNaN(sa) || isNaN(sb) || sa < 0 || sb < 0) return setStatus("Enter both scores.", "err");
+          if (sa === sb) return setStatus("A game can't end in a tie — pick a winner.", "err");
+          addBtn.disabled = true;
+          setStatus("Saving…", "");
+          LH.addGame(sessionId, { teamA: teamA, teamB: teamB, scoreA: sa, scoreB: sb })
+            .then(function () {
+              track("score_added");
+              setStatus("Game added ✓", "ok");
+              assign = {};
+              drawPicker();
+              card.querySelector("#score-a").value = "";
+              card.querySelector("#score-b").value = "";
+            })
+            .catch(function (err) {
+              var code = err && err.code ? String(err.code) : "";
+              setStatus(
+                code.indexOf("permission-denied") > -1
+                  ? "Score-saving isn't live yet — the updated security rules need to be deployed."
+                  : (err && err.message) || "Couldn't add game.",
+                "err"
+              );
+            })
+            .finally(function () { addBtn.disabled = false; });
+        });
+      }
+    }).catch(function () {
+      card.innerHTML = '<p class="muted">Could not load this session.</p>';
+    });
+  }
+
+  // Fill the stat tiles (games / win rate / record) for a profile, if the
+  // player has any recorded games. Async — degrades to nothing on error (e.g.
+  // before the games rules are deployed).
+  function attachStats(scope, uid) {
+    var box = scope.querySelector("[data-stats]");
+    if (!box || !uid || !LH.getPlayerStats) return;
+    LH.getPlayerStats(uid)
+      .then(function (st) {
+        if (!st || !st.games) return;
+        var tile = function (v, l) {
+          return '<div class="pstat"><div class="pstat-v">' + esc(v) + '</div><div class="pstat-l">' + esc(l) + "</div></div>";
+        };
+        box.innerHTML = tile(st.games, "Games") + tile(st.winRate + "%", "Win rate") + tile(st.wins + "–" + st.losses, "W–L");
+        box.hidden = false;
+      })
+      .catch(function () {});
+  }
+
+  // Format a Timestamp/Date as a value for <input type="datetime-local">.
+  function toLocalInput(ts) {
+    var d = ts && ts.toDate ? ts.toDate() : ts ? new Date(ts) : null;
+    if (!d || isNaN(d.getTime())) return "";
+    var pad = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
   function renderCreate() {
     main.innerHTML = "";
+    var editing = state.editingSession; // session object or null
+    var e0 = editing || {};
     var wrap = el('<section class="stack"></section>');
     var back = el('<div class="view-head"><button class="link-back" id="back" type="button">‹ Play</button></div>');
     wrap.appendChild(back);
     back.querySelector("#back").addEventListener("click", function () {
+      state.editingSession = null;
       state.view = "discover";
       renderSignedIn();
     });
     var card = el(
       '<section class="card">' +
-        "<h2>Host an open play</h2>" +
+        "<h2>" + (editing ? "Manage session" : "Host an open play") + "</h2>" +
         '<form id="create-form" class="stack">' +
         '<div class="field"><label>Title</label>' +
-        '<input id="c-title" type="text" placeholder="Saturday morning doubles" required /></div>' +
+        '<input id="c-title" type="text" placeholder="Saturday morning doubles" value="' + esc(e0.title || "") + '" required /></div>' +
         '<div class="field"><label>Venue</label>' +
-        '<input id="c-venue" type="text" placeholder="Riverside Courts" required /></div>' +
+        '<input id="c-venue" type="text" placeholder="Riverside Courts" value="' + esc(e0.venueName || "") + '" required /></div>' +
         '<div class="field"><label>Date &amp; time</label>' +
-        '<input id="c-when" type="datetime-local" required /></div>' +
+        '<input id="c-when" type="datetime-local" value="' + esc(editing ? toLocalInput(e0.startAt) : "") + '" required /></div>' +
         '<div class="row">' +
         '<div class="field"><label>Courts</label>' +
-        '<input id="c-courts" type="number" min="1" value="2" /></div>' +
+        '<input id="c-courts" type="number" min="1" value="' + esc(editing ? e0.courtCount || 1 : 2) + '" /></div>' +
         '<div class="field"><label>Capacity</label>' +
-        '<input id="c-cap" type="number" min="2" value="8" /></div>' +
+        '<input id="c-cap" type="number" min="2" value="' + esc(editing ? e0.capacity || 8 : 8) + '" /></div>' +
         "</div>" +
         '<div class="row">' +
         '<div class="field"><label>Min DUPR</label>' +
-        '<input id="c-min" type="number" step="0.1" min="2" max="8" placeholder="any" /></div>' +
+        '<input id="c-min" type="number" step="0.1" min="2" max="8" placeholder="any" value="' + esc(e0.skillMin != null ? e0.skillMin : "") + '" /></div>' +
         '<div class="field"><label>Max DUPR</label>' +
-        '<input id="c-max" type="number" step="0.1" min="2" max="8" placeholder="any" /></div>' +
+        '<input id="c-max" type="number" step="0.1" min="2" max="8" placeholder="any" value="' + esc(e0.skillMax != null ? e0.skillMax : "") + '" /></div>' +
         "</div>" +
-        '<button class="btn-primary" type="submit">Create session</button>' +
+        '<button class="btn-primary" type="submit">' + (editing ? "Save changes" : "Create session") + "</button>" +
+        (editing ? '<button class="btn-signout" id="cancel-session" type="button">Cancel this session</button>' : "") +
         "</form></section>"
     );
     wrap.appendChild(card);
@@ -682,7 +1059,7 @@
       if (!whenVal) return toast("Pick a date and time.");
       var min = parseFloat(card.querySelector("#c-min").value);
       var max = parseFloat(card.querySelector("#c-max").value);
-      LH.createSession({
+      var data = {
         title: card.querySelector("#c-title").value.trim(),
         venueName: card.querySelector("#c-venue").value.trim(),
         startAt: new Date(whenVal),
@@ -691,16 +1068,35 @@
         skillMin: isNaN(min) ? null : min,
         skillMax: isNaN(max) ? null : max,
         organizerName: (state.profile && state.profile.displayName) || undefined,
-      })
+      };
+      var action = editing ? LH.updateSession(editing.id, data) : LH.createSession(data);
+      action
         .then(function () {
-          toast("Session created!");
+          if (!editing) track("session_created");
+          state.editingSession = null;
+          toast(editing ? "Session updated." : "Session created!");
           state.view = "discover";
           renderSignedIn();
         })
         .catch(function (err) {
-          toast(err.message || "Could not create session.");
+          toast(err.message || (editing ? "Could not update session." : "Could not create session."));
         });
     });
+
+    var cancelBtn = card.querySelector("#cancel-session");
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        if (!window.confirm("Cancel this session? Players who joined will no longer see it.")) return;
+        LH.cancelSession(editing.id)
+          .then(function () {
+            state.editingSession = null;
+            toast("Session cancelled.");
+            state.view = "discover";
+            renderSignedIn();
+          })
+          .catch(function (err) { toast(err.message || "Couldn't cancel the session."); });
+      });
+    }
   }
 
   // Resize/crop an image File to a square dataURL (keeps Firestore docs small).
@@ -761,6 +1157,41 @@
     );
   }
 
+  // Generic single-select segmented control (format, hand, court side, …).
+  function segmentedGroup(id, options, selected) {
+    return (
+      '<div class="segmented" id="' + esc(id) + '" role="group">' +
+      options.map(function (o) {
+        return (
+          '<button type="button" class="seg' + (selected === o ? " active" : "") +
+          '" data-val="' + esc(o) + '">' + esc(o) + "</button>"
+        );
+      }).join("") +
+      "</div>"
+    );
+  }
+
+  // Wire a segmented control: single-select, tap the active one to clear it.
+  // Returns a getter for the current value (or null).
+  function wireSegmented(card, id) {
+    var seg = card.querySelector("#" + id);
+    if (seg) {
+      seg.addEventListener("click", function (e) {
+        var btn = e.target.closest(".seg");
+        if (!btn) return;
+        var already = btn.classList.contains("active");
+        Array.prototype.forEach.call(seg.querySelectorAll(".seg"), function (s) {
+          s.classList.remove("active");
+        });
+        if (!already) btn.classList.add("active");
+      });
+    }
+    return function () {
+      var active = seg && seg.querySelector(".seg.active");
+      return active ? active.dataset.val : null;
+    };
+  }
+
   // Small circular avatar for rosters (photo or first initial).
   function miniAvatar(r) {
     var inner = r.photoDataUrl
@@ -769,9 +1200,10 @@
     return '<span class="roster-avatar">' + inner + flagBadge(r.heritageFlag) + "</span>";
   }
 
-  function rosterItem(r) {
+  function rosterItem(r, waitPos) {
     return (
-      '<li class="roster-item">' +
+      '<li class="roster-item is-clickable" role="button" tabindex="0" data-uid="' + esc(r.uid) + '">' +
+      (waitPos ? '<span class="roster-wait">#' + waitPos + "</span>" : "") +
       miniAvatar(r) +
       '<span class="roster-name">' + esc(r.displayName) + "</span>" +
       (r.skillLevel ? '<span class="roster-skill">' + esc(r.skillLevel) + "</span>" : "") +
@@ -780,24 +1212,18 @@
     );
   }
 
-  // ---- Connect: DUPR leaderboard (sample data for now) ----
-  // TODO: replace with real players once the DUPR integration lands.
-  var LEADERBOARD = [
-    { name: "Ralph Llacar", flag: "🇨🇦", dupr: 6.82, lotus: 92 },
-    { name: "Marco Silva", flag: "🇧🇷", dupr: 6.75, lotus: 88 },
-    { name: "Priya Nair", flag: "🇮🇳", dupr: 6.61, lotus: 95 },
-    { name: "Leo Tanaka", flag: "🇯🇵", dupr: 6.40, lotus: 90 },
-    { name: "Sofia Rossi", flag: "🇮🇹", dupr: 6.28, lotus: 84 },
-    { name: "James Park", flag: "🇰🇷", dupr: 6.15, lotus: 86 },
-    { name: "Emma Müller", flag: "🇩🇪", dupr: 6.03, lotus: 78 },
-    { name: "Diego Torres", flag: "🇲🇽", dupr: 5.92, lotus: 81 },
-    { name: "Lena Novak", flag: "🇨🇿", dupr: 5.85, lotus: 74 },
-    { name: "Noah Smith", flag: "🇺🇸", dupr: 5.77, lotus: 89 },
-  ];
-  // Which metric the leaderboard is ranked by ("dupr" | "lotus").
-  var rankMetric = "dupr";
+  // ---- Leaderboard (real, computed from recorded games) ----
+  // Which metric the leaderboard is ranked by ("dupr" | "lotus"). Lotus Score
+  // is the default view.
+  var rankMetric = "lotus";
   function rankValueStr(pl) {
     return rankMetric === "lotus" ? String(pl.lotus) : pl.dupr.toFixed(2);
+  }
+  // Lotus Score = performance + activity from recorded games (tunable). 0 until
+  // a player has logged games, so unranked players don't clutter the board.
+  function lotusScore(st) {
+    if (!st || !st.games) return 0;
+    return Math.round(st.wins * 30 + st.games * 8 + st.winRate);
   }
 
   function podiumCol(pl, rank) {
@@ -816,23 +1242,76 @@
     );
   }
 
-  // ---- Connect: find & connect with players (sample data for now) ----
-  var CONNECT_PLAYERS = [
-    { name: "Jenny Kim", flag: "🇰🇷", skill: "Intermediate", city: "Toronto" },
-    { name: "Raj Patel", flag: "🇮🇳", skill: "Advanced", city: "Mississauga" },
-    { name: "Maria Lopez", flag: "🇲🇽", skill: "Beginner", city: "Toronto" },
-    { name: "Kevin Wong", flag: "🇭🇰", skill: "Intermediate", city: "Markham" },
-    { name: "Aisha Khan", flag: "🇵🇰", skill: "Advanced", city: "Brampton" },
-    { name: "Tom Nguyen", flag: "🇻🇳", skill: "Intermediate", city: "Scarborough" },
-  ];
+  function isBlocked(uid) {
+    return (state.blocks || []).indexOf(uid) > -1;
+  }
 
-  function connectCard(pl) {
+  // ---- Connections (friend requests) ----
+  var connectRefresh = null; // set while the Connect list is on screen
+
+  function connectionWith(uid) {
+    var list = state.connections || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].users && list[i].users.indexOf(uid) > -1) return list[i];
+    }
+    return null;
+  }
+  // "none" | "pending-out" (I asked) | "pending-in" (they asked) | "connected"
+  function connStatus(uid) {
+    var c = connectionWith(uid);
+    if (!c) return "none";
+    if (c.status === "accepted") return "connected";
+    var me = LH.currentUser();
+    return me && c.requestedBy === me.uid ? "pending-out" : "pending-in";
+  }
+  function connectBtnHtml(uid, cls) {
+    var s = connStatus(uid);
+    var label = s === "connected" ? "✓ Connected" : s === "pending-out" ? "Requested" : s === "pending-in" ? "Accept" : "Connect";
+    var isDisabled = s === "connected" || s === "pending-out";
+    var mod = s === "pending-in" ? " is-accept" : isDisabled ? " is-requested" : "";
     return (
-      '<article class="card connect-card">' +
-      '<span class="connect-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + flagBadge(pl.flag) + "</span>" +
-      '<div class="connect-body"><h3>' + esc(pl.name) + "</h3>" +
-      '<p class="muted">' + esc(pl.skill) + " · " + esc(pl.city) + "</p></div>" +
-      '<button class="btn-connect" data-connect="' + esc(pl.name) + '" type="button">Connect</button>' +
+      '<button class="' + cls + mod + '" data-conn="' + esc(uid) + '" data-status="' + s + '" type="button"' +
+      (isDisabled ? " disabled" : "") + ">" + label + "</button>"
+    );
+  }
+  function connErr(err) {
+    var code = err && err.code ? String(err.code) : "";
+    if (code.indexOf("permission-denied") > -1) return "Connections aren't live yet — the updated rules need to be deployed.";
+    return (err && err.message) || "Something went wrong.";
+  }
+  function handleConnectClick(uid, status) {
+    if (status === "none") {
+      LH.requestConnection(uid)
+        .then(function () { track("connect_request"); toast("Connection request sent!"); })
+        .catch(function (e) { toast(connErr(e)); });
+    } else if (status === "pending-in") {
+      LH.acceptConnection(uid)
+        .then(function () { track("connect_accepted"); toast("You're connected! 🎉"); })
+        .catch(function (e) { toast(connErr(e)); });
+    }
+  }
+  // Update the visitor-profile Connect button in place when connections change.
+  function refreshVisitorConnectBtn() {
+    var oldBtn = main.querySelector(".va-connect");
+    if (!oldBtn) return;
+    var uid = oldBtn.dataset.conn;
+    var fresh = el(connectBtnHtml(uid, "btn-primary va-connect"));
+    oldBtn.replaceWith(fresh);
+    fresh.addEventListener("click", function () { handleConnectClick(uid, fresh.dataset.status); });
+  }
+
+  // ---- Connect: find & connect with real players (from Firestore) ----
+  function connectCard(u) {
+    var sub = [u.skillLevel, u.country].filter(Boolean).map(esc).join(" · ");
+    var inner = (u.photoDataUrl || u.photoURL)
+      ? '<img src="' + esc(u.photoDataUrl || u.photoURL) + '" alt="" referrerpolicy="no-referrer" />'
+      : esc((u.displayName || "?").trim().charAt(0).toUpperCase() || "?");
+    return (
+      '<article class="card connect-card is-clickable" role="button" tabindex="0" data-uid="' + esc(u.uid) + '">' +
+      '<span class="connect-avatar">' + inner + flagBadge(heritageFlagOf(u)) + "</span>" +
+      '<div class="connect-body"><h3>' + esc(u.displayName || "Player") + "</h3>" +
+      (sub ? '<p class="muted">' + sub + "</p>" : "") + "</div>" +
+      connectBtnHtml(u.uid, "btn-connect") +
       "</article>"
     );
   }
@@ -848,33 +1327,57 @@
     );
     var search = el(
       '<div class="input-wrap"><span class="lead" aria-hidden="true">🔍</span>' +
-        '<input class="has-icon" id="connect-search" type="text" placeholder="Search players by name…" /></div>'
+        '<input class="has-icon" id="connect-search" type="text" placeholder="Search players by name or location…" /></div>'
     );
     wrap.appendChild(search);
-    var listEl = el('<div class="stack" id="connect-list"></div>');
+    var listEl = el('<div class="stack" id="connect-list"><div class="muted" style="text-align:center;padding:20px">Loading players…</div></div>');
     wrap.appendChild(listEl);
     main.appendChild(wrap);
 
-    function draw(q) {
-      var query = (q || "").trim().toLowerCase();
-      var items = CONNECT_PLAYERS.filter(function (pl) {
-        return !query || pl.name.toLowerCase().indexOf(query) > -1 || pl.city.toLowerCase().indexOf(query) > -1;
+    var players = [];
+    var query = "";
+    function draw() {
+      var me = LH.currentUser();
+      var q = query.trim().toLowerCase();
+      var items = players.filter(function (u) {
+        if (me && u.uid === me.uid) return false; // don't list yourself
+        if (isBlocked(u.uid)) return false; // hide blocked players
+        if (!q) return true;
+        return (u.displayName || "").toLowerCase().indexOf(q) > -1 ||
+          (u.country || "").toLowerCase().indexOf(q) > -1;
       });
+      items.sort(function (a, b) { return (a.displayName || "").localeCompare(b.displayName || ""); });
       listEl.innerHTML = items.length
         ? items.map(connectCard).join("")
-        : '<div class="empty">No players found.</div>';
+        : (players.length > (me ? 1 : 0)
+            ? '<div class="empty">No players match your search.</div>'
+            : '<div class="empty">No other players yet — invite friends to join Lotus Hub! 🪷</div>');
     }
-    draw("");
+
+    if (state.unsub.players) state.unsub.players();
+    state.unsub.players = LH.watchPlayers(function (list) {
+      players = list;
+      draw();
+    });
+    // Let the connections watcher refresh this list's buttons in place.
+    connectRefresh = draw;
+
     search.querySelector("#connect-search").addEventListener("input", function (e) {
-      draw(e.target.value);
+      query = e.target.value;
+      draw();
     });
     listEl.addEventListener("click", function (e) {
-      var btn = e.target.closest("[data-connect]");
-      if (!btn) return;
-      btn.textContent = "Requested";
-      btn.disabled = true;
-      btn.classList.add("is-requested");
-      toast("Connection request sent to " + btn.dataset.connect + "!");
+      var btn = e.target.closest(".btn-connect");
+      if (btn) {
+        handleConnectClick(btn.dataset.conn, btn.dataset.status);
+        return;
+      }
+      var cardEl = e.target.closest("[data-uid]");
+      if (!cardEl) return;
+      state.viewingPlayerUid = cardEl.dataset.uid;
+      state.playerBackView = "connect";
+      state.view = "player-view";
+      renderSignedIn();
     });
   }
 
@@ -902,44 +1405,72 @@
     if (isLotus) {
       wrap.appendChild(
         el(
-          '<div class="lotus-note"><strong>Lotus Score</strong> is your overall player rating — combining your ' +
-            "skill, performance, activity, and community involvement into one score.</div>"
+          '<div class="lotus-note"><strong>Lotus Score</strong> rewards playing and winning — ' +
+            "it's built from the open-play games you log scores for.</div>"
         )
       );
     }
 
-    var ranked = LEADERBOARD.slice().sort(function (a, b) {
-      return (isLotus ? b.lotus - a.lotus : b.dupr - a.dupr);
-    });
-    var top3 = ranked.slice(0, 3);
-    var podium = el(
-      '<div class="card podium-card"><div class="podium">' +
+    var bodyEl = el('<div id="rank-body"><div class="card"><p class="muted" style="text-align:center;padding:14px 0">Loading leaderboard…</p></div></div>');
+    wrap.appendChild(bodyEl);
+    main.appendChild(wrap);
+
+    // Build the board from real players + their recorded-game stats.
+    var players = null;
+    var stats = null;
+    function build() {
+      if (players == null || stats == null) return;
+      var entries = players.map(function (u) {
+        var st = stats[u.uid] || { games: 0, wins: 0, losses: 0, winRate: 0 };
+        return {
+          uid: u.uid,
+          name: u.displayName || "Player",
+          flag: heritageFlagOf(u),
+          dupr: ratingOf(u),
+          lotus: lotusScore(st),
+          games: st.games,
+        };
+      });
+      var ranked = isLotus
+        ? entries.filter(function (e) { return e.games > 0; }).sort(function (a, b) { return b.lotus - a.lotus; })
+        : entries.filter(function (e) { return e.dupr != null; }).sort(function (a, b) { return b.dupr - a.dupr; });
+
+      if (!ranked.length) {
+        bodyEl.innerHTML =
+          '<div class="empty">' +
+          (isLotus
+            ? "No ranked games yet — play an open-play session and log the scores to climb the Lotus leaderboard. 🏓"
+            : "No rated players yet — add your DUPR rating on your profile to appear here.") +
+          "</div>";
+        return;
+      }
+      var top3 = ranked.slice(0, 3);
+      var podium =
+        '<div class="card podium-card"><div class="podium">' +
         (top3[1] ? podiumCol(top3[1], 2) : "") +
         (top3[0] ? podiumCol(top3[0], 1) : "") +
         (top3[2] ? podiumCol(top3[2], 3) : "") +
-        "</div></div>"
-    );
-    wrap.appendChild(podium);
+        "</div></div>";
+      var rows = ranked
+        .slice(3)
+        .map(function (pl, i) {
+          var rank = i + 4;
+          return (
+            '<div class="lb-row">' +
+            '<span class="lb-rank">' + rank + "</span>" +
+            '<span class="lb-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + flagBadge(pl.flag) + "</span>" +
+            '<span class="lb-name">' + esc(pl.name) + "</span>" +
+            '<span class="lb-dupr">' + esc(rankValueStr(pl)) + "</span>" +
+            "</div>"
+          );
+        })
+        .join("");
+      bodyEl.innerHTML = podium + (rows ? '<div class="card lb-list">' + rows + "</div>" : "");
+    }
 
-    var rows = ranked
-      .slice(3)
-      .map(function (pl, i) {
-        var rank = i + 4;
-        return (
-          '<div class="lb-row">' +
-          '<span class="lb-rank">' + rank + "</span>" +
-          '<span class="lb-avatar">' + esc(pl.name.trim().charAt(0).toUpperCase()) + flagBadge(pl.flag) + "</span>" +
-          '<span class="lb-name">' + esc(pl.name) + "</span>" +
-          '<span class="lb-dupr">' + esc(rankValueStr(pl)) + "</span>" +
-          "</div>"
-        );
-      })
-      .join("");
-    wrap.appendChild(el('<div class="card lb-list">' + rows + "</div>"));
-    wrap.appendChild(
-      el('<p class="muted" style="text-align:center">Sample rankings — real standings arrive with the DUPR integration.</p>')
-    );
-    main.appendChild(wrap);
+    if (state.unsub.rank) state.unsub.rank();
+    state.unsub.rank = LH.watchPlayers(function (list) { players = list; build(); });
+    LH.getAllPlayerStats().then(function (map) { stats = map; build(); });
 
     var filterBtn = wrap.querySelector("#rank-filter");
     var filterMenu = wrap.querySelector("#rank-menu");
@@ -968,39 +1499,258 @@
     });
   }
 
-  // Read-only "how visitors see you" profile, with a pencil to edit.
-  function renderProfileView() {
-    main.innerHTML = "";
-    var p = state.profile || {};
+  // Meta row whose value is trusted HTML (e.g. a link). Label is still escaped.
+  function metaRowRaw(label, valHtml) {
+    return (
+      '<div class="meta-row"><span class="meta-label">' + esc(label) + "</span>" +
+      '<span class="meta-val">' + valHtml + "</span></div>"
+    );
+  }
+  // "Mar 2024" from a Firestore timestamp (or nothing if unset).
+  function fmtMemberSince(ts) {
+    if (!ts) return "";
+    var d = ts.toDate ? ts.toDate() : new Date(ts);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  }
+  // Strip a leading @ and whitespace from a handle.
+  function cleanHandle(s) {
+    return String(s || "").trim().replace(/^@+/, "");
+  }
+  // Rating line: a bold number with a small tag. Verified DUPR ratings show
+  // "DUPR <n>" + a green Verified tag; self-reported ones show just the number
+  // + a neutral Self-rated tag (no "DUPR" word).
+  function ratingHtml(linked, rating) {
+    return (
+      '<span class="rating-pill' + (linked ? " verified" : "") + '">' +
+      '<span class="rp-label">' + (linked ? "DUPR" : "Self-rated") + "</span>" +
+      '<span class="rp-val">' + esc(rating) + "</span>" +
+      (linked ? '<span class="rp-check" aria-hidden="true">✓</span>' : "") +
+      "</span>"
+    );
+  }
+
+  // Shared read-only profile body (hero + bio + style + facts). Used by both the
+  // owner's "how visitors see you" view and the visitor player view so the two
+  // never drift apart.
+  function profileBody(p) {
     var linked = !!p.duprLinked;
     var manualVal = p.duprManual != null ? String(p.duprManual) : "";
     var shownRating = linked && p.homeRatingDoubles != null ? String(p.homeRatingDoubles) : manualVal;
-    var heritage = p.heritage != null ? p.heritage : p.ethnicity;
+    var since = fmtMemberSince(p.createdAt);
+    var ig = cleanHandle(p.instagram);
+
+    var tags =
+      (p.skillLevel ? '<span class="identity-skill">' + esc(p.skillLevel) + "</span>" : "") +
+      (shownRating ? ratingHtml(linked, shownRating) : "") +
+      (p.lotusScore != null ? '<span class="chip lotus-chip">🪷 Lotus ' + esc(p.lotusScore) + "</span>" : "");
+
+    var facts =
+      (p.country ? metaRow("Location", p.country) : "") +
+      (p.favCourt ? metaRow("Home court", p.favCourt) : "") +
+      (p.availability ? metaRow("Usually free", p.availability) : "") +
+      (p.favPaddle ? metaRow("Paddle", p.favPaddle) : "") +
+      (ig
+        ? metaRowRaw(
+            "Instagram",
+            '<a class="meta-link" href="https://instagram.com/' + encodeURIComponent(ig) +
+              '" target="_blank" rel="noopener noreferrer">@' + esc(ig) + "</a>"
+          )
+        : "") +
+      (since ? metaRow("Member since", since) : "");
+
+    return (
+      '<div class="profile-hero">' +
+      '<div class="avatar-preview">' + avatarFace(p) +
+      (linked ? '<span class="av-verified" title="DUPR verified">✓</span>' : "") +
+      flagBadge(heritageFlagOf(p)) + "</div>" +
+      '<div class="identity-name">' + esc(p.displayName || "Player") + "</div>" +
+      (tags ? '<div class="identity-tags">' + tags + "</div>" : "") +
+      (p.bio ? '<p class="profile-bio">' + esc(p.bio).replace(/\n/g, "<br>") + "</p>" : "") +
+      "</div>" +
+      '<div class="pstats" data-stats hidden></div>' +
+      facts
+    );
+  }
+
+  // Action bar shown to a VISITOR looking at someone else's profile.
+  function visitorActions(p) {
+    return (
+      '<div class="visitor-actions">' +
+      connectBtnHtml(p.uid, "btn-primary va-connect") +
+      '<button class="btn-ghost va-message" type="button">💬 Message</button>' +
+      '<button class="btn-ghost va-invite" type="button">🏓 Invite</button>' +
+      "</div>" +
+      '<div class="visitor-more">' +
+      (p.isCoach ? '<button class="btn-ghost full va-coach" type="button">🎯 View coaching profile</button>' : "") +
+      '<div class="visitor-safety">' +
+      '<button class="linkish va-report" type="button">Report</button>' +
+      '<span class="dot-sep">·</span>' +
+      '<button class="linkish va-block" type="button">' + (isBlocked(p.uid) ? "Unblock" : "Block") + "</button>" +
+      "</div></div>"
+    );
+  }
+
+  function wireVisitorActions(card, p) {
+    var connect = card.querySelector(".va-connect");
+    if (connect) {
+      connect.addEventListener("click", function () {
+        handleConnectClick(p.uid, connect.dataset.status);
+      });
+    }
+    var message = card.querySelector(".va-message");
+    if (message) {
+      message.addEventListener("click", function () {
+        var ig = cleanHandle(p.instagram);
+        if (ig) {
+          window.open("https://instagram.com/" + encodeURIComponent(ig), "_blank", "noopener");
+        } else {
+          toast("No contact info yet — try connecting first.");
+        }
+      });
+    }
+    var invite = card.querySelector(".va-invite");
+    if (invite) {
+      invite.addEventListener("click", function () {
+        toast("Host a session, then share it with " + (p.displayName || "them") + " to play together.");
+        state.view = "create";
+        renderSignedIn();
+      });
+    }
+    var coach = card.querySelector(".va-coach");
+    if (coach) {
+      coach.addEventListener("click", function () {
+        state.viewingCoachUid = p.uid;
+        state.view = "coach-view";
+        renderSignedIn();
+      });
+    }
+    var report = card.querySelector(".va-report");
+    if (report) {
+      report.addEventListener("click", function () {
+        if (!window.confirm("Report " + (p.displayName || "this player") + " to our team for review?")) return;
+        LH.reportUser(p.uid, null)
+          .then(function () { track("user_reported"); toast("Thanks — we'll review this player."); })
+          .catch(function () { toast("Couldn't send the report — try again."); });
+      });
+    }
+    var block = card.querySelector(".va-block");
+    if (block) {
+      block.addEventListener("click", function () {
+        var blocked = isBlocked(p.uid);
+        if (blocked) {
+          LH.unblockUser(p.uid).then(function () {
+            block.textContent = "Block";
+            toast("Unblocked " + (p.displayName || "player") + ".");
+          });
+          return;
+        }
+        if (!window.confirm("Block " + (p.displayName || "this player") + "? You won't see them in Connect.")) return;
+        LH.blockUser(p.uid)
+          .then(function () {
+            track("user_blocked");
+            toast((p.displayName || "Player") + " blocked.");
+            state.view = state.playerBackView || "connect";
+            renderSignedIn();
+          })
+          .catch(function () { toast("Couldn't block — try again."); });
+      });
+    }
+  }
+
+  // Visitor view of another player's profile (read-only + action bar).
+  function renderPlayerView(uid) {
+    main.innerHTML = "";
+    var wrap = el('<section class="stack"></section>');
+    wrap.appendChild(
+      el('<div class="view-head"><button class="link-back" id="back" type="button">‹ Back</button></div>')
+    );
+    var card = el('<section class="card stack profile-card"><p class="muted">Loading…</p></section>');
+    wrap.appendChild(card);
+    main.appendChild(wrap);
+
+    wrap.querySelector("#back").addEventListener("click", function () {
+      state.view = state.playerBackView || "discover";
+      renderSignedIn();
+    });
+
+    if (!uid) {
+      card.innerHTML = '<p class="muted">Player not found.</p>';
+      return;
+    }
+    var me = LH.currentUser();
+    LH.getUserOnce(uid)
+      .then(function (p) {
+        if (!p) {
+          card.innerHTML = '<p class="muted">Player not found.</p>';
+          return;
+        }
+        var isSelf = !!(me && me.uid === uid);
+        card.innerHTML = profileBody(p) + (isSelf ? "" : visitorActions(p));
+        attachStats(card, uid);
+        if (!isSelf) wireVisitorActions(card, p);
+      })
+      .catch(function () {
+        card.innerHTML = '<p class="muted">Could not load this player.</p>';
+      });
+  }
+
+  // Read-only "how visitors see you" profile, with a gear to open settings.
+  // How filled-in a profile is, and the first thing still missing.
+  function profileCompleteness(p) {
+    var checks = [
+      { has: !!(p.photoDataUrl || p.photoURL), label: "a photo" },
+      { has: !!p.bio, label: "a short bio" },
+      { has: !!p.country, label: "your location" },
+      { has: !!p.skillLevel, label: "your skill level" },
+      { has: p.duprManual != null || p.homeRatingDoubles != null, label: "your DUPR rating" },
+      { has: !!heritageFlagOf(p), label: "your flag" },
+    ];
+    var done = 0;
+    var missing = [];
+    checks.forEach(function (c) { if (c.has) done++; else missing.push(c.label); });
+    return { pct: Math.round((done / checks.length) * 100), missing: missing };
+  }
+
+  function renderProfileView() {
+    main.innerHTML = "";
+    var p = state.profile || {};
 
     var wrap = el('<section class="stack"></section>');
     wrap.appendChild(
       el(
-        '<div class="profile-topbar"><button class="gear-btn" id="open-settings" type="button" aria-label="Settings" title="Settings">' +
+        '<div class="profile-topbar">' +
+          '<button class="gear-btn" id="add-friend" type="button" aria-label="Find friends" title="Find friends">' +
+          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></svg>' +
+          "</button>" +
+          '<button class="gear-btn" id="share-profile" type="button" aria-label="Share profile" title="Share profile">' +
+          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>' +
+          "</button>" +
+          '<button class="gear-btn" id="open-settings" type="button" aria-label="Settings" title="Settings">' +
           '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' +
-          "</button></div>"
+          "</button>" +
+          "</div>"
       )
     );
-    var card = el(
-      '<section class="card stack profile-card">' +
-        '<div class="profile-hero">' +
-        '<div class="avatar-preview">' + avatarFace(p) + flagBadge(heritageFlagOf(p)) + "</div>" +
-        '<div class="identity-name">' + esc(p.displayName || "Player") + "</div>" +
-        (shownRating
-          ? '<div class="identity-dupr">DUPR ' + esc(shownRating) + (linked ? "" : ' ·<span class="self-rated"> self-rated</span>') + "</div>"
-          : "") +
-        (p.skillLevel ? '<div class="identity-skill">' + esc(p.skillLevel) + "</div>" : "") +
-        "</div>" +
-        (p.country ? metaRow("Location", p.country) : "") +
-        (p.favCourt ? metaRow("Favourite court", p.favCourt) : "") +
-        (p.favPaddle ? metaRow("Favourite paddle", p.favPaddle) : "") +
-        "</section>"
-    );
+    var comp = profileCompleteness(p);
+    if (comp.pct < 100 && comp.missing.length) {
+      var nudge = el(
+        '<button class="profile-nudge" type="button">' +
+          '<div class="nudge-top"><span class="nudge-title">Complete your profile</span><span class="nudge-pct">' + comp.pct + "%</span></div>" +
+          '<div class="nudge-bar"><span style="width:' + comp.pct + '%"></span></div>' +
+          '<div class="nudge-sub">Add ' + esc(comp.missing[0]) + " so players get to know you →</div>" +
+          "</button>"
+      );
+      nudge.addEventListener("click", function () {
+        state.view = "profile-edit";
+        renderSignedIn();
+      });
+      wrap.appendChild(nudge);
+    }
+
+    var card = el('<section class="card stack profile-card">' + profileBody(p) + "</section>");
     wrap.appendChild(card);
+    attachStats(card, state.user && state.user.uid);
     wrap.appendChild(
       el('<p class="muted" style="text-align:center">This is how your profile appears to other players.</p>')
     );
@@ -1013,6 +1763,9 @@
         '<button class="drawer-item" id="drawer-edit" type="button">' +
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>' +
         " Edit profile</button>" +
+        '<a class="drawer-item" href="privacy.html" target="_blank" rel="noopener noreferrer">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>' +
+        " Privacy &amp; Terms</a>" +
         '<button class="drawer-item drawer-item-danger" id="drawer-signout" type="button">' +
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>' +
         " Sign out</button>" +
@@ -1031,6 +1784,23 @@
       drawer.classList.remove("open");
     }
     wrap.querySelector("#open-settings").addEventListener("click", openPanel);
+    // Find friends → the Connect tab (where you discover & connect with players).
+    wrap.querySelector("#add-friend").addEventListener("click", function () {
+      state.view = "connect";
+      renderSignedIn();
+    });
+    // Share → native share sheet, falling back to copying the link.
+    wrap.querySelector("#share-profile").addEventListener("click", function () {
+      var url = window.location.origin + "/";
+      var data = { title: "Lotus Hub", text: "Check out Lotus Hub — open-play pickleball 🪷", url: url };
+      if (navigator.share) {
+        navigator.share(data).catch(function () {});
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function () { toast("Profile link copied!"); }, function () { toast(url); });
+      } else {
+        toast(url);
+      }
+    });
     overlay.addEventListener("click", closePanel);
     drawer.querySelector("#drawer-close").addEventListener("click", closePanel);
     drawer.querySelector("#drawer-edit").addEventListener("click", function () {
@@ -1042,6 +1812,182 @@
       function reload() { window.location.reload(); }
       LH.signOut().then(reload, reload);
     });
+  }
+
+  // A brand-new user (nothing filled in yet, never onboarded) should be walked
+  // through setup. Existing users with any real profile data are left alone.
+  function needsOnboarding(p) {
+    if (!p || p.onboarded === true) return false;
+    return (
+      !p.country && !p.skillLevel && !p.photoDataUrl && !p.photoURL &&
+      p.duprManual == null && p.homeRatingDoubles == null && !p.bio
+    );
+  }
+
+  // First-run onboarding wizard: name/photo/flag → skill/location → rating.
+  function renderOnboard() {
+    tabs.hidden = true;
+    main.innerHTML = "";
+    var p = state.profile || {};
+    var draft = {
+      name: p.displayName || "",
+      photoDataUrl: p.photoDataUrl || p.photoURL || null,
+      flag: heritageFlagOf(p) || "",
+      skillLevel: p.skillLevel || null,
+      country: p.country || "",
+      duprManual: p.duprManual != null ? String(p.duprManual) : "",
+    };
+    var step = 0; // 0,1,2
+    var TOTAL = 3;
+
+    var wrap = el(
+      '<section class="stack onboard">' +
+        '<div class="onboard-progress" id="ob-progress"></div>' +
+        '<section class="card stack" id="ob-card"></section>' +
+        "</section>"
+    );
+    main.appendChild(wrap);
+    var cardEl = wrap.querySelector("#ob-card");
+    var progressEl = wrap.querySelector("#ob-progress");
+
+    function drawProgress() {
+      var dots = "";
+      for (var i = 0; i < TOTAL; i++) {
+        dots += '<span class="onboard-dot' + (i === step ? " active" : i < step ? " done" : "") + '"></span>';
+      }
+      progressEl.innerHTML = dots;
+    }
+
+    // Read whatever's currently on screen into the draft before navigating.
+    function capture() {
+      var nameEl = cardEl.querySelector("#ob-name");
+      if (nameEl) draft.name = nameEl.value;
+      var countryEl = cardEl.querySelector("#ob-country");
+      if (countryEl) draft.country = countryEl.value;
+      var duprEl = cardEl.querySelector("#ob-dupr");
+      if (duprEl) draft.duprManual = duprEl.value;
+      var seg = cardEl.querySelector("#p-skill .seg.active");
+      if (cardEl.querySelector("#p-skill")) draft.skillLevel = seg ? seg.dataset.val : null;
+    }
+
+    function pseudo() {
+      return { photoDataUrl: draft.photoDataUrl, displayName: draft.name };
+    }
+
+    function save(skip) {
+      capture();
+      var u = LH.currentUser() || state.user;
+      if (!u) return toast("You're not signed in. Please sign in again.");
+      var patch = { onboarded: true };
+      if (draft.name && draft.name.trim()) patch.displayName = draft.name.trim();
+      if (!skip) {
+        if (draft.photoDataUrl) patch.photoDataUrl = draft.photoDataUrl;
+        if (draft.flag) patch.flag = draft.flag;
+        patch.skillLevel = draft.skillLevel || null;
+        if (draft.country && draft.country.trim()) patch.country = draft.country.trim();
+        var dv = parseFloat(draft.duprManual);
+        if (draft.duprManual !== "" && !isNaN(dv) && dv >= 2 && dv <= 8.5) patch.duprManual = dv;
+      }
+      firebase
+        .firestore()
+        .collection("users")
+        .doc(u.uid)
+        .set(patch, { merge: true })
+        .then(function () {
+          track(skip ? "onboarding_skip" : "onboarding_complete");
+          toast(skip ? "You can finish your profile anytime." : "You're all set! 🎉");
+          state.view = "profile";
+          renderSignedIn();
+        })
+        .catch(function (err) {
+          toast("Couldn't save — " + (err && (err.code || err.message) ? err.code || err.message : "error"));
+        });
+    }
+
+    function go(next) {
+      capture();
+      step = Math.max(0, Math.min(TOTAL - 1, next));
+      renderStep();
+    }
+
+    function renderStep() {
+      drawProgress();
+      if (step === 0) {
+        cardEl.innerHTML =
+          "<h2>Welcome to Lotus Hub 🪷</h2>" +
+          '<p class="muted">Let\'s set up your profile so other players can find you. Takes about 30 seconds.</p>' +
+          '<div class="profile-hero"><div class="avatar-preview" id="ob-avatar">' +
+          avatarFace(pseudo()) + AVATAR_EDIT_BTN + flagEditBtn(draft.flag) + "</div>" +
+          '<input type="file" id="ob-photo" accept="image/*" hidden /></div>' +
+          '<p class="muted" style="text-align:center;margin-top:-2px">Tap to add a photo · tap the globe to pick your flag</p>' +
+          '<div class="field"><label>Your name</label>' +
+          '<input id="ob-name" type="text" placeholder="Your name" value="' + esc(draft.name) + '" /></div>' +
+          '<button class="btn-primary" id="ob-next" type="button">Next</button>' +
+          '<button class="link-inline ob-skip" type="button">Skip for now</button>';
+        wireAvatar();
+      } else if (step === 1) {
+        cardEl.innerHTML =
+          "<h2>How you play 🏓</h2>" +
+          '<p class="muted">This helps match you to the right open-play games.</p>' +
+          '<div class="field"><label>Skill level</label>' + segmentedSkill(draft.skillLevel) + "</div>" +
+          '<div class="field"><label>Location</label>' +
+          '<input id="ob-country" type="text" placeholder="e.g. Toronto, Canada 🇨🇦" value="' + esc(draft.country) + '" /></div>' +
+          '<div class="row-btns"><button class="btn-ghost" id="ob-back" type="button">Back</button>' +
+          '<button class="btn-primary" id="ob-next" type="button">Next</button></div>';
+        wireSkill();
+      } else {
+        cardEl.innerHTML =
+          "<h2>Your rating 📊</h2>" +
+          '<p class="muted">Self-report your DUPR for now — you can connect and verify it later. Optional.</p>' +
+          '<div class="field"><label>DUPR rating</label>' +
+          '<input id="ob-dupr" type="number" step="0.001" min="2" max="8.5" placeholder="e.g. 3.500" value="' + esc(draft.duprManual) + '" /></div>' +
+          '<div class="row-btns"><button class="btn-ghost" id="ob-back" type="button">Back</button>' +
+          '<button class="btn-primary" id="ob-finish" type="button">Finish</button></div>' +
+          '<button class="link-inline ob-skip" type="button">Skip for now</button>';
+      }
+
+      var nextBtn = cardEl.querySelector("#ob-next");
+      if (nextBtn) nextBtn.addEventListener("click", function () { go(step + 1); });
+      var backBtn = cardEl.querySelector("#ob-back");
+      if (backBtn) backBtn.addEventListener("click", function () { go(step - 1); });
+      var finishBtn = cardEl.querySelector("#ob-finish");
+      if (finishBtn) finishBtn.addEventListener("click", function () { save(false); });
+      var skipBtn = cardEl.querySelector(".ob-skip");
+      if (skipBtn) skipBtn.addEventListener("click", function () { save(true); });
+    }
+
+    function wireSkill() {
+      var seg = cardEl.querySelector("#p-skill");
+      if (!seg) return;
+      seg.addEventListener("click", function (e) {
+        var btn = e.target.closest(".seg");
+        if (!btn) return;
+        var already = btn.classList.contains("active");
+        Array.prototype.forEach.call(seg.querySelectorAll(".seg"), function (s) { s.classList.remove("active"); });
+        if (!already) btn.classList.add("active");
+      });
+    }
+
+    function wireAvatar() {
+      var avatar = cardEl.querySelector("#ob-avatar");
+      var photoInput = cardEl.querySelector("#ob-photo");
+      avatar.addEventListener("click", function (e) {
+        if (e.target.closest("#flag-pick")) {
+          openFlagPicker(draft.flag, function (flag) { draft.flag = flag; renderStep(); });
+          return;
+        }
+        photoInput.click();
+      });
+      photoInput.addEventListener("change", function () {
+        var file = photoInput.files && photoInput.files[0];
+        if (!file) return;
+        resizeImage(file, 256)
+          .then(function (dataUrl) { draft.photoDataUrl = dataUrl; renderStep(); })
+          .catch(function () { toast("Couldn't load that image."); });
+      });
+    }
+
+    renderStep();
   }
 
   function renderProfileEdit() {
@@ -1060,25 +2006,38 @@
         esc(p.displayName || "Your name") + "</div>" +
         '<div class="avatar-preview" id="avatar-preview">' + avatarFace(p) + AVATAR_EDIT_BTN + flagEditBtn(myFlag) + "</div>" +
         '<input type="file" id="photo-input" accept="image/*" hidden />' +
-        '<button type="button" class="flag-hint" id="flag-hint">🌍 Represent your background — tap your flag to set your nationality</button>' +
-        (shownRating ? '<div class="identity-dupr">DUPR ' + esc(shownRating) + (linked ? "" : " ·<span class=\"self-rated\"> self-rated</span>") + "</div>" : "") +
+        '<button type="button" class="flag-hint" id="flag-hint">🌍 Represent your native country — tap to display your flag</button>' +
+        (shownRating ? ratingHtml(linked, shownRating) : "") +
         '<div class="identity-skill" id="skill-preview"' + (p.skillLevel ? "" : " hidden") + ">" +
         esc(p.skillLevel || "") + "</div>" +
         "</div>" +
         '<div class="field"><label>Name</label>' +
         '<input id="p-name" type="text" placeholder="Your name" value="' + esc(p.displayName || "") + '" /></div>' +
+        '<div class="field"><label>What\'s your game? <span class="muted">(short bio)</span></label>' +
+        '<textarea id="p-bio" rows="3" placeholder="e.g. Weeknight dinker chasing 4.0 — always up for a competitive doubles game.">' + esc(p.bio || "") + "</textarea></div>" +
         '<div class="field"><label>Pickleball Skill Level</label>' +
         segmentedSkill(p.skillLevel) + "</div>" +
         '<div class="field"><label>Location</label>' +
         '<input id="p-country" type="text" placeholder="e.g. Toronto, Canada 🇨🇦" value="' + esc(p.country || "") + '" /></div>' +
+        '<div class="field"><label>Instagram</label>' +
+        '<div class="input-wrap"><span class="lead" aria-hidden="true">@</span>' +
+        '<input class="has-icon" id="p-ig" type="text" placeholder="yourhandle" autocapitalize="none" value="' + esc(cleanHandle(p.instagram)) + '" /></div></div>' +
         '<div class="field"><label>Favourite court?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">📍</span>' +
         '<input class="has-icon" id="p-court" type="text" placeholder="e.g. Pickleplex Downsview" value="' + esc(p.favCourt || "") + '" /></div></div>' +
         '<div class="field"><label>Favourite paddle?</label>' +
         '<div class="input-wrap"><span class="lead" aria-hidden="true">🏓</span>' +
         '<input class="has-icon" id="p-paddle" type="text" placeholder="e.g. Selkirk Vanguard" value="' + esc(p.favPaddle || "") + '" /></div></div>' +
+        '<div class="field"><label>Usually free</label>' +
+        '<input id="p-avail" type="text" placeholder="e.g. Evenings &amp; weekends" value="' + esc(p.availability || "") + '" /></div>' +
         '<button class="btn-primary" id="save-profile" type="button">Save profile</button>' +
         '<p class="save-status" id="save-status" hidden></p>' +
+        '<div class="notif-box">' +
+        '<div class="dupr-head"><h3>🔔 Session reminders</h3><span class="chip" id="notif-chip"></span></div>' +
+        '<p class="muted">Get a heads-up about an hour before open-play sessions you\'ve joined.</p>' +
+        '<div id="notif-body"></div>' +
+        '<p class="save-status" id="notif-status" hidden></p>' +
+        "</div>" +
         '<div class="dupr-box">' +
         '<div class="dupr-head"><h3>DUPR rating</h3>' +
         '<span class="chip ' + (linked ? "chip-ok" : manualVal ? "chip-warn" : "chip-muted") + '">' +
@@ -1091,20 +2050,65 @@
           : '<div class="field"><label>Your DUPR rating</label>' +
             '<input id="p-dupr" type="number" step="0.001" min="2" max="8.5" value="' + esc(manualVal) + '" placeholder="e.g. 3.750" /></div>' +
             '<button class="btn-ghost" id="save-dupr" type="button">Save rating</button>' +
-            '<p class="muted">Self-reported for now. Once our DUPR API access is approved, you can ' +
-            "connect your account and ratings verify automatically.</p>" +
-            '<button class="btn-primary" id="link-dupr" type="button">Connect DUPR</button>' +
-            '<div id="dupr-link-form" hidden>' +
-            '<div class="field" style="margin-top:12px"><label>DUPR account email</label>' +
-            '<input id="dupr-email" type="email" placeholder="you@example.com" autocomplete="email" /></div>' +
-            '<button class="btn-primary" id="dupr-link-go" type="button">Link account</button>' +
-            "</div>") +
+            '<p class="muted">Self-reported for now. <strong>Verified DUPR sync is coming soon</strong> — ' +
+            "once our DUPR partner access is live you'll be able to connect your account so your rating updates automatically from your matches.</p>" +
+            '<div class="dupr-soon">🔒 Connect DUPR · Coming soon</div>') +
         '<p class="save-status" id="dupr-status" hidden></p>' +
         "</div>" +
         '<button class="btn-signout" id="signout-btn" type="button">Sign out</button>' +
         "</section>"
     );
     main.appendChild(card);
+
+    // ---- session reminders (push notifications) ----
+    function setNotifStatus(msg, kind) {
+      var s = card.querySelector("#notif-status");
+      if (!s) return;
+      s.hidden = false;
+      s.textContent = msg;
+      s.className = "save-status" + (kind ? " " + kind : "");
+    }
+    function renderNotif() {
+      var chip = card.querySelector("#notif-chip");
+      var body = card.querySelector("#notif-body");
+      if (!chip || !body) return;
+      if (!LH.notificationsSupported || !LH.notificationsSupported()) {
+        chip.className = "chip chip-muted";
+        chip.textContent = "Coming soon";
+        body.innerHTML = '<div class="dupr-soon">🔒 Session reminders — coming soon</div>';
+        return;
+      }
+      var perm = LH.notificationPermission();
+      if (perm === "granted") {
+        chip.className = "chip chip-ok";
+        chip.textContent = "On";
+        body.innerHTML =
+          '<p class="muted">Reminders are on for this device.</p>' +
+          '<button class="btn-ghost" id="notif-off" type="button">Turn off on this device</button>';
+        body.querySelector("#notif-off").addEventListener("click", function () {
+          setNotifStatus("Turning off…", "");
+          LH.disableNotifications().then(function () {
+            setNotifStatus("Reminders turned off on this device.", "ok");
+            renderNotif();
+          });
+        });
+      } else if (perm === "denied") {
+        chip.className = "chip chip-warn";
+        chip.textContent = "Blocked";
+        body.innerHTML = '<p class="muted">Notifications are blocked. Allow them for this site in your browser settings, then reload.</p>';
+      } else {
+        chip.className = "chip chip-muted";
+        chip.textContent = "Off";
+        body.innerHTML = '<button class="btn-primary" id="notif-on" type="button">Enable reminders</button>';
+        body.querySelector("#notif-on").addEventListener("click", function () {
+          setNotifStatus("Enabling…", "");
+          LH.enableNotifications()
+            .then(function () { track("notifications_enabled"); setNotifStatus("Reminders enabled ✓", "ok"); renderNotif(); })
+            .catch(function (err) { setNotifStatus((err && err.message) || "Couldn't enable reminders.", "err"); });
+        });
+      }
+    }
+    renderNotif();
 
     card.querySelector("#signout-btn").addEventListener("click", function () {
       // Reload to a clean state afterward so a stale/invalid session can't leave
@@ -1191,6 +2195,7 @@
       return active ? active.dataset.val : null;
     }
 
+
     // ---- save profile fields ----
     var statusEl = card.querySelector("#save-status");
     function setStatus(msg, kind) {
@@ -1213,14 +2218,18 @@
           .set(
             {
               displayName: name,
+              bio: card.querySelector("#p-bio").value.trim() || null,
               skillLevel: selectedSkill(),
               country: card.querySelector("#p-country").value.trim() || null,
               favCourt: card.querySelector("#p-court").value.trim() || null,
               favPaddle: card.querySelector("#p-paddle").value.trim() || null,
+              availability: card.querySelector("#p-avail").value.trim() || null,
+              instagram: cleanHandle(card.querySelector("#p-ig").value) || null,
             },
             { merge: true }
           )
           .then(function () {
+            track("profile_saved");
             toast("Saved.");
             // Show the profile as visitors see it after saving.
             state.view = "profile";
@@ -1250,31 +2259,6 @@
         return "DUPR linking isn't live yet — the Cloud Functions need to be deployed (see functions/README).";
       }
       return (err && err.message) || "Couldn't link DUPR.";
-    }
-
-    var linkBtn = card.querySelector("#link-dupr");
-    if (linkBtn) {
-      var linkForm = card.querySelector("#dupr-link-form");
-      linkBtn.addEventListener("click", function () {
-        linkForm.hidden = false;
-        linkBtn.hidden = true;
-        var e = card.querySelector("#dupr-email");
-        if (e) e.focus();
-      });
-      card.querySelector("#dupr-link-go").addEventListener("click", function () {
-        var email = card.querySelector("#dupr-email").value.trim();
-        if (!email) return setDuprStatus("Enter the email on your DUPR account.", "err");
-        setDuprStatus("Linking…", "");
-        LH.linkDupr(email)
-          .then(function () {
-            setDuprStatus("Linked ✓", "ok");
-            renderProfileEdit();
-          })
-          .catch(function (err) {
-            console.error("linkDupr failed:", err);
-            setDuprStatus(friendlyDuprError(err), "err");
-          });
-      });
     }
 
     var refreshBtn = card.querySelector("#refresh-dupr");
@@ -1333,6 +2317,26 @@
         // while it's open — that would wipe fields the user is mid-editing.
         // The form is rebuilt from state.profile each time it's opened.
         state.profile = doc;
+        // First-run: a brand-new user with an empty profile gets the onboarding
+        // wizard once. needsOnboarding() is false once they finish or skip.
+        if (needsOnboarding(doc) && !state._onboardDone && state.view !== "onboard") {
+          state._onboardDone = true;
+          track("onboarding_start");
+          state.view = "onboard";
+          renderSignedIn();
+        }
+      });
+      if (state.unsub.connections) state.unsub.connections();
+      state.unsub.connections = LH.watchConnections(function (list) {
+        state.connections = list || [];
+        // Reflect status changes live on whichever view is showing buttons.
+        if (state.view === "connect" && connectRefresh) connectRefresh();
+        else if (state.view === "player-view") refreshVisitorConnectBtn();
+      });
+      if (state.unsub.blocks) state.unsub.blocks();
+      state.unsub.blocks = LH.watchBlocks(function (list) {
+        state.blocks = list || [];
+        if (state.view === "connect" && connectRefresh) connectRefresh();
       });
     }
   }
@@ -1344,9 +2348,65 @@
     renderSignedIn();
   });
 
+  // Keyboard support for card-style controls that use role="button" (coach and
+  // clickable cards): activate them on Enter/Space like a real button would.
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    var t = e.target;
+    if (!t || typeof t.closest !== "function") return;
+    var target = t.closest('[role="button"]');
+    if (!target || target.tagName === "BUTTON" || target.tagName === "A") return;
+    e.preventDefault();
+    target.click();
+  });
+
+
+  // "Add to Home Screen": capture the install event and offer a dismissible
+  // banner (Chrome/Android). iOS installs via Share → Add to Home Screen.
+  function setupInstallPrompt() {
+    var deferred = null;
+    function dismissed() { try { return localStorage.getItem("lh_install_dismissed") === "1"; } catch (e) { return false; } }
+    function standalone() {
+      return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+    }
+    function show() {
+      if (!deferred || dismissed() || standalone() || document.getElementById("install-banner")) return;
+      var banner = el(
+        '<div id="install-banner" class="install-banner">' +
+          '<span class="ib-text">📲 Add Lotus Hub to your home screen</span>' +
+          '<button class="ib-install" type="button">Install</button>' +
+          '<button class="ib-close" type="button" aria-label="Dismiss">✕</button>' +
+          "</div>"
+      );
+      document.body.appendChild(banner);
+      banner.querySelector(".ib-install").addEventListener("click", function () {
+        if (!deferred) return;
+        deferred.prompt();
+        deferred.userChoice
+          .then(function (c) { track("install_prompt", { outcome: c && c.outcome }); })
+          .catch(function () {})
+          .then(function () { deferred = null; banner.remove(); });
+      });
+      banner.querySelector(".ib-close").addEventListener("click", function () {
+        try { localStorage.setItem("lh_install_dismissed", "1"); } catch (e) {}
+        banner.remove();
+      });
+    }
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      deferred = e;
+      show();
+    });
+    window.addEventListener("appinstalled", function () {
+      track("app_installed");
+      var b = document.getElementById("install-banner");
+      if (b) b.remove();
+    });
+  }
 
   function start() {
     var ok = renderBanner();
+    setupInstallPrompt();
     LH.init();
     if (!ok) {
       renderSignedOut();
@@ -1363,6 +2423,13 @@
         renderSignedOut();
       }
     });
+    // Show a toast if a push arrives while the app is open (foreground).
+    if (LH.onForegroundMessage) {
+      LH.onForegroundMessage(function (payload) {
+        var n = (payload && payload.notification) || {};
+        toast((n.title ? n.title + " — " : "") + (n.body || "New notification"));
+      });
+    }
   }
 
   start();

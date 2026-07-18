@@ -5,6 +5,7 @@
       "firebase.json",
       ".firebaserc",
       "firestore.rules",
+      "firestore.indexes.json",
       "**/.git/**",
       "**/node_modules/**",
       "functions/**",
@@ -16,7 +17,8 @@
     ]
   },
   "firestore": {
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   },
   "functions": {
     "source": "functions",

@@ -7,24 +7,64 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
 
+    // Rating/verification fields are owned by the server (Cloud Functions write
+    // them with the Admin SDK, which bypasses these rules). Clients must never
+    // set or change them, or anyone could fake a "verified" DUPR or Lotus Score.
+    function protectedUserFields() {
+      return ['duprLinked', 'duprId', 'duprEmail', 'homeRatingDoubles',
+              'homeRatingSingles', 'duprSyncedAt', 'lotusScore'];
+    }
+
     // Profiles: anyone signed in can read (to show names/ratings on rosters);
-    // only the owner can write their own doc.
-    // NOTE: duprId / rating fields are written server-side by Cloud Functions
-    // using the Admin SDK, which bypasses these rules. Clients must not be
-    // trusted to set their own rating — tighten with a field check before launch.
+    // only the owner can write their own doc — and only the non-protected fields.
+    // duprManual (the self-reported rating) IS client-writable on purpose.
     match /users/{uid} {
       allow read: if signedIn();
-      allow write: if isSelf(uid);
+      // On create the doc may only carry the empty/false defaults for protected
+      // fields (that's what the client's ensureUserDoc writes on first sign-in).
+      allow create: if isSelf(uid)
+        && request.resource.data.get('duprLinked', false) == false
+        && request.resource.data.get('duprId', null) == null
+        && request.resource.data.get('homeRatingDoubles', null) == null
+        && request.resource.data.get('homeRatingSingles', null) == null
+        && request.resource.data.get('lotusScore', null) == null;
+      // On update, none of the protected fields may change.
+      allow update: if isSelf(uid)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+             .hasAny(protectedUserFields());
+      allow delete: if isSelf(uid);
+
+      // Push-notification device tokens — private to the owner. The reminder
+      // Cloud Function reads them with the Admin SDK (which bypasses rules).
+      match /tokens/{tokenId} {
+        allow read, write: if isSelf(uid);
+      }
+
+      // Players this user has blocked — private to the owner.
+      match /blocks/{blockedUid} {
+        allow read, write: if isSelf(uid);
+      }
+    }
+
+    // Abuse reports — a signed-in user can file one (as themselves); only
+    // admins/console can read or resolve them.
+    match /reports/{reportId} {
+      allow create: if signedIn() && request.resource.data.reporterUid == request.auth.uid;
+      allow read, update, delete: if false;
     }
 
     // Sessions: readable by any signed-in user; created by any signed-in user
     // (must set themselves as organizer); only the organizer can edit/delete.
-    // attendeeCount is updated by RSVP transactions, so updates are allowed for
-    // signed-in users but should be locked down further before launch.
     match /sessions/{sessionId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.organizerUid == request.auth.uid;
-      allow update: if signedIn();
+      // The organizer can edit anything (including cancelling); everyone else may
+      // only touch attendeeCount, which join/leave transactions maintain.
+      allow update: if signedIn() && (
+        resource.data.organizerUid == request.auth.uid
+        || request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['attendeeCount'])
+      );
       allow delete: if signedIn() && resource.data.organizerUid == request.auth.uid;
 
       // RSVPs: you can only create/edit/delete your OWN rsvp doc; anyone signed
@@ -33,6 +73,42 @@ service cloud.firestore {
         allow read: if signedIn();
         allow write: if isSelf(uid);
       }
+
+      // Games (recorded scores) for a session. Anyone signed in can read the
+      // results; only the session's organizer can add/edit/remove them. These
+      // feed player stats now and bridge to DUPR (matches) later.
+      match /games/{gameId} {
+        allow read: if signedIn();
+        allow write: if signedIn() &&
+          get(/databases/$(database)/documents/sessions/$(sessionId)).data.organizerUid == request.auth.uid;
+      }
+    }
+
+    // Collection-group read of games so a player's cross-session stats
+    // (games played / win rate) can be computed with one query.
+    match /{path=**}/games/{gameId} {
+      allow read: if signedIn();
+    }
+
+    // Player-to-player connections (friend requests). One doc per pair; its id
+    // is the two uids sorted and joined. Only the two participants can read or
+    // delete it; the requester creates it as 'pending'; the recipient (not the
+    // requester) is the only one who can flip it to 'accepted'.
+    match /connections/{cid} {
+      allow read: if signedIn() && request.auth.uid in resource.data.users;
+      allow create: if signedIn()
+        && request.resource.data.users is list
+        && request.resource.data.users.size() == 2
+        && request.auth.uid in request.resource.data.users
+        && request.resource.data.requestedBy == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.users
+        && request.auth.uid != resource.data.requestedBy
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if signedIn() && request.auth.uid in resource.data.users;
     }
 
     // Matches are created/validated server-side (Cloud Functions) before being
