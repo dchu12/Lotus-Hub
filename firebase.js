@@ -321,6 +321,42 @@
     return db.collection("connections").doc(pairId(u.uid, otherUid)).delete();
   }
 
+  // ---- Reports & blocks -------------------------------------------------
+  function reportUser(uid, reason) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return db.collection("reports").add({
+      reporterUid: u.uid,
+      reportedUid: uid,
+      reason: reason || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+  function blockUser(uid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return userDoc(u.uid).collection("blocks").doc(uid).set({
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+  function unblockUser(uid) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return userDoc(u.uid).collection("blocks").doc(uid).delete();
+  }
+  function watchBlocks(cb) {
+    if (!ready) return function () {};
+    var u = auth.currentUser;
+    if (!u) { cb([]); return function () {}; }
+    return userDoc(u.uid).collection("blocks").onSnapshot(
+      function (qs) { var out = []; qs.forEach(function (d) { out.push(d.id); }); cb(out); },
+      function () { cb([]); }
+    );
+  }
+
   // ---- Sessions (open play) --------------------------------------------
   function sessionsCol() {
     return db.collection("sessions");
@@ -638,6 +674,10 @@
     requestConnection: requestConnection,
     acceptConnection: acceptConnection,
     removeConnection: removeConnection,
+    reportUser: reportUser,
+    blockUser: blockUser,
+    unblockUser: unblockUser,
+    watchBlocks: watchBlocks,
     linkDupr: linkDupr,
     refreshDuprRating: refreshDuprRating,
     watchUpcomingSessions: watchUpcomingSessions,

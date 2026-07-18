@@ -30,7 +30,8 @@
     sessionFilter: "all", // "all" | "hosting"
     _onboardDone: false, // first-run onboarding shown/dismissed this session
     connections: [], // my connection docs (pending/accepted)
-    unsub: { sessions: null, profile: null, coaches: null, scores: null, players: null, connections: null, rank: null, cards: [] },
+    blocks: [], // uids I've blocked
+    unsub: { sessions: null, profile: null, coaches: null, scores: null, players: null, connections: null, rank: null, cards: [], blocks: null },
   };
 
   // ---- helpers ----------------------------------------------------------
@@ -1241,6 +1242,10 @@
     );
   }
 
+  function isBlocked(uid) {
+    return (state.blocks || []).indexOf(uid) > -1;
+  }
+
   // ---- Connections (friend requests) ----
   var connectRefresh = null; // set while the Connect list is on screen
 
@@ -1336,6 +1341,7 @@
       var q = query.trim().toLowerCase();
       var items = players.filter(function (u) {
         if (me && u.uid === me.uid) return false; // don't list yourself
+        if (isBlocked(u.uid)) return false; // hide blocked players
         if (!q) return true;
         return (u.displayName || "").toLowerCase().indexOf(q) > -1 ||
           (u.country || "").toLowerCase().indexOf(q) > -1;
@@ -1577,8 +1583,11 @@
       "</div>" +
       '<div class="visitor-more">' +
       (p.isCoach ? '<button class="btn-ghost full va-coach" type="button">🎯 View coaching profile</button>' : "") +
-      '<button class="linkish va-report" type="button">Report or block</button>' +
-      "</div>"
+      '<div class="visitor-safety">' +
+      '<button class="linkish va-report" type="button">Report</button>' +
+      '<span class="dot-sep">·</span>' +
+      '<button class="linkish va-block" type="button">' + (isBlocked(p.uid) ? "Unblock" : "Block") + "</button>" +
+      "</div></div>"
     );
   }
 
@@ -1619,9 +1628,32 @@
     var report = card.querySelector(".va-report");
     if (report) {
       report.addEventListener("click", function () {
-        if (window.confirm("Report or block " + (p.displayName || "this player") + "? Our team will review.")) {
-          toast("Thanks — we'll review this player.");
+        if (!window.confirm("Report " + (p.displayName || "this player") + " to our team for review?")) return;
+        LH.reportUser(p.uid, null)
+          .then(function () { track("user_reported"); toast("Thanks — we'll review this player."); })
+          .catch(function () { toast("Couldn't send the report — try again."); });
+      });
+    }
+    var block = card.querySelector(".va-block");
+    if (block) {
+      block.addEventListener("click", function () {
+        var blocked = isBlocked(p.uid);
+        if (blocked) {
+          LH.unblockUser(p.uid).then(function () {
+            block.textContent = "Block";
+            toast("Unblocked " + (p.displayName || "player") + ".");
+          });
+          return;
         }
+        if (!window.confirm("Block " + (p.displayName || "this player") + "? You won't see them in Connect.")) return;
+        LH.blockUser(p.uid)
+          .then(function () {
+            track("user_blocked");
+            toast((p.displayName || "Player") + " blocked.");
+            state.view = state.playerBackView || "connect";
+            renderSignedIn();
+          })
+          .catch(function () { toast("Couldn't block — try again."); });
       });
     }
   }
@@ -1664,6 +1696,22 @@
   }
 
   // Read-only "how visitors see you" profile, with a gear to open settings.
+  // How filled-in a profile is, and the first thing still missing.
+  function profileCompleteness(p) {
+    var checks = [
+      { has: !!(p.photoDataUrl || p.photoURL), label: "a photo" },
+      { has: !!p.bio, label: "a short bio" },
+      { has: !!p.country, label: "your location" },
+      { has: !!p.skillLevel, label: "your skill level" },
+      { has: p.duprManual != null || p.homeRatingDoubles != null, label: "your DUPR rating" },
+      { has: !!heritageFlagOf(p), label: "your flag" },
+    ];
+    var done = 0;
+    var missing = [];
+    checks.forEach(function (c) { if (c.has) done++; else missing.push(c.label); });
+    return { pct: Math.round((done / checks.length) * 100), missing: missing };
+  }
+
   function renderProfileView() {
     main.innerHTML = "";
     var p = state.profile || {};
@@ -1684,6 +1732,22 @@
           "</div>"
       )
     );
+    var comp = profileCompleteness(p);
+    if (comp.pct < 100 && comp.missing.length) {
+      var nudge = el(
+        '<button class="profile-nudge" type="button">' +
+          '<div class="nudge-top"><span class="nudge-title">Complete your profile</span><span class="nudge-pct">' + comp.pct + "%</span></div>" +
+          '<div class="nudge-bar"><span style="width:' + comp.pct + '%"></span></div>' +
+          '<div class="nudge-sub">Add ' + esc(comp.missing[0]) + " so players get to know you →</div>" +
+          "</button>"
+      );
+      nudge.addEventListener("click", function () {
+        state.view = "profile-edit";
+        renderSignedIn();
+      });
+      wrap.appendChild(nudge);
+    }
+
     var card = el('<section class="card stack profile-card">' + profileBody(p) + "</section>");
     wrap.appendChild(card);
     attachStats(card, state.user && state.user.uid);
@@ -2269,6 +2333,11 @@
         if (state.view === "connect" && connectRefresh) connectRefresh();
         else if (state.view === "player-view") refreshVisitorConnectBtn();
       });
+      if (state.unsub.blocks) state.unsub.blocks();
+      state.unsub.blocks = LH.watchBlocks(function (list) {
+        state.blocks = list || [];
+        if (state.view === "connect" && connectRefresh) connectRefresh();
+      });
     }
   }
 
@@ -2292,8 +2361,52 @@
   });
 
 
+  // "Add to Home Screen": capture the install event and offer a dismissible
+  // banner (Chrome/Android). iOS installs via Share → Add to Home Screen.
+  function setupInstallPrompt() {
+    var deferred = null;
+    function dismissed() { try { return localStorage.getItem("lh_install_dismissed") === "1"; } catch (e) { return false; } }
+    function standalone() {
+      return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+    }
+    function show() {
+      if (!deferred || dismissed() || standalone() || document.getElementById("install-banner")) return;
+      var banner = el(
+        '<div id="install-banner" class="install-banner">' +
+          '<span class="ib-text">📲 Add Lotus Hub to your home screen</span>' +
+          '<button class="ib-install" type="button">Install</button>' +
+          '<button class="ib-close" type="button" aria-label="Dismiss">✕</button>' +
+          "</div>"
+      );
+      document.body.appendChild(banner);
+      banner.querySelector(".ib-install").addEventListener("click", function () {
+        if (!deferred) return;
+        deferred.prompt();
+        deferred.userChoice
+          .then(function (c) { track("install_prompt", { outcome: c && c.outcome }); })
+          .catch(function () {})
+          .then(function () { deferred = null; banner.remove(); });
+      });
+      banner.querySelector(".ib-close").addEventListener("click", function () {
+        try { localStorage.setItem("lh_install_dismissed", "1"); } catch (e) {}
+        banner.remove();
+      });
+    }
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      deferred = e;
+      show();
+    });
+    window.addEventListener("appinstalled", function () {
+      track("app_installed");
+      var b = document.getElementById("install-banner");
+      if (b) b.remove();
+    });
+  }
+
   function start() {
     var ok = renderBanner();
+    setupInstallPrompt();
     LH.init();
     if (!ok) {
       renderSignedOut();

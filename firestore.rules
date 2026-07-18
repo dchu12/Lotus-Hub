@@ -39,6 +39,18 @@ service cloud.firestore {
       match /tokens/{tokenId} {
         allow read, write: if isSelf(uid);
       }
+
+      // Players this user has blocked — private to the owner.
+      match /blocks/{blockedUid} {
+        allow read, write: if isSelf(uid);
+      }
+    }
+
+    // Abuse reports — a signed-in user can file one (as themselves); only
+    // admins/console can read or resolve them.
+    match /reports/{reportId} {
+      allow create: if signedIn() && request.resource.data.reporterUid == request.auth.uid;
+      allow read, update, delete: if false;
     }
 
     // Sessions: readable by any signed-in user; created by any signed-in user
