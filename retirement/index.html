@@ -102,6 +102,13 @@
       </div>
     </section>
 
+    <!-- ---- What if (live scenarios) ---- -->
+    <section class="card whatif" aria-label="What if">
+      <div class="step-head"><span class="step-ico" aria-hidden="true">🔮</span><h2 class="step-title">What if…</h2></div>
+      <p class="step-help">A few quick scenarios based on your numbers. These don't change your plan — they just show what would happen.</p>
+      <div id="whatifList" class="wi-list"></div>
+    </section>
+
     <!-- ---- Advanced (collapsed) ---- -->
     <details class="advanced card">
       <summary>Fine-tune the assumptions</summary>
@@ -141,6 +148,11 @@
         <label class="split-lbl" for="investPct">Of what's left over, invest <b id="investPctLbl">85%</b> <em>the rest stays as cash</em></label>
         <input type="range" id="investPct" min="0" max="100" step="5" value="85" />
         <p class="split-note" id="splitNote"></p>
+      </div>
+
+      <div class="reset-row">
+        <button type="button" id="resetBtn" class="reset-btn">Reset to the example</button>
+        <span>Clears your numbers and loads the sample household.</span>
       </div>
     </details>
 

@@ -74,7 +74,7 @@
    "theme-toggle", "hhTitle",
    "status", "statusText", "verdictLine", "verdictSub", "progressFill", "progressPct",
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
-   "goalYear", "projIncome", "projSub", "chart", "chartX"].forEach(function (id) {
+   "goalYear", "projIncome", "projSub", "chart", "chartX", "whatifList", "resetBtn"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
 
@@ -124,9 +124,10 @@
   }
 
   /* ---------- projection (all in today's dollars) ---------- */
-  function project(cf) {
+  function project(cf, opts) {
     var s = state.settings;
-    var years = Math.max(0, Math.round(s.targetYear - THIS_YEAR));
+    var targetYear = (opts && opts.targetYear) || s.targetYear;
+    var years = Math.max(0, Math.round(targetYear - THIS_YEAR));
     var months = years * 12;
     var rReturn = realMonthly(s.rate);
     var rCash = realMonthly(s.cashYield);
@@ -295,6 +296,7 @@
       : "≈ " + fmtMoney(cf.debtMo) + "/mo extra to debt · " + fmtMoney(cf.investMo) + "/mo invested · " + fmtMoney(cf.cashMo) + "/mo to cash.";
 
     drawChart(p);
+    renderWhatif();
   }
 
   function setStatus(ok, text) { el.status.className = "status" + (ok ? "" : " warn"); el.statusText.textContent = text; }
@@ -324,6 +326,47 @@
       + '</svg>';
     var midYear = THIS_YEAR + Math.round(p.years / 2);
     el.chartX.innerHTML = '<span>' + THIS_YEAR + '</span><span>' + midYear + '</span><span>' + state.settings.targetYear + '</span>';
+  }
+
+  /* ---------- "what if" scenarios (non-destructive) ---------- */
+  var SCENARIOS = [
+    { label: "Retire 3 years earlier", yearsDelta: -3 },
+    { label: "Retire 3 years later", yearsDelta: 3 },
+    { label: "Save $300 more a month", extraMonthly: 300 },
+    { label: "If investments grow slower", rateDelta: -2 },
+  ];
+
+  function renderWhatif() {
+    var s = state.settings;
+    var base = cashflow();
+    el.whatifList.innerHTML = SCENARIOS.map(function (sc) {
+      var cf2 = base, detail = "", year = s.targetYear, savedRate = s.rate;
+      if (sc.extraMonthly) {
+        cf2 = Object.assign({}, base, {
+          investMo: base.investMo + sc.extraMonthly * base.pct,
+          cashMo: base.cashMo + sc.extraMonthly * (1 - base.pct),
+          saveMo: base.saveMo + sc.extraMonthly,
+        });
+      }
+      if (sc.yearsDelta) { year = s.targetYear + sc.yearsDelta; detail = String(year); }
+
+      var out, cls, pill;
+      if (year <= THIS_YEAR) {
+        out = "—"; cls = "mute"; pill = "too soon";
+      } else {
+        if (sc.rateDelta) s.rate = savedRate + sc.rateDelta;   // temporary tweak for the sim
+        var p = project(cf2, { targetYear: year });
+        if (sc.rateDelta) s.rate = savedRate;                  // restore immediately
+        var meets = p.projPortfolio >= p.needed;
+        out = fmtMoney(p.projIncome) + "<em>/yr</em>";
+        cls = meets ? "good" : "warn";
+        pill = meets ? "Meets goal" : "Falls short";
+      }
+      return '<div class="wi-row"><span class="wi-label">' + escapeHtml(sc.label)
+        + (detail ? ' <em>(' + detail + ')</em>' : '') + '</span>'
+        + '<span class="wi-out"><span class="wi-income">' + out + '</span>'
+        + '<span class="wi-pill ' + cls + '">' + pill + '</span></span></div>';
+    }).join("");
   }
 
   /* ---------- editable lists ---------- */
@@ -424,6 +467,17 @@
     el.addFixed.addEventListener("click", function () { state.fixed.push({ id: "f" + (++idSeq), name: "", amount: 0, freq: "mo" }); save(); renderLineList(el.fixedList, state.fixed); renderAll(); });
     el.addAcct.addEventListener("click", function () { state.accounts.push({ id: "a" + (++idSeq), name: "", owner: "Joint", type: "investment", balance: 0 }); save(); renderAccounts(); renderAll(); });
     el.addDebt.addEventListener("click", function () { state.debts.push({ id: "d" + (++idSeq), name: "", balance: 0, apr: 6, payment: 0 }); save(); renderDebts(); renderAll(); });
+    el.resetBtn.addEventListener("click", function () {
+      if (!window.confirm("Reset everything back to the example household? This clears the numbers you've entered.")) return;
+      state = defaults();
+      save();
+      syncSettingsToForm();
+      renderLineList(el.incomeList, state.incomes);
+      renderLineList(el.fixedList, state.fixed);
+      renderAccounts();
+      renderDebts();
+      renderAll();
+    });
   }
 
   /* ---------- persistence ---------- */
