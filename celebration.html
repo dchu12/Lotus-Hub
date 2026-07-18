@@ -119,6 +119,15 @@
     animation:rise .9s ease forwards;opacity:0;animation-delay:1s}
   .lotus{margin-top:20px;font-size:20px;opacity:.7;animation:rise .9s ease forwards;opacity:0;animation-delay:1.05s}
 
+  /* Sound toggle */
+  .mute{position:fixed;top:14px;right:14px;z-index:40;width:44px;height:44px;border-radius:50%;
+    border:1px solid rgba(192,31,74,.18);background:rgba(255,255,255,.72);backdrop-filter:blur(8px);
+    font-size:19px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 14px rgba(192,31,74,.12);-webkit-tap-highlight-color:transparent;
+    transition:transform .15s ease}
+  .mute:hover{transform:scale(1.06)}
+  .mute:active{transform:scale(.94)}
+
   @media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}}
 </style>
 </head>
@@ -127,6 +136,8 @@
   <div class="glow g2"></div>
   <canvas id="petals"></canvas>
   <canvas id="confetti"></canvas>
+
+  <button class="mute" id="muteBtn" type="button" aria-label="Toggle sound" title="Sound on/off">🔊</button>
 
   <!-- Surprise screen -->
   <section id="intro">
@@ -170,6 +181,41 @@
 <script>
 (function(){
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  /* ---------- Sound (synthesized, no files) + haptics ---------- */
+  var actx=null, muted=false;
+  function audio(){
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return null;
+    if(!actx) actx=new AC();
+    if(actx.state==='suspended') actx.resume();
+    return actx;
+  }
+  function tone(freq,start,dur,type,gain){
+    var a=audio(); if(!a) return;
+    var t0=a.currentTime+start, o=a.createOscillator(), g=a.createGain();
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t0);
+    g.gain.linearRampToValueAtTime(gain||.2,t0+.012);
+    g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(t0); o.stop(t0+dur+.03);
+  }
+  function chime(){
+    if(muted||!audio()) return;
+    [523.25,659.25,783.99,1046.5].forEach(function(f,i){ tone(f,i*.09,.9,'triangle',.17); }); // C-E-G-C sparkle
+    [1568,2093].forEach(function(f,i){ tone(f,.34+i*.06,.7,'sine',.07); });                    // high shimmer
+    tone(130.81,0,.5,'sine',.22);                                                              // warm bass
+  }
+  function pop(){ if(muted||!audio()) return; tone(560+Math.random()*420,0,.16,'triangle',.11); }
+  function buzz(p){ if(navigator.vibrate){ try{ navigator.vibrate(p); }catch(e){} } }
+  var mb=document.getElementById('muteBtn');
+  mb.addEventListener('click',function(){
+    muted=!muted;
+    mb.textContent=muted?'🔇':'🔊';
+    if(!muted){ audio(); tone(880,0,.12,'triangle',.12); } // little blip so they hear it's on
+    else buzz(0);
+  });
   var cc=document.getElementById('confetti'),ctx=cc.getContext('2d');
   var pc=document.getElementById('petals'),pctx=pc.getContext('2d');
   var W,H,DPR;
@@ -242,6 +288,8 @@
     var intro=document.getElementById('intro');
     var r=document.getElementById('openBtn').getBoundingClientRect();
     var bx=r.left+r.width/2, by=r.top+r.height/2;
+    chime();
+    buzz([12,45,12,45,80]);
     if(!reduce){
       cannon(bx,by,120,1.3);
       setTimeout(function(){cannon(W*0.2,H*0.62,70,1.1);cannon(W*0.8,H*0.62,70,1.1);},180);
@@ -260,9 +308,11 @@
   // Tap anywhere on the message for more confetti
   document.querySelector('.stage').addEventListener('pointerdown',function(e){
     cannon(e.clientX,e.clientY,26,.9);
+    pop(); buzz(10);
   });
   document.getElementById('againBtn').addEventListener('click',function(e){
     e.stopPropagation();
+    chime(); buzz([10,40,10]);
     cannon(W*0.5,H*0.4,110,1.2);
     setTimeout(function(){cannon(W*0.25,H*0.5,60,1);cannon(W*0.75,H*0.5,60,1);},160);
   });
