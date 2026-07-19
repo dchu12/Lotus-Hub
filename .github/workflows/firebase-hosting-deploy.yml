@@ -1,0 +1,29 @@
+name: Deploy to Firebase Hosting
+
+# Auto-publishes the site to Firebase Hosting on every push to main.
+# You can also run it by hand from the Actions tab (workflow_dispatch).
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Only one deploy runs at a time; newer pushes cancel an in-flight deploy.
+concurrency:
+  group: firebase-hosting
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Firebase Hosting (live channel)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: lots-hub
+          channelId: live
