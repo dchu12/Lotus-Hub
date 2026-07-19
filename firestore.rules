@@ -42,16 +42,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Shared trackers (e.g. the wedding thank-you card tracker). Private to a
-    // small allowlist of accounts — edit the list to add/remove people. Both
-    // devices can sign in with the same account, or add each person's email.
-    function trackerAllowed() {
-      return signedIn() && request.auth.token.email in [
-        "kokwithchu@gmail.com"
-      ];
-    }
+    // Shared trackers (e.g. the wedding thank-you card tracker). Open by
+    // request: no sign-in, so anyone who has the app link can view/edit. Keep
+    // it private by not sharing the URL. To lock it back down later, require
+    // auth here (e.g. `if request.auth != null`) and restore the sign-in gate.
     match /trackers/{trackerId} {
-      allow read, write: if trackerAllowed();
+      allow read, write: if true;
     }
   }
 }

@@ -350,13 +350,12 @@
   function saveTracker(id, families) {
     if (!ready) return Promise.reject(new Error("Not connected."));
     var u = auth.currentUser;
-    if (!u) return Promise.reject(new Error("Sign in first."));
     return trackerDoc(id).set(
       {
         families: families || [],
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy: u.uid,
-        updatedByEmail: u.email || null,
+        updatedBy: u ? u.uid : "open",
+        updatedByEmail: u ? (u.email || null) : null,
       },
       { merge: true }
     );

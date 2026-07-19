@@ -474,7 +474,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js?v=1"></script>
-  <script src="firebase.js?v=33"></script>
+  <script src="firebase.js?v=34"></script>
 
   <script>
   (function () {
@@ -482,8 +482,6 @@
 
     var STORAGE_KEY = "lotus-thankyou-v1";
     var TRACKER_ID = "wedding";
-    // Only these accounts may open the shared tracker (mirrors firestore.rules).
-    var ALLOWED_EMAILS = ["kokwithchu@gmail.com"];
 
     // ---- seed data: guests grouped into families (1 card per family) -------
     var SEED = [
@@ -539,7 +537,6 @@
 
     // sync state
     var mode = "local";          // "cloud" once Firebase is available
-    var me = null;               // signed-in Firebase user
     var unsubTracker = null;     // Firestore snapshot unsubscribe
     var writeTimer = null;       // debounce handle for cloud writes
     var dirty = false;           // a local edit is waiting to be pushed
@@ -650,7 +647,7 @@
     }
     function cloudSaveNow() {
       clearTimeout(writeTimer);
-      if (!(window.LH && window.LH.ready && me)) return;
+      if (!(window.LH && window.LH.ready)) return;
       window.LH.saveTracker(TRACKER_ID, families)
         .then(function () { dirty = false; clearLocalEdits(); setSync("ok"); })
         .catch(function () { setSync("error"); });
@@ -981,18 +978,16 @@
     function hideApp() { appmain.hidden = true; }
 
     function setSync(kind) {
-      var email = me && me.email ? me.email : "";
-      signoutBtn.hidden = !(mode === "cloud" && me);
+      signoutBtn.hidden = true;
       if (mode !== "cloud") {
         syncbar.className = "syncbar local";
         syncWho.innerHTML = "💾 Saved on <strong>this device only</strong>";
         return;
       }
       if (kind === "saving") { syncbar.className = "syncbar ok"; syncWho.innerHTML = "☁️ Saving…"; }
-      else if (kind === "ok") { syncbar.className = "syncbar ok"; syncWho.innerHTML = "☁️ Synced · <strong>" + esc(email) + "</strong>"; }
+      else if (kind === "ok") { syncbar.className = "syncbar ok"; syncWho.innerHTML = "☁️ Synced · <strong>shared across devices</strong>"; }
       else if (kind === "error") { syncbar.className = "syncbar local"; syncWho.innerHTML = "⚠️ Offline — saved on this device, will sync when back online"; }
-      else if (kind === "connecting") { syncbar.className = "syncbar"; syncWho.innerHTML = "☁️ Connecting…"; }
-      else { syncbar.className = "syncbar"; syncWho.innerHTML = "🔒 Sign in to sync"; }
+      else { syncbar.className = "syncbar"; syncWho.innerHTML = "☁️ Connecting…"; }
     }
 
     function isEditing() {
@@ -1071,92 +1066,15 @@
       return out;
     }
 
-    function renderGate(LH, user) {
-      hideApp();
-      gate.hidden = false;
-      if (user) {
-        // signed in, but not on the allowlist
-        setSync("signedout");
-        signoutBtn.hidden = true;
-        gate.innerHTML =
-          '<div class="card"><h2>Private tracker 🔒</h2>' +
-          '<p class="muted">You\'re signed in as <strong>' + esc(user.email || "") +
-          "</strong>, which isn't on this tracker's guest list. Sign in with the shared wedding account to continue.</p>" +
-          '<button class="btn-primary" id="g-switch">Use a different account</button></div>';
-        gate.querySelector("#g-switch").addEventListener("click", function () { LH.signOut(); });
-        return;
-      }
-      setSync("signedout");
-      gate.innerHTML =
-        '<div class="card"><h2>Sign in to sync 🔒</h2>' +
-        '<p class="muted">This shared tracker keeps Kelly &amp; Derek on the same list across every device. Sign in with your wedding account.</p>' +
-        '<button class="btn-google" id="g-google"><span>🇬</span> Continue with Google</button>' +
-        '<div class="divider">or with email</div>' +
-        '<div class="field"><label>Email</label><input type="email" id="g-email" placeholder="you@example.com" autocomplete="email" /></div>' +
-        '<div class="field"><label>Password</label><input type="password" id="g-pass" placeholder="••••••••" autocomplete="current-password" /></div>' +
-        '<button class="btn-primary" id="g-signin">Sign in</button>' +
-        '<button class="ghost" id="g-signup">New account? Create it</button></div>';
-      var mode2 = "signin";
-      gate.querySelector("#g-google").addEventListener("click", function () {
-        if (typeof firebase === "undefined" || !firebase.auth) {
-          toast("Google sign-in isn't available right now.");
-          return;
-        }
-        // Phones block sign-in popups (they just flash and close), so use a
-        // full-page redirect on mobile; keep the smoother popup on desktop.
-        var isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        var provider = new firebase.auth.GoogleAuthProvider();
-        if (isMobile) {
-          firebase.auth().signInWithRedirect(provider).catch(function (e) { toast(e.message || "Google sign-in failed."); });
-        } else {
-          LH.signInWithGoogle().catch(function () {
-            // popup blocked/closed on desktop too — fall back to redirect
-            firebase.auth().signInWithRedirect(provider).catch(function (e) { toast(e.message || "Google sign-in failed."); });
-          });
-        }
-      });
-      gate.querySelector("#g-signup").addEventListener("click", function () {
-        mode2 = mode2 === "signin" ? "signup" : "signin";
-        gate.querySelector("#g-signin").textContent = mode2 === "signin" ? "Sign in" : "Create account";
-        this.textContent = mode2 === "signin" ? "New account? Create it" : "Have an account? Sign in";
-      });
-      gate.querySelector("#g-signin").addEventListener("click", function () {
-        var email = gate.querySelector("#g-email").value.trim();
-        var pass = gate.querySelector("#g-pass").value;
-        if (!email || !pass) { toast("Enter your email and password."); return; }
-        var p = mode2 === "signup" ? LH.signUp(email, pass, "Kelly & Derek") : LH.signIn(email, pass);
-        p.catch(function (e) { toast(e.message || "Sign-in failed."); });
-      });
-    }
-
+    // Open shared mode — no sign-in. Anyone who opens the link shares one live
+    // list; keep it private by not sharing the URL.
     function startCloud(LH) {
       syncbar.hidden = false;
+      gate.hidden = true;
+      signoutBtn.hidden = true;
       setSync("connecting");
-      // Complete a Google redirect sign-in when returning from the provider,
-      // and surface any real error (e.g. provider not enabled).
-      try {
-        if (typeof firebase !== "undefined" && firebase.auth) {
-          firebase.auth().getRedirectResult().catch(function (e) {
-            if (e && e.message) toast(e.message);
-          });
-        }
-      } catch (e) { /* ignore */ }
-      signoutBtn.addEventListener("click", function () {
-        if (unsubTracker) { unsubTracker(); unsubTracker = null; }
-        LH.signOut();
-      });
-      LH.onAuth(function (user) {
-        me = user;
-        if (unsubTracker) { unsubTracker(); unsubTracker = null; }
-        appReady = false;
-        if (!user) { renderGate(LH, null); return; }
-        var email = (user.email || "").toLowerCase();
-        if (ALLOWED_EMAILS.indexOf(email) === -1) { renderGate(LH, user); return; }
-        gate.hidden = true;
-        setSync("connecting");
-        footSave.innerHTML = "☁️ Changes sync automatically to your shared wedding account — you both see the same list on every device.";
-        unsubTracker = LH.watchTracker(TRACKER_ID, onRemote);
-      });
+      footSave.innerHTML = "☁️ Changes sync automatically across every device that opens this link — no sign-in needed. Keep it private by not sharing the link.";
+      unsubTracker = LH.watchTracker(TRACKER_ID, onRemote);
     }
 
     // ---- go ----------------------------------------------------------------
