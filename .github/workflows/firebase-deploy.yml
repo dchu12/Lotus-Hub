@@ -1,0 +1,65 @@
+name: Deploy to Firebase
+
+# Publishes the site (Firebase Hosting) AND the Firestore security rules to the
+# lots-hub project on every push to main. Also runnable on demand from the
+# Actions tab (workflow_dispatch).
+#
+# One-time setup (all in the browser, no terminal needed):
+#   1. Google Cloud console -> IAM & Admin -> Service Accounts -> Create.
+#      Give it the "Editor" role (simplest that can deploy hosting + rules).
+#   2. On that service account -> Keys -> Add key -> Create new key -> JSON.
+#      Download the JSON file.
+#   3. GitHub repo -> Settings -> Secrets and variables -> Actions -> New
+#      repository secret. Name it exactly FIREBASE_SERVICE_ACCOUNT and paste
+#      the entire contents of the JSON file as the value.
+# After that, merging to main deploys automatically.
+
+on:
+  push:
+    branches: [main]
+    # Doc-only changes don't need a deploy.
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+# Never let two deploys run at once; a newer push supersedes an in-flight one.
+concurrency:
+  group: firebase-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install the Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write the service-account key to a file
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::Missing FIREBASE_SERVICE_ACCOUNT secret. See the setup steps at the top of .github/workflows/firebase-deploy.yml"
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/service-account.json"
+
+      - name: Deploy hosting + Firestore rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/service-account.json
+        run: firebase deploy --only hosting,firestore:rules --project lots-hub --non-interactive
+
+      - name: Done
+        run: echo "Deployed → https://lots-hub.web.app  (tracker at /thank-you.html)"
