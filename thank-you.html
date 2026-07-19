@@ -236,6 +236,13 @@
     .fc-field.f-derek label { color: var(--derek); }
     .fc-field.f-kelly label { color: var(--kelly); }
     .fc-field.f-msg label { color: var(--accent-ink); }
+    .fc-field.f-gift label { color: var(--accent-ink); }
+    textarea.gift { border-left: 3px solid var(--accent); background: #fffdf6; }
+    .gift-badge {
+      display: inline-block; margin-top: 6px;
+      background: var(--accent-soft); color: var(--accent-ink);
+      border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700;
+    }
 
     /* checkbox toggles (photos printed / mailed) */
     .chk {
@@ -419,6 +426,7 @@
         <span>🤝 In&nbsp;person <b id="s-person">0</b></span>
         <span>🖼️ Printed <b id="s-printed">0</b></span>
         <span>📮 Mailed <b id="s-mailed">0</b></span>
+        <span>💰 Gave a gift <b id="s-gift">0</b></span>
       </div>
     </section>
 
@@ -569,7 +577,8 @@
           address: "",
           message: "",       // the thank-you message to write in the card
           notesDerek: "",    // Derek's private notes
-          notesKelly: ""     // Kelly's private notes
+          notesKelly: "",    // Kelly's private notes
+          gift: ""           // wedding gift (money) — e.g. "CAD 200"
         };
       });
     }
@@ -590,7 +599,8 @@
         message: f.message || "",
         // legacy single "notes" field folds into Derek's notes
         notesDerek: f.notesDerek || f.notes || "",
-        notesKelly: f.notesKelly || ""
+        notesKelly: f.notesKelly || "",
+        gift: f.gift || ""
       };
     }
 
@@ -613,7 +623,7 @@
       keep.guests = keep.guests.concat(drop.guests);
       if (keep.num === "TBD" || keep.num == null) keep.num = num;
       // fold in anything already entered on the dropped row, without overwriting
-      ["address", "message", "notesDerek", "notesKelly"].forEach(function (k) {
+      ["address", "message", "notesDerek", "notesKelly", "gift"].forEach(function (k) {
         if (!keep[k] && drop[k]) keep[k] = drop[k];
       });
       if (keep.status === "not" && drop.status !== "not") keep.status = drop.status;
@@ -625,6 +635,27 @@
     }
     function migrate(list) {
       return mergeTwo(list, "Fong Sow Wai", "Jayden Fong", "32");
+    }
+
+    // One-time seeding of the "Langkawi gifts" list onto matching families (by
+    // card #). Runs once per device; only fills a gift that's still empty, and
+    // PERSISTS (so it reaches the shared copy on the other device). Won't
+    // overwrite edits or re-add a gift you delete.
+    function applyGiftSeed() {
+      try { if (localStorage.getItem("lotus-thankyou-gifts-v1")) return; } catch (e) {}
+      var GIFTS = {
+        "1": "USD 400", "5": "CAD 500", "9": "CAD 400", "10": "RM 101",
+        "11": "CAD 300", "12": "RM 600", "13": "CAD 190", "15": "CAD 320 + USD 20",
+        "21": "CAD 440", "23": "RM 387", "26": "CAD 200", "27": "RM 380",
+        "28": "RM 1200", "29": "CAD 40", "31": "RM 350"
+      };
+      var changed = false;
+      families.forEach(function (f) {
+        var g = GIFTS[String(f.num)];
+        if (g && !f.gift) { f.gift = g; markDirty(f.id); changed = true; }
+      });
+      try { localStorage.setItem("lotus-thankyou-gifts-v1", "1"); } catch (e) {}
+      if (changed) { save(); render(); }
     }
 
     // Always keep an on-device copy (offline cache + Backup/CSV source); when
@@ -678,7 +709,7 @@
       if (filter.status !== "all" && f.status !== filter.status) return false;
       if (filter.resp !== "all" && f.responsible !== filter.resp) return false;
       if (filter.q) {
-        var hay = (f.guests.join(" ") + " " + f.address + " " + f.message + " " + f.notesDerek + " " + f.notesKelly + " " + f.num).toLowerCase();
+        var hay = (f.guests.join(" ") + " " + f.address + " " + f.message + " " + f.notesDerek + " " + f.notesKelly + " " + f.gift + " " + f.num).toLowerCase();
         if (hay.indexOf(filter.q) === -1) return false;
       }
       return true;
@@ -712,12 +743,13 @@
         : '<label class="chk' + (f.mailed ? " on" : "") + '">' +
           '<input type="checkbox" data-field="mailed"' + (f.mailed ? " checked" : "") + " />" +
           "<span>📮 Mailed</span></label>";
-      var hasDetails = f.message || f.notesDerek || f.notesKelly || (!inPerson && f.address);
+      var giftBadge = f.gift ? '<span class="gift-badge">💰 ' + esc(f.gift) + "</span>" : "";
+      var hasDetails = f.gift || f.message || f.notesDerek || f.notesKelly || (!inPerson && f.address);
       return (
         '<article class="fam-card ' + (f.status === "done" ? "done-row" : "") + '" data-id="' + esc(f.id) + '">' +
           '<div class="fc-head">' +
             '<span class="fam-num ' + (isTbd ? "tbd" : "") + '">' + esc(f.num) + "</span>" +
-            '<div class="fc-names"><div class="guests" contenteditable="false">' + guestNames + "</div>" +
+            '<div class="fc-names"><div class="guests" contenteditable="false">' + guestNames + "</div>" + giftBadge +
               '<textarea class="cell" data-field="guests" rows="2" placeholder="Names (one per line)" style="display:none">' + esc(f.guests.join("\n")) + "</textarea></div>" +
             '<button class="row-del" title="Remove family" aria-label="Remove family">✕</button>' +
           "</div>" +
@@ -737,6 +769,7 @@
           '<details class="fc-details"' + (hasDetails ? " open" : "") + ">" +
             "<summary>Address, message &amp; notes" + (hasDetails ? '<span class="fc-summary-flags">· filled in</span>' : "") + "</summary>" +
             '<div class="fc-detail-body">' +
+              '<div class="fc-field f-gift"><label>💰 Wedding gift (money received)</label><textarea class="cell gift" data-field="gift" rows="1" placeholder="e.g. CAD 200 — leave blank if none">' + esc(f.gift) + "</textarea></div>" +
               '<div class="fc-field"><label>Mailing address</label>' + addrCell + "</div>" +
               '<div class="fc-field f-msg"><label>Thank-you message</label><textarea class="cell msg" data-field="message" rows="2" placeholder="The note to write in this card">' + esc(f.message) + "</textarea></div>" +
               '<div class="fc-field f-derek"><label>Derek\'s notes</label><textarea class="cell note-derek" data-field="notesDerek" rows="2" placeholder="Private notes">' + esc(f.notesDerek) + "</textarea></div>" +
@@ -749,7 +782,7 @@
 
     function updateStats() {
       var total = families.length;
-      var done = 0, prog = 0, notCt = 0, kelly = 0, derek = 0, mail = 0, person = 0, printed = 0, mailed = 0;
+      var done = 0, prog = 0, notCt = 0, kelly = 0, derek = 0, mail = 0, person = 0, printed = 0, mailed = 0, gifts = 0;
       families.forEach(function (f) {
         if (f.status === "done") done++;
         else if (f.status === "in-progress") prog++;
@@ -760,6 +793,7 @@
         else mail++;
         if (f.photosPrinted) printed++;
         if (f.mailed && f.delivery !== "person") mailed++;
+        if (f.gift) gifts++;
       });
       document.getElementById("p-done").textContent = done;
       document.getElementById("p-total").textContent = total;
@@ -776,6 +810,7 @@
       document.getElementById("s-person").textContent = person;
       document.getElementById("s-printed").textContent = printed;
       document.getElementById("s-mailed").textContent = mailed;
+      document.getElementById("s-gift").textContent = gifts;
     }
 
     function find(id) {
@@ -827,6 +862,7 @@
       else if (field === "message") f.message = e.target.value;
       else if (field === "notesDerek") f.notesDerek = e.target.value;
       else if (field === "notesKelly") f.notesKelly = e.target.value;
+      else if (field === "gift") { f.gift = e.target.value; updateStats(); }
       save();
     });
 
@@ -893,7 +929,7 @@
       families.push({
         id: newId(), num: "TBD", guests: ["New guest"], status: "not",
         responsible: "", delivery: "mail", photosPrinted: false, mailed: false,
-        address: "", message: "", notesDerek: "", notesKelly: ""
+        address: "", message: "", notesDerek: "", notesKelly: "", gift: ""
       });
       markStructural();
       // clear filters so the new row is visible
@@ -924,7 +960,7 @@
       return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     }
     document.getElementById("export-csv").addEventListener("click", function () {
-      var head = ["Card #", "Guests", "Status", "Responsible", "Delivery", "Photos Printed", "Mailed", "Mailing Address", "Thank You Message", "Derek's Notes", "Kelly's Notes"];
+      var head = ["Card #", "Guests", "Status", "Responsible", "Delivery", "Photos Printed", "Mailed", "Wedding Gift", "Mailing Address", "Thank You Message", "Derek's Notes", "Kelly's Notes"];
       var lines = [head.map(csvCell).join(",")];
       families.forEach(function (f) {
         var label = STATUSES.filter(function (s) { return s.v === f.status; }).map(function (s) { return s.label; })[0] || f.status;
@@ -934,7 +970,7 @@
           inPerson ? "In person" : "Mail",
           f.photosPrinted ? "Yes" : "No",
           inPerson ? "N/A (drop-off)" : (f.mailed ? "Yes" : "No"),
-          inPerson ? "" : f.address, f.message, f.notesDerek, f.notesKelly
+          f.gift, inPerson ? "" : f.address, f.message, f.notesDerek, f.notesKelly
         ].map(csvCell).join(","));
       });
       download("thank-you-cards.csv", "﻿" + lines.join("\r\n"), "text/csv;charset=utf-8");
@@ -1018,6 +1054,7 @@
         if (!seededOnce) {
           seededOnce = true;
           families = load();
+          applyGiftSeed();
           showApp(); render();
           cloudSaveNow();
         }
@@ -1053,6 +1090,7 @@
       }
       showApp();
       render();
+      applyGiftSeed();   // one-time: fill the gift list and persist to the shared copy
     }
     function mergeOverlay(incoming, local, keepIds) {
       var byId = {};
@@ -1096,6 +1134,7 @@
         setSync("local");
         showApp();
         render();
+        applyGiftSeed();
       }
     }
     boot();
