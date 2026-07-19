@@ -1,0 +1,16 @@
+{
+  "name": "Thank You Cards",
+  "short_name": "Thank Yous",
+  "description": "Kelly & Derek's wedding thank-you card tracker",
+  "start_url": "/thank-you.html",
+  "scope": "/thank-you.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbf6ec",
+  "theme_color": "#0d8aa8",
+  "icons": [
+    { "src": "icon-ty-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-ty-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-ty-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
