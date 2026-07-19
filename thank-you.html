@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d8aa8" />
+  <title>Thank You Card Tracker · Lotus Hub</title>
+  <link rel="icon" type="image/png" href="favicon-64.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <style>
+    :root {
+      /* 🏖 beach vibes — ocean blue + warm sand */
+      --bg: #fbf6ec;          /* soft warm sand */
+      --card: #ffffff;        /* card surface */
+      --ink: #1c3a44;         /* deep sea-slate text */
+      --muted: #6d7f85;       /* driftwood grey */
+      --line: #ece2cf;        /* sand hairline */
+      --line-strong: #dccfb4;
+      --brand: #0d8aa8;       /* ocean blue — primary actions */
+      --brand-hover: #0a7391; /* deeper ocean for press/hover */
+      --brand-soft: #e0f3f7;  /* pale sea-foam wash */
+      --accent: #f3b64b;      /* golden sand / sun — highlights */
+      --accent-soft: #fdf1d6; /* soft sand surface */
+      --accent-ink: #9a6a13;  /* readable warm-sand text */
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow: 0 1px 2px rgba(23, 58, 68, 0.05), 0 6px 16px rgba(23, 58, 68, 0.08);
+
+      /* status colors */
+      --s-not: #6d7f85;
+      --s-not-bg: #eef0e8;
+      --s-prog: #9a6a13;
+      --s-prog-bg: #fdf1d6;
+      --s-done: #0f8f7e;      /* tropical teal-green */
+      --s-done-bg: #d9f3ee;
+
+      /* responsible chips */
+      --kelly: #c26a1f;       /* warm coral-sand */
+      --kelly-bg: #fbeada;
+      --derek: #1069a8;       /* deep sea blue */
+      --derek-bg: #e0eefa;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header.hero {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%);
+      color: #fff;
+      padding: 22px 20px 20px;
+    }
+    .hero-inner { max-width: 1200px; margin: 0 auto; }
+    .hero h1 {
+      margin: 0;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hero .sub { margin: 4px 0 0 34px; opacity: 0.92; font-size: 13.5px; }
+    .hero .flower { font-size: 24px; }
+
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px 16px 80px; }
+
+    /* progress */
+    .progress-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+      margin-top: -18px;
+      position: relative;
+      z-index: 2;
+    }
+    .progress-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .progress-top .big { font-size: 20px; font-weight: 700; }
+    .progress-top .pct { font-size: 20px; font-weight: 700; color: var(--brand); }
+    .bar {
+      height: 12px;
+      background: var(--s-not-bg);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 12px 0 14px;
+      display: flex;
+    }
+    .bar .seg-done { background: var(--s-done); }
+    .bar .seg-prog { background: var(--accent); }
+    .stat-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .stat {
+      flex: 1 1 130px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .stat .n { font-size: 20px; font-weight: 700; }
+    .stat .l { font-size: 12px; color: var(--muted); }
+    .stat.done .n { color: var(--s-done); }
+    .stat.prog .n { color: var(--accent-ink); }
+
+    /* toolbar */
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 16px 0 12px;
+    }
+    .toolbar .grow { flex: 1 1 200px; }
+    input[type="search"], select, input[type="text"], textarea {
+      font: inherit;
+      color: var(--ink);
+      background: var(--card);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--brand-soft);
+    }
+    .seg-filter {
+      display: inline-flex;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--card);
+    }
+    .seg-filter button {
+      border: 0;
+      background: transparent;
+      padding: 7px 13px;
+      font: inherit;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .seg-filter button.active { background: var(--brand); color: #fff; }
+
+    .btn {
+      font: inherit;
+      font-size: 13.5px;
+      border: 1px solid var(--line-strong);
+      background: var(--card);
+      color: var(--ink);
+      border-radius: var(--radius-sm);
+      padding: 8px 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #f6f1ef; }
+    .btn-primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .btn-primary:hover { background: var(--brand-hover); }
+
+    /* table */
+    .table-scroll { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow); }
+    table { width: 100%; border-collapse: collapse; background: var(--card); min-width: 900px; }
+    thead th {
+      text-align: left;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line-strong);
+      background: #fbf7f5;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tbody td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr.done-row { background: #fbfdfb; }
+
+    .fam-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 30px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .fam-num.tbd { background: var(--accent-soft); color: var(--accent-ink); font-size: 11px; }
+    .guests { font-weight: 600; }
+    .guests .g { display: block; }
+    .col-fam { width: 70px; }
+    .col-status { width: 150px; }
+    .col-resp { width: 130px; }
+    .col-addr { width: 240px; }
+    .col-actions { width: 44px; }
+
+    select.status {
+      font-weight: 600;
+      border-radius: 999px;
+      padding: 6px 10px;
+      cursor: pointer;
+      border-width: 1px;
+    }
+    select.status.not { color: var(--s-not); background: var(--s-not-bg); border-color: var(--s-not-bg); }
+    select.status.prog { color: var(--s-prog); background: var(--s-prog-bg); border-color: var(--s-prog-bg); }
+    select.status.done { color: var(--s-done); background: var(--s-done-bg); border-color: var(--s-done-bg); }
+
+    select.resp { border-radius: 999px; padding: 6px 10px; cursor: pointer; font-weight: 600; }
+    select.resp.kelly { color: var(--kelly); background: var(--kelly-bg); border-color: var(--kelly-bg); }
+    select.resp.derek { color: var(--derek); background: var(--derek-bg); border-color: var(--derek-bg); }
+
+    textarea.cell {
+      resize: vertical;
+      min-height: 38px;
+      font-size: 13px;
+      border-color: var(--line);
+    }
+    .row-del {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 6px;
+      border-radius: 8px;
+    }
+    .row-del:hover { background: var(--brand-soft); color: var(--brand); }
+
+    .empty { text-align: center; color: var(--muted); padding: 40px 20px; }
+
+    .footnote { color: var(--muted); font-size: 12.5px; margin-top: 14px; line-height: 1.6; }
+    .footnote code { background: #f1ecea; padding: 1px 5px; border-radius: 5px; }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 50;
+    }
+    .toast.show { opacity: 1; }
+
+    @media (max-width: 640px) {
+      .hero .sub { margin-left: 0; }
+      .stat { flex-basis: 46%; }
+    }
+
+    @media print {
+      header.hero, .toolbar, .row-del, .col-actions, .footnote, .progress-card .stat-row { display: none; }
+      .table-scroll { border: 0; box-shadow: none; overflow: visible; }
+      table { min-width: 0; font-size: 11px; }
+      select, textarea { border: 0 !important; background: transparent !important; -webkit-appearance: none; appearance: none; padding: 0; }
+      body { background: #fff; }
+      @page { margin: 12mm; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <h1><span class="flower">🏖️</span> Thank You Card Tracker</h1>
+      <p class="sub">Kelly &amp; Derek's wedding — one card per family. Everything saves automatically in this browser.</p>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="progress-card">
+      <div class="progress-top">
+        <div class="big"><span id="p-done">0</span> of <span id="p-total">0</span> cards sent</div>
+        <div class="pct" id="p-pct">0%</div>
+      </div>
+      <div class="bar" aria-hidden="true">
+        <div class="seg-done" id="p-bar-done" style="width:0%"></div>
+        <div class="seg-prog" id="p-bar-prog" style="width:0%"></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><span class="n" id="s-not">0</span><span class="l">Not started</span></div>
+        <div class="stat prog"><span class="n" id="s-prog">0</span><span class="l">In progress</span></div>
+        <div class="stat done"><span class="n" id="s-done">0</span><span class="l">Done</span></div>
+        <div class="stat"><span class="n" id="s-kelly">0</span><span class="l">Kelly's families</span></div>
+        <div class="stat"><span class="n" id="s-derek">0</span><span class="l">Derek's families</span></div>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <div class="grow"><input type="search" id="search" placeholder="🔍 Search a name, address, or note…" /></div>
+      <div class="seg-filter" id="status-filter">
+        <button data-f="all" class="active">All</button>
+        <button data-f="not">Not started</button>
+        <button data-f="in-progress">In progress</button>
+        <button data-f="done">Done</button>
+      </div>
+      <div class="seg-filter" id="resp-filter">
+        <button data-r="all" class="active">Everyone</button>
+        <button data-r="Kelly">Kelly</button>
+        <button data-r="Derek">Derek</button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn btn-primary" id="add-family">＋ Add family</button>
+      <button class="btn" id="export-csv">⬇ Export CSV</button>
+      <button class="btn" id="export-json">⬇ Backup (JSON)</button>
+      <button class="btn" id="import-json">⬆ Restore backup</button>
+      <button class="btn" id="print-btn">🖨 Print</button>
+      <input type="file" id="import-file" accept="application/json" hidden />
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-fam">Card&nbsp;#</th>
+            <th>Family / Guests</th>
+            <th class="col-status">Status</th>
+            <th class="col-resp">Responsible</th>
+            <th class="col-addr">Mailing address</th>
+            <th>Notes</th>
+            <th class="col-actions" aria-label="Remove"></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="empty" hidden>No families match your filters.</div>
+
+    <p class="footnote">
+      💾 Your changes save to <strong>this browser on this device only</strong>. For a shared copy Kelly and Derek can both
+      use — or a safe backup — click <strong>Backup (JSON)</strong> and keep the file; use <strong>Restore backup</strong>
+      to load it on another device. <strong>Export CSV</strong> opens in Excel or Google Sheets.
+      Families marked <span class="fam-num tbd" style="min-width:auto;height:auto;padding:1px 6px;">TBD</span> had no card
+      count yet — edit their names or add/remove families as you confirm the guest list.
+    </p>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    var STORAGE_KEY = "lotus-thankyou-v1";
+
+    // ---- seed data: guests grouped into families (1 card per family) -------
+    var SEED = [
+      { num: "1",  guests: ["John Chu", "Mary Chu"] },
+      { num: "2",  guests: ["Kok Chee Weng", "Yong Yoke Har"] },
+      { num: "3",  guests: ["Kok Yue Ran", "Wayne Kang"] },
+      { num: "4",  guests: ["Kok Hao Ran", "Jennifer Ang"] },
+      { num: "5",  guests: ["Kevin Chu", "Julianna Chu"] },
+      { num: "6",  guests: ["Matthew Magdales"] },
+      { num: "7",  guests: ["Sammie Phung"] },
+      { num: "8",  guests: ["Andres Serrano", "Angela Wong"] },
+      { num: "9",  guests: ["Arian Shemirani", "Bianca Calimlim"] },
+      { num: "10", guests: ["Mankiran Mann"] },
+      { num: "11", guests: ["Brandon Won", "Glenys Tanesia"] },
+      { num: "12", guests: ["Ming Yang Ng", "Sze Ying Wong"] },
+      { num: "13", guests: ["Irene Chen", "Kevin Liu"] },
+      { num: "14", guests: ["Melissa Chen", "Daniel Chen"] },
+      { num: "15", guests: ["Hui Chen", "Paul Chen"] },
+      { num: "16", guests: ["Sophia Yong"] },
+      { num: "17", guests: ["Caren Yong"] },
+      { num: "18", guests: ["Elsie Yong"] },
+      { num: "19", guests: ["Jeffrey Chu"] },
+      { num: "20", guests: ["Allan Tham", "Wenjin Haw"] },
+      { num: "21", guests: ["Joseph Tham", "Lily Tham"] },
+      { num: "22", guests: ["Allysa Martinez", "Alexander Wong"] },
+      { num: "23", guests: ["Daphne Chin"] },
+      { num: "24", guests: ["Kok Wei Hao", "Wong Wen Wen"] },
+      { num: "25", guests: ["Alexander Lee"] },
+      { num: "26", guests: ["Dustin Tan", "Jennifer Tamin"] },
+      { num: "27", guests: ["Christie Chua", "Jonathan Fong"] },
+      { num: "28", guests: ["Billy Lim", "Kee Hui"] },
+      { num: "29", guests: ["Jonathan Chu", "Hannah Lai", "Bonnie Fung"] },
+      { num: "30", guests: ["Daniel Upeniks", "Alyssa Kumar"] },
+      { num: "31", guests: ["Eric Lim"] },
+      { num: "TBD", guests: ["Kok Yoke Peng"] },
+      { num: "TBD", guests: ["Liew Sau Yoong"] },
+      { num: "TBD", guests: ["Lai Kheng Kok"] },
+      { num: "TBD", guests: ["Kwok Yong Peng"] },
+      { num: "TBD", guests: ["Fong Sow Wai"] },
+      { num: "TBD", guests: ["Jayden Fong"] }
+    ];
+
+    var STATUSES = [
+      { v: "not", label: "Not started", cls: "not" },
+      { v: "in-progress", label: "In progress", cls: "prog" },
+      { v: "done", label: "Done", cls: "done" }
+    ];
+
+    // ---- state -------------------------------------------------------------
+    var idSeed = 1;
+    function newId() { return "f" + (idSeed++) + "-" + (families.length + 1); }
+    var families = load();
+    var filter = { status: "all", resp: "all", q: "" };
+
+    function load() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          var saved = JSON.parse(raw);
+          if (Array.isArray(saved) && saved.length) return saved;
+        }
+      } catch (e) { /* fall through to seed */ }
+      return SEED.map(function (f, i) {
+        return {
+          id: "seed-" + i,
+          num: f.num,
+          guests: f.guests.slice(),
+          status: "not",
+          responsible: "",   // "", "Kelly", or "Derek"
+          address: "",
+          notes: ""
+        };
+      });
+    }
+
+    function save() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(families)); }
+      catch (e) { toast("Couldn't save — storage may be full."); }
+    }
+
+    // ---- helpers -----------------------------------------------------------
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+    var toastEl = document.getElementById("toast");
+    var toastTimer = null;
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2200);
+    }
+    function statusCls(v) {
+      var s = STATUSES.filter(function (x) { return x.v === v; })[0];
+      return s ? s.cls : "not";
+    }
+
+    // ---- rendering ---------------------------------------------------------
+    var rowsEl = document.getElementById("rows");
+    var emptyEl = document.getElementById("empty");
+
+    function matches(f) {
+      if (filter.status !== "all" && f.status !== filter.status) return false;
+      if (filter.resp !== "all" && f.responsible !== filter.resp) return false;
+      if (filter.q) {
+        var hay = (f.guests.join(" ") + " " + f.address + " " + f.notes + " " + f.num).toLowerCase();
+        if (hay.indexOf(filter.q) === -1) return false;
+      }
+      return true;
+    }
+
+    function render() {
+      updateStats();
+      var visible = families.filter(matches);
+      emptyEl.hidden = visible.length !== 0;
+      rowsEl.innerHTML = visible.map(rowHtml).join("");
+    }
+
+    function rowHtml(f) {
+      var isTbd = String(f.num).toUpperCase() === "TBD";
+      var scls = statusCls(f.status);
+      var rcls = f.responsible === "Kelly" ? "kelly" : f.responsible === "Derek" ? "derek" : "";
+      var statusOpts = STATUSES.map(function (s) {
+        return '<option value="' + s.v + '"' + (s.v === f.status ? " selected" : "") + '>' + s.label + "</option>";
+      }).join("");
+      var guestNames = f.guests.map(function (g) { return '<span class="g">' + esc(g) + "</span>"; }).join("");
+      return (
+        '<tr class="' + (f.status === "done" ? "done-row" : "") + '" data-id="' + esc(f.id) + '">' +
+          '<td class="col-fam"><span class="fam-num ' + (isTbd ? "tbd" : "") + '">' + esc(f.num) + "</span></td>" +
+          '<td><div class="guests" contenteditable="false">' + guestNames + "</div>" +
+            '<textarea class="cell" data-field="guests" rows="1" placeholder="Names (one per line)" style="display:none">' + esc(f.guests.join("\n")) + "</textarea></td>" +
+          '<td class="col-status"><select class="status ' + scls + '" data-field="status">' + statusOpts + "</select></td>" +
+          '<td class="col-resp"><select class="resp ' + rcls + '" data-field="responsible">' +
+            '<option value=""' + (f.responsible === "" ? " selected" : "") + ">— pick —</option>" +
+            '<option value="Kelly"' + (f.responsible === "Kelly" ? " selected" : "") + ">Kelly</option>" +
+            '<option value="Derek"' + (f.responsible === "Derek" ? " selected" : "") + ">Derek</option>" +
+          "</select></td>" +
+          '<td class="col-addr"><textarea class="cell" data-field="address" rows="2" placeholder="Mailing address">' + esc(f.address) + "</textarea></td>" +
+          '<td><textarea class="cell" data-field="notes" rows="2" placeholder="Notes">' + esc(f.notes) + "</textarea></td>" +
+          '<td class="col-actions"><button class="row-del" title="Remove family" aria-label="Remove family">✕</button></td>' +
+        "</tr>"
+      );
+    }
+
+    function updateStats() {
+      var total = families.length;
+      var done = 0, prog = 0, notCt = 0, kelly = 0, derek = 0;
+      families.forEach(function (f) {
+        if (f.status === "done") done++;
+        else if (f.status === "in-progress") prog++;
+        else notCt++;
+        if (f.responsible === "Kelly") kelly++;
+        if (f.responsible === "Derek") derek++;
+      });
+      document.getElementById("p-done").textContent = done;
+      document.getElementById("p-total").textContent = total;
+      var pct = total ? Math.round((done / total) * 100) : 0;
+      document.getElementById("p-pct").textContent = pct + "%";
+      document.getElementById("p-bar-done").style.width = pct + "%";
+      document.getElementById("p-bar-prog").style.width = (total ? Math.round((prog / total) * 100) : 0) + "%";
+      document.getElementById("s-not").textContent = notCt;
+      document.getElementById("s-prog").textContent = prog;
+      document.getElementById("s-done").textContent = done;
+      document.getElementById("s-kelly").textContent = kelly;
+      document.getElementById("s-derek").textContent = derek;
+    }
+
+    function find(id) {
+      for (var i = 0; i < families.length; i++) if (families[i].id === id) return families[i];
+      return null;
+    }
+
+    // ---- events (delegated) ------------------------------------------------
+    rowsEl.addEventListener("change", function (e) {
+      var field = e.target.getAttribute && e.target.getAttribute("data-field");
+      var tr = e.target.closest && e.target.closest("tr");
+      if (!field || !tr) return;
+      var f = find(tr.dataset.id);
+      if (!f) return;
+      if (field === "status") {
+        f.status = e.target.value;
+        e.target.className = "status " + statusCls(f.status);
+        tr.classList.toggle("done-row", f.status === "done");
+        updateStats();
+      } else if (field === "responsible") {
+        f.responsible = e.target.value;
+        e.target.className = "resp " + (f.responsible === "Kelly" ? "kelly" : f.responsible === "Derek" ? "derek" : "");
+        updateStats();
+      }
+      save();
+    });
+
+    // live-save for textareas (address, notes, guests)
+    rowsEl.addEventListener("input", function (e) {
+      var field = e.target.getAttribute && e.target.getAttribute("data-field");
+      var tr = e.target.closest && e.target.closest("tr");
+      if (!field || !tr) return;
+      var f = find(tr.dataset.id);
+      if (!f) return;
+      if (field === "address") f.address = e.target.value;
+      else if (field === "notes") f.notes = e.target.value;
+      save();
+    });
+
+    // edit guest names: double-click the names block to edit
+    rowsEl.addEventListener("dblclick", function (e) {
+      var block = e.target.closest && e.target.closest(".guests");
+      if (!block) return;
+      var td = block.parentNode;
+      var ta = td.querySelector('textarea[data-field="guests"]');
+      block.style.display = "none";
+      ta.style.display = "block";
+      ta.focus();
+    });
+    rowsEl.addEventListener("focusout", function (e) {
+      if (!(e.target.getAttribute && e.target.getAttribute("data-field") === "guests")) return;
+      var tr = e.target.closest("tr");
+      var f = find(tr.dataset.id);
+      if (!f) return;
+      f.guests = e.target.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+      save();
+      render();
+    });
+
+    rowsEl.addEventListener("click", function (e) {
+      if (!e.target.classList.contains("row-del")) return;
+      var tr = e.target.closest("tr");
+      var f = find(tr.dataset.id);
+      if (!f) return;
+      if (!confirm("Remove " + (f.guests[0] || "this family") + "'s card from the tracker?")) return;
+      families = families.filter(function (x) { return x.id !== f.id; });
+      save();
+      render();
+    });
+
+    // ---- toolbar -----------------------------------------------------------
+    document.getElementById("search").addEventListener("input", function (e) {
+      filter.q = e.target.value.trim().toLowerCase();
+      render();
+    });
+    document.getElementById("status-filter").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      filter.status = b.dataset.f;
+      setActive(this, b);
+      render();
+    });
+    document.getElementById("resp-filter").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      filter.resp = b.dataset.r;
+      setActive(this, b);
+      render();
+    });
+    function setActive(group, btn) {
+      Array.prototype.forEach.call(group.querySelectorAll("button"), function (x) { x.classList.remove("active"); });
+      btn.classList.add("active");
+    }
+
+    document.getElementById("add-family").addEventListener("click", function () {
+      families.push({
+        id: newId(), num: "TBD", guests: ["New guest"], status: "not",
+        responsible: "", address: "", notes: ""
+      });
+      // clear filters so the new row is visible
+      filter = { status: "all", resp: "all", q: "" };
+      document.getElementById("search").value = "";
+      setActive(document.getElementById("status-filter"), document.querySelector('#status-filter [data-f="all"]'));
+      setActive(document.getElementById("resp-filter"), document.querySelector('#resp-filter [data-r="all"]'));
+      save();
+      render();
+      window.scrollTo(0, document.body.scrollHeight);
+      toast("Family added — double-click the names to edit.");
+    });
+
+    document.getElementById("print-btn").addEventListener("click", function () { window.print(); });
+
+    // ---- export / import ---------------------------------------------------
+    function download(filename, text, type) {
+      var blob = new Blob([text], { type: type });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 500);
+    }
+    function csvCell(s) {
+      s = String(s == null ? "" : s);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    document.getElementById("export-csv").addEventListener("click", function () {
+      var head = ["Card #", "Guests", "Status", "Responsible", "Mailing Address", "Notes"];
+      var lines = [head.map(csvCell).join(",")];
+      families.forEach(function (f) {
+        var label = STATUSES.filter(function (s) { return s.v === f.status; }).map(function (s) { return s.label; })[0] || f.status;
+        lines.push([
+          f.num, f.guests.join(" & "), label, f.responsible || "", f.address, f.notes
+        ].map(csvCell).join(","));
+      });
+      download("thank-you-cards.csv", "﻿" + lines.join("\r\n"), "text/csv;charset=utf-8");
+      toast("CSV downloaded.");
+    });
+    document.getElementById("export-json").addEventListener("click", function () {
+      download("thank-you-cards-backup.json", JSON.stringify(families, null, 2), "application/json");
+      toast("Backup downloaded — keep it safe.");
+    });
+    document.getElementById("import-json").addEventListener("click", function () {
+      document.getElementById("import-file").click();
+    });
+    document.getElementById("import-file").addEventListener("change", function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var data = JSON.parse(reader.result);
+          if (!Array.isArray(data)) throw new Error("bad format");
+          if (!confirm("Restore " + data.length + " families? This replaces the current tracker.")) return;
+          families = data.map(function (f, i) {
+            return {
+              id: f.id || "imp-" + i,
+              num: f.num == null ? "TBD" : f.num,
+              guests: Array.isArray(f.guests) ? f.guests : [],
+              status: f.status || "not",
+              responsible: f.responsible || "",
+              address: f.address || "",
+              notes: f.notes || ""
+            };
+          });
+          save();
+          render();
+          toast("Backup restored.");
+        } catch (err) {
+          toast("That file isn't a valid backup.");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    });
+
+    // ---- go ----------------------------------------------------------------
+    render();
+  })();
+  </script>
+</body>
+</html>
