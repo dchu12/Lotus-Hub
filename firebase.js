@@ -323,6 +323,45 @@
     );
   }
 
+  // ---- Trackers (shared single-doc tools, e.g. the thank-you card tracker) --
+  // A tracker is one Firestore doc under /trackers/{id} holding an arbitrary
+  // `families` array plus bookkeeping. Access is gated by security rules to an
+  // email allowlist so a couple can share one live copy across devices.
+  function trackerDoc(id) {
+    return db.collection("trackers").doc(id || "wedding");
+  }
+
+  // Realtime subscription. cb(data, error): data is the doc's contents (or null
+  // if it doesn't exist yet / on error).
+  function watchTracker(id, cb) {
+    if (!ready) return function () {};
+    return trackerDoc(id).onSnapshot(
+      function (snap) {
+        cb(snap.exists ? snap.data() : null, null);
+      },
+      function (err) {
+        cb(null, err);
+      }
+    );
+  }
+
+  // Overwrite the tracker's families array. Arrays are replaced wholesale
+  // (Firestore does not deep-merge arrays), which is exactly what we want.
+  function saveTracker(id, families) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return trackerDoc(id).set(
+      {
+        families: families || [],
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: u.uid,
+        updatedByEmail: u.email || null,
+      },
+      { merge: true }
+    );
+  }
+
   window.LH = {
     get available() {
       return hasSDK && configured;
@@ -353,5 +392,7 @@
     join: join,
     leave: leave,
     myRsvpStatus: myRsvpStatus,
+    watchTracker: watchTracker,
+    saveTracker: saveTracker,
   };
 })();

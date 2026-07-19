@@ -1,13 +1,14 @@
 /* sw.js — service worker for Lotus Hub (installable PWA).
  * Network-first with HTTP-cache bypass so the newest deploy always loads on open;
  * falls back to the runtime cache only when offline. */
-var CACHE = "lotus-hub-v37";
+var CACHE = "lotus-hub-v38";
 var SHELL = [
   "./",
   "./index.html",
+  "./thank-you.html",
   "./styles.css?v=37",
   "./app.js?v=37",
-  "./firebase.js?v=32",
+  "./firebase.js?v=33",
   "./firebase-config.js?v=1",
   "./manifest.json",
 ];
