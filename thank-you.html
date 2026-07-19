@@ -642,19 +642,21 @@
     // PERSISTS (so it reaches the shared copy on the other device). Won't
     // overwrite edits or re-add a gift you delete.
     function applyGiftSeed() {
-      try { if (localStorage.getItem("lotus-thankyou-gifts-v1")) return; } catch (e) {}
+      try { if (localStorage.getItem("lotus-thankyou-gifts-v2")) return; } catch (e) {}
       var GIFTS = {
         "1": "USD 400", "5": "CAD 500", "9": "CAD 400", "10": "RM 101",
         "11": "CAD 300", "12": "RM 600", "13": "CAD 190", "15": "CAD 320 + USD 20",
         "21": "CAD 440", "23": "RM 387", "26": "CAD 200", "27": "RM 380",
-        "28": "RM 1200", "29": "CAD 40", "31": "RM 350"
+        "28": "RM 1200", "29": "CAD 40", "31": "RM 350",
+        // second batch (all RM): Yue Ran #3, Hao Ran #4, Sophia #16, Caren #17, Elsie #18
+        "3": "RM 1040", "4": "RM 1544", "16": "RM 188", "17": "RM 100", "18": "RM 400"
       };
       var changed = false;
       families.forEach(function (f) {
         var g = GIFTS[String(f.num)];
         if (g && !f.gift) { f.gift = g; markDirty(f.id); changed = true; }
       });
-      try { localStorage.setItem("lotus-thankyou-gifts-v1", "1"); } catch (e) {}
+      try { localStorage.setItem("lotus-thankyou-gifts-v2", "1"); } catch (e) {}
       if (changed) { save(); render(); }
     }
 
