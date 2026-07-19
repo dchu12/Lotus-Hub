@@ -1098,7 +1098,22 @@
         '<button class="ghost" id="g-signup">New account? Create it</button></div>';
       var mode2 = "signin";
       gate.querySelector("#g-google").addEventListener("click", function () {
-        LH.signInWithGoogle().catch(function (e) { toast(e.message || "Google sign-in failed."); });
+        if (typeof firebase === "undefined" || !firebase.auth) {
+          toast("Google sign-in isn't available right now.");
+          return;
+        }
+        // Phones block sign-in popups (they just flash and close), so use a
+        // full-page redirect on mobile; keep the smoother popup on desktop.
+        var isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        var provider = new firebase.auth.GoogleAuthProvider();
+        if (isMobile) {
+          firebase.auth().signInWithRedirect(provider).catch(function (e) { toast(e.message || "Google sign-in failed."); });
+        } else {
+          LH.signInWithGoogle().catch(function () {
+            // popup blocked/closed on desktop too — fall back to redirect
+            firebase.auth().signInWithRedirect(provider).catch(function (e) { toast(e.message || "Google sign-in failed."); });
+          });
+        }
       });
       gate.querySelector("#g-signup").addEventListener("click", function () {
         mode2 = mode2 === "signin" ? "signup" : "signin";
@@ -1117,6 +1132,15 @@
     function startCloud(LH) {
       syncbar.hidden = false;
       setSync("connecting");
+      // Complete a Google redirect sign-in when returning from the provider,
+      // and surface any real error (e.g. provider not enabled).
+      try {
+        if (typeof firebase !== "undefined" && firebase.auth) {
+          firebase.auth().getRedirectResult().catch(function (e) {
+            if (e && e.message) toast(e.message);
+          });
+        }
+      } catch (e) { /* ignore */ }
       signoutBtn.addEventListener("click", function () {
         if (unsubTracker) { unsubTracker(); unsubTracker = null; }
         LH.signOut();
