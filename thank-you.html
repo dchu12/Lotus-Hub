@@ -172,7 +172,7 @@
 
     /* table */
     .table-scroll { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow); }
-    table { width: 100%; border-collapse: collapse; background: var(--card); min-width: 900px; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); min-width: 1360px; }
     thead th {
       text-align: left;
       font-size: 11.5px;
@@ -210,8 +210,19 @@
     .col-status { width: 150px; }
     .col-resp { width: 130px; }
     .col-deliv { width: 140px; }
-    .col-addr { width: 240px; }
+    .col-addr { width: 210px; }
+    .col-msg { width: 260px; }
+    .col-derek-notes { width: 190px; }
+    .col-kelly-notes { width: 190px; }
     .col-actions { width: 44px; }
+
+    /* color-coded note columns for quick scanning */
+    textarea.msg { border-left: 3px solid var(--accent); background: #fffdf6; }
+    textarea.note-derek { border-left: 3px solid var(--derek); background: #f6faff; }
+    textarea.note-kelly { border-left: 3px solid var(--kelly); background: #fff7fb; }
+    thead th.col-derek-notes { color: var(--derek); }
+    thead th.col-kelly-notes { color: var(--kelly); }
+    thead th.col-msg { color: var(--accent-ink); }
 
     select.status {
       font-weight: 600;
@@ -360,7 +371,9 @@
             <th class="col-resp">Responsible</th>
             <th class="col-deliv">Delivery</th>
             <th class="col-addr">Mailing address</th>
-            <th>Notes</th>
+            <th class="col-msg">Thank you message</th>
+            <th class="col-derek-notes">Derek's notes</th>
+            <th class="col-kelly-notes">Kelly's notes</th>
             <th class="col-actions" aria-label="Remove"></th>
           </tr>
         </thead>
@@ -446,7 +459,7 @@
         var raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           var saved = JSON.parse(raw);
-          if (Array.isArray(saved) && saved.length) return saved;
+          if (Array.isArray(saved) && saved.length) return saved.map(normalize);
         }
       } catch (e) { /* fall through to seed */ }
       return SEED.map(function (f, i) {
@@ -458,9 +471,29 @@
           responsible: "",   // "", "Kelly", or "Derek"
           delivery: "mail",  // "mail" or "person" (in-person drop-off)
           address: "",
-          notes: ""
+          message: "",       // the thank-you message to write in the card
+          notesDerek: "",    // Derek's private notes
+          notesKelly: ""     // Kelly's private notes
         };
       });
+    }
+
+    // Fill in defaults / migrate older records so every family has all fields.
+    function normalize(f, i) {
+      f = f || {};
+      return {
+        id: f.id || "imp-" + i,
+        num: f.num == null ? "TBD" : f.num,
+        guests: Array.isArray(f.guests) ? f.guests : [],
+        status: f.status || "not",
+        responsible: f.responsible || "",
+        delivery: f.delivery === "person" ? "person" : "mail",
+        address: f.address || "",
+        message: f.message || "",
+        // legacy single "notes" field folds into Derek's notes
+        notesDerek: f.notesDerek || f.notes || "",
+        notesKelly: f.notesKelly || ""
+      };
     }
 
     function save() {
@@ -495,7 +528,7 @@
       if (filter.status !== "all" && f.status !== filter.status) return false;
       if (filter.resp !== "all" && f.responsible !== filter.resp) return false;
       if (filter.q) {
-        var hay = (f.guests.join(" ") + " " + f.address + " " + f.notes + " " + f.num).toLowerCase();
+        var hay = (f.guests.join(" ") + " " + f.address + " " + f.message + " " + f.notesDerek + " " + f.notesKelly + " " + f.num).toLowerCase();
         if (hay.indexOf(filter.q) === -1) return false;
       }
       return true;
@@ -537,7 +570,9 @@
             '<option value="person"' + (inPerson ? " selected" : "") + ">🤝 In person</option>" +
           "</select></td>" +
           '<td class="col-addr">' + addrCell + "</td>" +
-          '<td><textarea class="cell" data-field="notes" rows="2" placeholder="Notes">' + esc(f.notes) + "</textarea></td>" +
+          '<td class="col-msg"><textarea class="cell msg" data-field="message" rows="2" placeholder="The thank-you note to write in this card">' + esc(f.message) + "</textarea></td>" +
+          '<td class="col-derek-notes"><textarea class="cell note-derek" data-field="notesDerek" rows="2" placeholder="Derek\'s notes">' + esc(f.notesDerek) + "</textarea></td>" +
+          '<td class="col-kelly-notes"><textarea class="cell note-kelly" data-field="notesKelly" rows="2" placeholder="Kelly\'s notes">' + esc(f.notesKelly) + "</textarea></td>" +
           '<td class="col-actions"><button class="row-del" title="Remove family" aria-label="Remove family">✕</button></td>' +
         "</tr>"
       );
@@ -609,7 +644,9 @@
       var f = find(tr.dataset.id);
       if (!f) return;
       if (field === "address") f.address = e.target.value;
-      else if (field === "notes") f.notes = e.target.value;
+      else if (field === "message") f.message = e.target.value;
+      else if (field === "notesDerek") f.notesDerek = e.target.value;
+      else if (field === "notesKelly") f.notesKelly = e.target.value;
       save();
     });
 
@@ -669,7 +706,7 @@
     document.getElementById("add-family").addEventListener("click", function () {
       families.push({
         id: newId(), num: "TBD", guests: ["New guest"], status: "not",
-        responsible: "", delivery: "mail", address: "", notes: ""
+        responsible: "", delivery: "mail", address: "", message: "", notesDerek: "", notesKelly: ""
       });
       // clear filters so the new row is visible
       filter = { status: "all", resp: "all", q: "" };
@@ -699,7 +736,7 @@
       return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     }
     document.getElementById("export-csv").addEventListener("click", function () {
-      var head = ["Card #", "Guests", "Status", "Responsible", "Delivery", "Mailing Address", "Notes"];
+      var head = ["Card #", "Guests", "Status", "Responsible", "Delivery", "Mailing Address", "Thank You Message", "Derek's Notes", "Kelly's Notes"];
       var lines = [head.map(csvCell).join(",")];
       families.forEach(function (f) {
         var label = STATUSES.filter(function (s) { return s.v === f.status; }).map(function (s) { return s.label; })[0] || f.status;
@@ -707,7 +744,7 @@
         lines.push([
           f.num, f.guests.join(" & "), label, f.responsible || "",
           inPerson ? "In person" : "Mail",
-          inPerson ? "" : f.address, f.notes
+          inPerson ? "" : f.address, f.message, f.notesDerek, f.notesKelly
         ].map(csvCell).join(","));
       });
       download("thank-you-cards.csv", "﻿" + lines.join("\r\n"), "text/csv;charset=utf-8");
@@ -729,18 +766,7 @@
           var data = JSON.parse(reader.result);
           if (!Array.isArray(data)) throw new Error("bad format");
           if (!confirm("Restore " + data.length + " families? This replaces the current tracker.")) return;
-          families = data.map(function (f, i) {
-            return {
-              id: f.id || "imp-" + i,
-              num: f.num == null ? "TBD" : f.num,
-              guests: Array.isArray(f.guests) ? f.guests : [],
-              status: f.status || "not",
-              responsible: f.responsible || "",
-              delivery: f.delivery === "person" ? "person" : "mail",
-              address: f.address || "",
-              notes: f.notes || ""
-            };
-          });
+          families = data.map(normalize);
           save();
           render();
           toast("Backup restored.");
