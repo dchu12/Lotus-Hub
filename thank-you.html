@@ -99,20 +99,21 @@
     }
     .bar .seg-done { background: var(--s-done); }
     .bar .seg-prog { background: var(--accent); }
-    .stat-row { display: flex; gap: 10px; flex-wrap: wrap; }
-    .stat {
-      flex: 1 1 130px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      padding: 8px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+    .status-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .status-chips .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      background: var(--s-not-bg); color: var(--s-not);
     }
-    .stat .n { font-size: 20px; font-weight: 700; }
-    .stat .l { font-size: 12px; color: var(--muted); }
-    .stat.done .n { color: var(--s-done); }
-    .stat.prog .n { color: var(--accent-ink); }
+    .status-chips .chip b { font-size: 15px; }
+    .status-chips .chip.prog { background: var(--s-prog-bg); color: var(--s-prog); }
+    .status-chips .chip.done { background: var(--s-done-bg); color: var(--s-done); }
+    .mini-stats {
+      display: flex; flex-wrap: wrap; gap: 6px 16px;
+      margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);
+      font-size: 12.5px; color: var(--muted);
+    }
+    .mini-stats b { color: var(--ink); }
 
     /* toolbar */
     .toolbar {
@@ -170,25 +171,42 @@
     .btn-primary { background: var(--brand); color: #fff; border-color: var(--brand); }
     .btn-primary:hover { background: var(--brand-hover); }
 
-    /* table */
-    .table-scroll { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow); }
-    table { width: 100%; border-collapse: collapse; background: var(--card); min-width: 1620px; }
-    thead th {
-      text-align: left;
-      font-size: 11.5px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--muted);
-      padding: 11px 12px;
-      border-bottom: 1px solid var(--line-strong);
-      background: #fbf7f5;
-      position: sticky;
-      top: 0;
-      z-index: 1;
+    details.more { position: relative; }
+    details.more > summary { list-style: none; display: inline-block; }
+    details.more > summary::-webkit-details-marker { display: none; }
+    details.more .more-menu {
+      position: absolute; right: 0; top: calc(100% + 6px); z-index: 10;
+      display: flex; flex-direction: column; gap: 6px; padding: 8px;
+      background: var(--card); border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm); box-shadow: var(--shadow); min-width: 170px;
     }
-    tbody td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-    tbody tr:last-child td { border-bottom: 0; }
-    tbody tr.done-row { background: #fbfdfb; }
+    details.more .more-menu .btn { width: 100%; text-align: left; }
+
+    /* family cards */
+    .cards { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 720px) { .cards { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 1120px) { .cards { grid-template-columns: 1fr 1fr 1fr; } }
+    .fam-card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); box-shadow: var(--shadow-sm);
+      padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .fam-card.done-row { background: #fbfdfb; border-color: var(--s-done-bg); }
+    .fc-head { display: flex; align-items: flex-start; gap: 10px; }
+    .fc-names { flex: 1 1 auto; min-width: 0; }
+    .fc-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .fc-controls select, .fc-controls .chk, .fc-controls .mailed-na { width: auto; }
+    details.fc-details { border-top: 1px solid var(--line); padding-top: 8px; }
+    details.fc-details > summary {
+      cursor: pointer; list-style: none; font-size: 12.5px; font-weight: 600;
+      color: var(--brand); display: inline-flex; align-items: center; gap: 5px;
+    }
+    details.fc-details > summary::-webkit-details-marker { display: none; }
+    details.fc-details > summary::before { content: "⌄"; font-size: 14px; transition: transform 0.15s; }
+    details.fc-details[open] > summary::before { transform: rotate(180deg); }
+    .fc-detail-body { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    .fc-field label { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+    .fc-summary-flags { font-size: 11px; color: var(--muted); font-weight: 500; margin-left: 4px; }
 
     .fam-num {
       display: inline-flex;
@@ -204,27 +222,16 @@
       font-size: 13px;
     }
     .fam-num.tbd { background: var(--accent-soft); color: var(--accent-ink); font-size: 11px; }
-    .guests { font-weight: 600; }
+    .guests { font-weight: 700; font-size: 15px; line-height: 1.3; }
     .guests .g { display: block; }
-    .col-fam { width: 70px; }
-    .col-status { width: 150px; }
-    .col-resp { width: 130px; }
-    .col-deliv { width: 140px; }
-    .col-printed { width: 130px; }
-    .col-mailed { width: 130px; }
-    .col-addr { width: 210px; }
-    .col-msg { width: 260px; }
-    .col-derek-notes { width: 190px; }
-    .col-kelly-notes { width: 190px; }
-    .col-actions { width: 44px; }
 
-    /* color-coded note columns for quick scanning */
+    /* color-coded note fields */
     textarea.msg { border-left: 3px solid var(--accent); background: #fffdf6; }
     textarea.note-derek { border-left: 3px solid var(--derek); background: #f6faff; }
     textarea.note-kelly { border-left: 3px solid var(--kelly); background: #fff7fb; }
-    thead th.col-derek-notes { color: var(--derek); }
-    thead th.col-kelly-notes { color: var(--kelly); }
-    thead th.col-msg { color: var(--accent-ink); }
+    .fc-field.f-derek label { color: var(--derek); }
+    .fc-field.f-kelly label { color: var(--kelly); }
+    .fc-field.f-msg label { color: var(--accent-ink); }
 
     /* checkbox toggles (photos printed / mailed) */
     .chk {
@@ -357,10 +364,12 @@
     }
 
     @media print {
-      header.hero, .toolbar, .row-del, .col-actions, .footnote, .progress-card .stat-row { display: none; }
-      .table-scroll { border: 0; box-shadow: none; overflow: visible; }
-      table { min-width: 0; font-size: 11px; }
-      select, textarea { border: 0 !important; background: transparent !important; -webkit-appearance: none; appearance: none; padding: 0; }
+      header.hero, .toolbar, .syncbar, .row-del, .footnote, .mini-stats { display: none; }
+      .cards { grid-template-columns: 1fr 1fr; }
+      .fam-card { break-inside: avoid; box-shadow: none; }
+      details.fc-details[open] > summary { display: none; }
+      details.fc-details { border-top: 0; }
+      select, textarea { border: 0 !important; background: transparent !important; -webkit-appearance: none; appearance: none; padding: 2px 0; }
       body { background: #fff; }
       @page { margin: 12mm; }
     }
@@ -394,25 +403,41 @@
         <div class="seg-done" id="p-bar-done" style="width:0%"></div>
         <div class="seg-prog" id="p-bar-prog" style="width:0%"></div>
       </div>
-      <div class="stat-row">
-        <div class="stat"><span class="n" id="s-not">0</span><span class="l">Not started</span></div>
-        <div class="stat prog"><span class="n" id="s-prog">0</span><span class="l">In progress</span></div>
-        <div class="stat done"><span class="n" id="s-done">0</span><span class="l">Done</span></div>
-        <div class="stat"><span class="n" id="s-kelly">0</span><span class="l">Kelly's families</span></div>
-        <div class="stat"><span class="n" id="s-derek">0</span><span class="l">Derek's families</span></div>
-        <div class="stat"><span class="n" id="s-mail">0</span><span class="l">✉️ By mail</span></div>
-        <div class="stat"><span class="n" id="s-person">0</span><span class="l">🤝 In person</span></div>
-        <div class="stat done"><span class="n" id="s-printed">0</span><span class="l">🖼️ Photos printed</span></div>
-        <div class="stat done"><span class="n" id="s-mailed">0</span><span class="l">📮 Mailed</span></div>
+      <div class="status-chips">
+        <span class="chip"><b id="s-not">0</b> Not started</span>
+        <span class="chip prog"><b id="s-prog">0</b> In progress</span>
+        <span class="chip done"><b id="s-done">0</b> Done</span>
+      </div>
+      <div class="mini-stats">
+        <span>Kelly <b id="s-kelly">0</b></span>
+        <span>Derek <b id="s-derek">0</b></span>
+        <span>✉️ Mail <b id="s-mail">0</b></span>
+        <span>🤝 In&nbsp;person <b id="s-person">0</b></span>
+        <span>🖼️ Printed <b id="s-printed">0</b></span>
+        <span>📮 Mailed <b id="s-mailed">0</b></span>
       </div>
     </section>
 
     <div class="toolbar">
-      <div class="grow"><input type="search" id="search" placeholder="🔍 Search a name, address, or note…" /></div>
+      <div class="grow"><input type="search" id="search" placeholder="🔍 Search name, address, or note…" /></div>
+      <button class="btn btn-primary" id="add-family">＋ Add family</button>
+      <details class="more">
+        <summary class="btn">More ⋯</summary>
+        <div class="more-menu">
+          <button class="btn" id="export-csv">⬇ Export CSV</button>
+          <button class="btn" id="export-json">⬇ Backup (JSON)</button>
+          <button class="btn" id="import-json">⬆ Restore backup</button>
+          <button class="btn" id="print-btn">🖨 Print</button>
+        </div>
+      </details>
+      <input type="file" id="import-file" accept="application/json" hidden />
+    </div>
+
+    <div class="toolbar">
       <div class="seg-filter" id="status-filter">
         <button data-f="all" class="active">All</button>
         <button data-f="not">Not started</button>
-        <button data-f="in-progress">In progress</button>
+        <button data-f="in-progress">In&nbsp;progress</button>
         <button data-f="done">Done</button>
       </div>
       <div class="seg-filter" id="resp-filter">
@@ -422,46 +447,15 @@
       </div>
     </div>
 
-    <div class="toolbar">
-      <button class="btn btn-primary" id="add-family">＋ Add family</button>
-      <button class="btn" id="export-csv">⬇ Export CSV</button>
-      <button class="btn" id="export-json">⬇ Backup (JSON)</button>
-      <button class="btn" id="import-json">⬆ Restore backup</button>
-      <button class="btn" id="print-btn">🖨 Print</button>
-      <input type="file" id="import-file" accept="application/json" hidden />
-    </div>
-
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th class="col-fam">Card&nbsp;#</th>
-            <th>Family / Guests</th>
-            <th class="col-status">Status</th>
-            <th class="col-resp">Responsible</th>
-            <th class="col-deliv">Delivery</th>
-            <th class="col-printed">Photos printed</th>
-            <th class="col-mailed">Mailed</th>
-            <th class="col-addr">Mailing address</th>
-            <th class="col-msg">Thank you message</th>
-            <th class="col-derek-notes">Derek's notes</th>
-            <th class="col-kelly-notes">Kelly's notes</th>
-            <th class="col-actions" aria-label="Remove"></th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
+    <div id="rows" class="cards"></div>
     <div class="empty" id="empty" hidden>No families match your filters.</div>
 
     <p class="footnote">
-      <span id="foot-save">💾 Your changes save to <strong>this browser on this device only</strong>.</span> For a safe backup
-      click <strong>Backup (JSON)</strong> and keep the file; use <strong>Restore backup</strong>
-      to load it elsewhere. <strong>Export CSV</strong> opens in Excel or Google Sheets.
-      Set <strong>Delivery</strong> to <strong>🤝 In person</strong> for families you'll hand the card to directly —
-      no mailing address is needed for those. Families marked
-      <span class="fam-num tbd" style="min-width:auto;height:auto;padding:1px 6px;">TBD</span> had no card
-      count yet — edit their names or add/remove families as you confirm the guest list.
+      <span id="foot-save">💾 Your changes save to <strong>this browser on this device only</strong>.</span>
+      Tap a card's <strong>Details</strong> for its address, message &amp; notes. Set <strong>Delivery</strong> to
+      <strong>🤝 In&nbsp;person</strong> for cards you'll hand over — no address needed. Families marked
+      <span class="fam-num tbd" style="min-width:auto;height:auto;padding:1px 6px;">TBD</span> still need a card count
+      (double-tap the names to edit). CSV export, backup &amp; print are under <strong>More ⋯</strong>.
     </p>
     </div><!-- /#appmain -->
   </div>
@@ -708,35 +702,44 @@
         : '<textarea class="cell" data-field="address" rows="2" placeholder="Mailing address">' + esc(f.address) + "</textarea>";
       var printedCell = '<label class="chk' + (f.photosPrinted ? " on" : "") + '">' +
         '<input type="checkbox" data-field="photosPrinted"' + (f.photosPrinted ? " checked" : "") + " />" +
-        "<span>" + (f.photosPrinted ? "🖼️ Printed" : "Not yet") + "</span></label>";
+        "<span>🖼️ Printed</span></label>";
       var mailedCell = inPerson
-        ? '<span class="mailed-na">— n/a (drop-off)</span>'
+        ? '<span class="mailed-na">📮 n/a (drop-off)</span>'
         : '<label class="chk' + (f.mailed ? " on" : "") + '">' +
           '<input type="checkbox" data-field="mailed"' + (f.mailed ? " checked" : "") + " />" +
-          "<span>" + (f.mailed ? "📮 Mailed" : "Not yet") + "</span></label>";
+          "<span>📮 Mailed</span></label>";
+      var hasDetails = f.message || f.notesDerek || f.notesKelly || (!inPerson && f.address);
       return (
-        '<tr class="' + (f.status === "done" ? "done-row" : "") + '" data-id="' + esc(f.id) + '">' +
-          '<td class="col-fam"><span class="fam-num ' + (isTbd ? "tbd" : "") + '">' + esc(f.num) + "</span></td>" +
-          '<td><div class="guests" contenteditable="false">' + guestNames + "</div>" +
-            '<textarea class="cell" data-field="guests" rows="1" placeholder="Names (one per line)" style="display:none">' + esc(f.guests.join("\n")) + "</textarea></td>" +
-          '<td class="col-status"><select class="status ' + scls + '" data-field="status">' + statusOpts + "</select></td>" +
-          '<td class="col-resp"><select class="resp ' + rcls + '" data-field="responsible">' +
-            '<option value=""' + (f.responsible === "" ? " selected" : "") + ">— pick —</option>" +
-            '<option value="Kelly"' + (f.responsible === "Kelly" ? " selected" : "") + ">Kelly</option>" +
-            '<option value="Derek"' + (f.responsible === "Derek" ? " selected" : "") + ">Derek</option>" +
-          "</select></td>" +
-          '<td class="col-deliv"><select class="deliv ' + dcls + '" data-field="delivery">' +
-            '<option value="mail"' + (!inPerson ? " selected" : "") + ">✉️ Mail</option>" +
-            '<option value="person"' + (inPerson ? " selected" : "") + ">🤝 In person</option>" +
-          "</select></td>" +
-          '<td class="col-printed">' + printedCell + "</td>" +
-          '<td class="col-mailed">' + mailedCell + "</td>" +
-          '<td class="col-addr">' + addrCell + "</td>" +
-          '<td class="col-msg"><textarea class="cell msg" data-field="message" rows="2" placeholder="The thank-you note to write in this card">' + esc(f.message) + "</textarea></td>" +
-          '<td class="col-derek-notes"><textarea class="cell note-derek" data-field="notesDerek" rows="2" placeholder="Derek\'s notes">' + esc(f.notesDerek) + "</textarea></td>" +
-          '<td class="col-kelly-notes"><textarea class="cell note-kelly" data-field="notesKelly" rows="2" placeholder="Kelly\'s notes">' + esc(f.notesKelly) + "</textarea></td>" +
-          '<td class="col-actions"><button class="row-del" title="Remove family" aria-label="Remove family">✕</button></td>' +
-        "</tr>"
+        '<article class="fam-card ' + (f.status === "done" ? "done-row" : "") + '" data-id="' + esc(f.id) + '">' +
+          '<div class="fc-head">' +
+            '<span class="fam-num ' + (isTbd ? "tbd" : "") + '">' + esc(f.num) + "</span>" +
+            '<div class="fc-names"><div class="guests" contenteditable="false">' + guestNames + "</div>" +
+              '<textarea class="cell" data-field="guests" rows="2" placeholder="Names (one per line)" style="display:none">' + esc(f.guests.join("\n")) + "</textarea></div>" +
+            '<button class="row-del" title="Remove family" aria-label="Remove family">✕</button>' +
+          "</div>" +
+          '<div class="fc-controls">' +
+            '<select class="status ' + scls + '" data-field="status">' + statusOpts + "</select>" +
+            '<select class="resp ' + rcls + '" data-field="responsible">' +
+              '<option value=""' + (f.responsible === "" ? " selected" : "") + ">— who? —</option>" +
+              '<option value="Kelly"' + (f.responsible === "Kelly" ? " selected" : "") + ">Kelly</option>" +
+              '<option value="Derek"' + (f.responsible === "Derek" ? " selected" : "") + ">Derek</option>" +
+            "</select>" +
+            '<select class="deliv ' + dcls + '" data-field="delivery">' +
+              '<option value="mail"' + (!inPerson ? " selected" : "") + ">✉️ Mail</option>" +
+              '<option value="person"' + (inPerson ? " selected" : "") + ">🤝 In person</option>" +
+            "</select>" +
+            printedCell + mailedCell +
+          "</div>" +
+          '<details class="fc-details"' + (hasDetails ? " open" : "") + ">" +
+            "<summary>Address, message &amp; notes" + (hasDetails ? '<span class="fc-summary-flags">· filled in</span>' : "") + "</summary>" +
+            '<div class="fc-detail-body">' +
+              '<div class="fc-field"><label>Mailing address</label>' + addrCell + "</div>" +
+              '<div class="fc-field f-msg"><label>Thank-you message</label><textarea class="cell msg" data-field="message" rows="2" placeholder="The note to write in this card">' + esc(f.message) + "</textarea></div>" +
+              '<div class="fc-field f-derek"><label>Derek\'s notes</label><textarea class="cell note-derek" data-field="notesDerek" rows="2" placeholder="Private notes">' + esc(f.notesDerek) + "</textarea></div>" +
+              '<div class="fc-field f-kelly"><label>Kelly\'s notes</label><textarea class="cell note-kelly" data-field="notesKelly" rows="2" placeholder="Private notes">' + esc(f.notesKelly) + "</textarea></div>" +
+            "</div>" +
+          "</details>" +
+        "</article>"
       );
     }
 
@@ -779,7 +782,7 @@
     // ---- events (delegated) ------------------------------------------------
     rowsEl.addEventListener("change", function (e) {
       var field = e.target.getAttribute && e.target.getAttribute("data-field");
-      var tr = e.target.closest && e.target.closest("tr");
+      var tr = e.target.closest && e.target.closest("[data-id]");
       if (!field || !tr) return;
       var f = find(tr.dataset.id);
       if (!f) return;
@@ -802,11 +805,7 @@
         return;
       } else if (field === "photosPrinted" || field === "mailed") {
         f[field] = e.target.checked;
-        var lbl = e.target.closest("label");
-        lbl.classList.toggle("on", e.target.checked);
-        lbl.querySelector("span").textContent = e.target.checked
-          ? (field === "mailed" ? "📮 Mailed" : "🖼️ Printed")
-          : "Not yet";
+        e.target.closest("label").classList.toggle("on", e.target.checked);
         updateStats();
       }
       save();
@@ -815,7 +814,7 @@
     // live-save for textareas (address, notes, guests)
     rowsEl.addEventListener("input", function (e) {
       var field = e.target.getAttribute && e.target.getAttribute("data-field");
-      var tr = e.target.closest && e.target.closest("tr");
+      var tr = e.target.closest && e.target.closest("[data-id]");
       if (!field || !tr) return;
       var f = find(tr.dataset.id);
       if (!f) return;
@@ -839,7 +838,7 @@
     });
     rowsEl.addEventListener("focusout", function (e) {
       if (e.target.getAttribute && e.target.getAttribute("data-field") === "guests") {
-        var tr = e.target.closest("tr");
+        var tr = e.target.closest("[data-id]");
         var f = find(tr.dataset.id);
         if (f) {
           markDirty(f.id);
@@ -854,7 +853,7 @@
 
     rowsEl.addEventListener("click", function (e) {
       if (!e.target.classList.contains("row-del")) return;
-      var tr = e.target.closest("tr");
+      var tr = e.target.closest("[data-id]");
       var f = find(tr.dataset.id);
       if (!f) return;
       if (!confirm("Remove " + (f.guests[0] || "this family") + "'s card from the tracker?")) return;
