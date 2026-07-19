@@ -311,6 +311,46 @@
     }
     .toast.show { opacity: 1; }
 
+    /* sync status bar */
+    .syncbar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 9px 14px; margin-bottom: 12px; font-size: 13px;
+    }
+    .syncbar .dot { width: 9px; height: 9px; border-radius: 999px; background: var(--muted); flex: none; }
+    .syncbar.ok .dot { background: var(--s-done); }
+    .syncbar.local .dot { background: var(--accent); }
+    .syncbar .who { color: var(--muted); }
+    .syncbar .who strong { color: var(--ink); }
+    .syncbar .spacer { flex: 1 1 auto; }
+    .syncbar .link { background: none; border: 0; color: var(--brand); font: inherit; font-weight: 600; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
+    .syncbar .link:hover { background: var(--brand-soft); }
+
+    /* sign-in gate */
+    .gate { max-width: 440px; margin: 24px auto; }
+    .gate .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); box-shadow: var(--shadow); padding: 26px 24px;
+    }
+    .gate h2 { margin: 0 0 6px; font-size: 20px; }
+    .gate p.muted { color: var(--muted); font-size: 13.5px; margin: 0 0 18px; }
+    .gate .field { margin-bottom: 12px; }
+    .gate label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+    .gate .btn-primary, .gate .btn-google {
+      width: 100%; justify-content: center; text-align: center;
+      padding: 11px 14px; font-size: 14.5px; border-radius: var(--radius-sm);
+      cursor: pointer; font-weight: 600; margin-top: 4px;
+    }
+    .gate .btn-primary { background: var(--brand); color: #fff; border: 1px solid var(--brand); }
+    .gate .btn-primary:hover { background: var(--brand-hover); }
+    .gate .btn-google { background: var(--card); color: var(--ink); border: 1px solid var(--line-strong); display: flex; align-items: center; gap: 8px; }
+    .gate .btn-google:hover { background: #f6f1ef; }
+    .gate .divider { text-align: center; color: var(--muted); font-size: 12px; margin: 14px 0; position: relative; }
+    .gate .divider::before, .gate .divider::after { content: ""; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--line); }
+    .gate .divider::before { left: 0; } .gate .divider::after { right: 0; }
+    .gate .ghost { background: none; border: 0; color: var(--brand); font: inherit; cursor: pointer; margin-top: 12px; width: 100%; font-weight: 600; }
+
     @media (max-width: 640px) {
       .hero .sub { margin-left: 0; }
       .stat { flex-basis: 46%; }
@@ -330,11 +370,21 @@
   <header class="hero">
     <div class="hero-inner">
       <h1><span class="flower">🏖️</span> Thank You Card Tracker</h1>
-      <p class="sub">Kelly &amp; Derek's wedding — one card per family. Everything saves automatically in this browser.</p>
+      <p class="sub">Kelly &amp; Derek's wedding — one card per family. Changes save automatically.</p>
     </div>
   </header>
 
   <div class="wrap">
+    <div class="syncbar local" id="syncbar" hidden>
+      <span class="dot"></span>
+      <span class="who" id="sync-who">Saved on this device</span>
+      <span class="spacer"></span>
+      <button class="link" id="sync-signout" hidden>Sign out</button>
+    </div>
+
+    <section class="gate" id="gate" hidden></section>
+
+    <div id="appmain">
     <section class="progress-card">
       <div class="progress-top">
         <div class="big"><span id="p-done">0</span> of <span id="p-total">0</span> cards sent</div>
@@ -405,23 +455,35 @@
     <div class="empty" id="empty" hidden>No families match your filters.</div>
 
     <p class="footnote">
-      💾 Your changes save to <strong>this browser on this device only</strong>. For a shared copy Kelly and Derek can both
-      use — or a safe backup — click <strong>Backup (JSON)</strong> and keep the file; use <strong>Restore backup</strong>
-      to load it on another device. <strong>Export CSV</strong> opens in Excel or Google Sheets.
+      <span id="foot-save">💾 Your changes save to <strong>this browser on this device only</strong>.</span> For a safe backup
+      click <strong>Backup (JSON)</strong> and keep the file; use <strong>Restore backup</strong>
+      to load it elsewhere. <strong>Export CSV</strong> opens in Excel or Google Sheets.
       Set <strong>Delivery</strong> to <strong>🤝 In person</strong> for families you'll hand the card to directly —
       no mailing address is needed for those. Families marked
       <span class="fam-num tbd" style="min-width:auto;height:auto;padding:1px 6px;">TBD</span> had no card
       count yet — edit their names or add/remove families as you confirm the guest list.
     </p>
+    </div><!-- /#appmain -->
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <!-- Firebase (optional): enables the shared, synced copy. If these fail to
+       load (offline / file://), the page falls back to on-device storage. -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js?v=1"></script>
+  <script src="firebase.js?v=33"></script>
 
   <script>
   (function () {
     "use strict";
 
     var STORAGE_KEY = "lotus-thankyou-v1";
+    var TRACKER_ID = "wedding";
+    // Only these accounts may open the shared tracker (mirrors firestore.rules).
+    var ALLOWED_EMAILS = ["kokwithchu@gmail.com"];
 
     // ---- seed data: guests grouped into families (1 card per family) -------
     var SEED = [
@@ -472,8 +534,24 @@
     // ---- state -------------------------------------------------------------
     var idSeed = 1;
     function newId() { return "f" + (idSeed++) + "-" + (families.length + 1); }
-    var families = load();
+    var families = [];
     var filter = { status: "all", resp: "all", q: "" };
+
+    // sync state
+    var mode = "local";          // "cloud" once Firebase is available
+    var me = null;               // signed-in Firebase user
+    var unsubTracker = null;     // Firestore snapshot unsubscribe
+    var writeTimer = null;       // debounce handle for cloud writes
+    var dirty = false;           // a local edit is waiting to be pushed
+    var pendingRemote = null;    // remote update deferred while user is typing
+    var appReady = false;        // first paint done
+    var seededOnce = false;      // guard: only seed the shared doc once
+    var dirtyIds = {};           // ids of families edited locally since last push
+    var structuralDirty = false; // local add/delete/import not yet pushed
+    function markDirty(id) { if (id) dirtyIds[id] = true; }
+    function markStructural() { structuralDirty = true; }
+    function hasLocalEdits() { return structuralDirty || Object.keys(dirtyIds).length > 0; }
+    function clearLocalEdits() { dirtyIds = {}; structuralDirty = false; }
 
     function load() {
       try {
@@ -554,9 +632,28 @@
       return mergeTwo(list, "Fong Sow Wai", "Jayden Fong", "32");
     }
 
-    function save() {
+    // Always keep an on-device copy (offline cache + Backup/CSV source); when
+    // signed in, also push to the shared cloud doc (debounced).
+    function writeLocal() {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(families)); }
-      catch (e) { toast("Couldn't save — storage may be full."); }
+      catch (e) { /* private mode / quota — cloud still holds it */ }
+    }
+    function save() {
+      writeLocal();
+      if (mode === "cloud") scheduleCloudSave();
+    }
+    function scheduleCloudSave() {
+      dirty = true;
+      setSync("saving");
+      clearTimeout(writeTimer);
+      writeTimer = setTimeout(cloudSaveNow, 600);
+    }
+    function cloudSaveNow() {
+      clearTimeout(writeTimer);
+      if (!(window.LH && window.LH.ready && me)) return;
+      window.LH.saveTracker(TRACKER_ID, families)
+        .then(function () { dirty = false; clearLocalEdits(); setSync("ok"); })
+        .catch(function () { setSync("error"); });
     }
 
     // ---- helpers -----------------------------------------------------------
@@ -689,6 +786,7 @@
       if (!field || !tr) return;
       var f = find(tr.dataset.id);
       if (!f) return;
+      markDirty(f.id);
       if (field === "status") {
         f.status = e.target.value;
         e.target.className = "status " + statusCls(f.status);
@@ -724,6 +822,7 @@
       if (!field || !tr) return;
       var f = find(tr.dataset.id);
       if (!f) return;
+      markDirty(f.id);
       if (field === "address") f.address = e.target.value;
       else if (field === "message") f.message = e.target.value;
       else if (field === "notesDerek") f.notesDerek = e.target.value;
@@ -742,13 +841,18 @@
       ta.focus();
     });
     rowsEl.addEventListener("focusout", function (e) {
-      if (!(e.target.getAttribute && e.target.getAttribute("data-field") === "guests")) return;
-      var tr = e.target.closest("tr");
-      var f = find(tr.dataset.id);
-      if (!f) return;
-      f.guests = e.target.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
-      save();
-      render();
+      if (e.target.getAttribute && e.target.getAttribute("data-field") === "guests") {
+        var tr = e.target.closest("tr");
+        var f = find(tr.dataset.id);
+        if (f) {
+          markDirty(f.id);
+          f.guests = e.target.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+          save();
+          render();
+        }
+      }
+      // a remote update arrived while typing — apply it once we're idle
+      applyPendingIfIdle();
     });
 
     rowsEl.addEventListener("click", function (e) {
@@ -758,6 +862,7 @@
       if (!f) return;
       if (!confirm("Remove " + (f.guests[0] || "this family") + "'s card from the tracker?")) return;
       families = families.filter(function (x) { return x.id !== f.id; });
+      markStructural();
       save();
       render();
     });
@@ -790,6 +895,7 @@
         responsible: "", delivery: "mail", photosPrinted: false, mailed: false,
         address: "", message: "", notesDerek: "", notesKelly: ""
       });
+      markStructural();
       // clear filters so the new row is visible
       filter = { status: "all", resp: "all", q: "" };
       document.getElementById("search").value = "";
@@ -851,6 +957,7 @@
           if (!Array.isArray(data)) throw new Error("bad format");
           if (!confirm("Restore " + data.length + " families? This replaces the current tracker.")) return;
           families = data.map(normalize);
+          markStructural();
           save();
           render();
           toast("Backup restored.");
@@ -862,9 +969,191 @@
       e.target.value = "";
     });
 
+    // ---- sync: cloud (shared) vs local (on-device) -------------------------
+    var syncbar = document.getElementById("syncbar");
+    var syncWho = document.getElementById("sync-who");
+    var signoutBtn = document.getElementById("sync-signout");
+    var gate = document.getElementById("gate");
+    var appmain = document.getElementById("appmain");
+    var footSave = document.getElementById("foot-save");
+
+    function showApp() { appmain.hidden = false; gate.hidden = true; appReady = true; }
+    function hideApp() { appmain.hidden = true; }
+
+    function setSync(kind) {
+      var email = me && me.email ? me.email : "";
+      signoutBtn.hidden = !(mode === "cloud" && me);
+      if (mode !== "cloud") {
+        syncbar.className = "syncbar local";
+        syncWho.innerHTML = "💾 Saved on <strong>this device only</strong>";
+        return;
+      }
+      if (kind === "saving") { syncbar.className = "syncbar ok"; syncWho.innerHTML = "☁️ Saving…"; }
+      else if (kind === "ok") { syncbar.className = "syncbar ok"; syncWho.innerHTML = "☁️ Synced · <strong>" + esc(email) + "</strong>"; }
+      else if (kind === "error") { syncbar.className = "syncbar local"; syncWho.innerHTML = "⚠️ Offline — saved on this device, will sync when back online"; }
+      else if (kind === "connecting") { syncbar.className = "syncbar"; syncWho.innerHTML = "☁️ Connecting…"; }
+      else { syncbar.className = "syncbar"; syncWho.innerHTML = "🔒 Sign in to sync"; }
+    }
+
+    function isEditing() {
+      var a = document.activeElement;
+      return !!(a && rowsEl.contains(a) && (a.tagName === "TEXTAREA" || a.tagName === "INPUT"));
+    }
+    function applyPendingIfIdle() {
+      setTimeout(function () {
+        if (pendingRemote && !isEditing()) {
+          var inc = pendingRemote; pendingRemote = null;
+          applyRemote(inc);
+          toast("Updated with the latest changes from your other device.");
+        }
+      }, 60);
+    }
+
+    function onRemote(data, err) {
+      if (err) {
+        setSync("error");
+        if (!appReady) { families = load(); showApp(); render(); }
+        return;
+      }
+      if (!data || !Array.isArray(data.families)) {
+        // no shared doc yet — seed it from this device's cache/seed and create it
+        if (!seededOnce) {
+          seededOnce = true;
+          families = load();
+          showApp(); render();
+          cloudSaveNow();
+        }
+        return;
+      }
+      var incoming = migrate((data.families || []).map(normalize));
+      setSync("ok");
+      if (JSON.stringify(incoming) === JSON.stringify(families)) {
+        if (!appReady) { showApp(); render(); }
+        return;
+      }
+      // Defer while actively typing so the caret/focus isn't yanked; applied on blur.
+      if (isEditing()) { pendingRemote = incoming; return; }
+      applyRemote(incoming);
+    }
+
+    // Adopt a remote update. If this device has unsaved local edits, overlay them
+    // on top so a concurrent edit to a *different* family isn't lost (whole-doc
+    // writes would otherwise clobber it). Same-family conflicts resolve to ours.
+    function applyRemote(incoming) {
+      if (hasLocalEdits()) {
+        if (structuralDirty) {
+          // we added/removed/imported rows — keep our structure, just re-push
+          scheduleCloudSave();
+        } else {
+          families = mergeOverlay(incoming, families, dirtyIds);
+          writeLocal();
+          scheduleCloudSave();      // persist the merged result (keeps both edits)
+        }
+      } else {
+        families = incoming;
+        writeLocal();
+      }
+      showApp();
+      render();
+    }
+    function mergeOverlay(incoming, local, keepIds) {
+      var byId = {};
+      local.forEach(function (f) { byId[f.id] = f; });
+      var seen = {};
+      var out = incoming.map(function (f) {
+        seen[f.id] = true;
+        return keepIds[f.id] && byId[f.id] ? byId[f.id] : f;
+      });
+      // families we edited that the remote doesn't have yet (rare) — keep them
+      Object.keys(keepIds).forEach(function (id) {
+        if (!seen[id] && byId[id]) out.push(byId[id]);
+      });
+      return out;
+    }
+
+    function renderGate(LH, user) {
+      hideApp();
+      gate.hidden = false;
+      if (user) {
+        // signed in, but not on the allowlist
+        setSync("signedout");
+        signoutBtn.hidden = true;
+        gate.innerHTML =
+          '<div class="card"><h2>Private tracker 🔒</h2>' +
+          '<p class="muted">You\'re signed in as <strong>' + esc(user.email || "") +
+          "</strong>, which isn't on this tracker's guest list. Sign in with the shared wedding account to continue.</p>" +
+          '<button class="btn-primary" id="g-switch">Use a different account</button></div>';
+        gate.querySelector("#g-switch").addEventListener("click", function () { LH.signOut(); });
+        return;
+      }
+      setSync("signedout");
+      gate.innerHTML =
+        '<div class="card"><h2>Sign in to sync 🔒</h2>' +
+        '<p class="muted">This shared tracker keeps Kelly &amp; Derek on the same list across every device. Sign in with your wedding account.</p>' +
+        '<button class="btn-google" id="g-google"><span>🇬</span> Continue with Google</button>' +
+        '<div class="divider">or with email</div>' +
+        '<div class="field"><label>Email</label><input type="email" id="g-email" placeholder="you@example.com" autocomplete="email" /></div>' +
+        '<div class="field"><label>Password</label><input type="password" id="g-pass" placeholder="••••••••" autocomplete="current-password" /></div>' +
+        '<button class="btn-primary" id="g-signin">Sign in</button>' +
+        '<button class="ghost" id="g-signup">New account? Create it</button></div>';
+      var mode2 = "signin";
+      gate.querySelector("#g-google").addEventListener("click", function () {
+        LH.signInWithGoogle().catch(function (e) { toast(e.message || "Google sign-in failed."); });
+      });
+      gate.querySelector("#g-signup").addEventListener("click", function () {
+        mode2 = mode2 === "signin" ? "signup" : "signin";
+        gate.querySelector("#g-signin").textContent = mode2 === "signin" ? "Sign in" : "Create account";
+        this.textContent = mode2 === "signin" ? "New account? Create it" : "Have an account? Sign in";
+      });
+      gate.querySelector("#g-signin").addEventListener("click", function () {
+        var email = gate.querySelector("#g-email").value.trim();
+        var pass = gate.querySelector("#g-pass").value;
+        if (!email || !pass) { toast("Enter your email and password."); return; }
+        var p = mode2 === "signup" ? LH.signUp(email, pass, "Kelly & Derek") : LH.signIn(email, pass);
+        p.catch(function (e) { toast(e.message || "Sign-in failed."); });
+      });
+    }
+
+    function startCloud(LH) {
+      syncbar.hidden = false;
+      setSync("connecting");
+      signoutBtn.addEventListener("click", function () {
+        if (unsubTracker) { unsubTracker(); unsubTracker = null; }
+        LH.signOut();
+      });
+      LH.onAuth(function (user) {
+        me = user;
+        if (unsubTracker) { unsubTracker(); unsubTracker = null; }
+        appReady = false;
+        if (!user) { renderGate(LH, null); return; }
+        var email = (user.email || "").toLowerCase();
+        if (ALLOWED_EMAILS.indexOf(email) === -1) { renderGate(LH, user); return; }
+        gate.hidden = true;
+        setSync("connecting");
+        footSave.innerHTML = "☁️ Changes sync automatically to your shared wedding account — you both see the same list on every device.";
+        unsubTracker = LH.watchTracker(TRACKER_ID, onRemote);
+      });
+    }
+
     // ---- go ----------------------------------------------------------------
-    save();   // persist any normalization / one-time merges from load()
-    render();
+    function boot() {
+      var LH = window.LH || null;
+      if (LH && LH.available) {
+        mode = "cloud";
+        hideApp();
+        try { LH.init(); } catch (e) {}
+        startCloud(LH);
+      } else {
+        mode = "local";
+        families = load();
+        save();          // persist normalization / one-time merges
+        syncbar.hidden = false;
+        setSync("local");
+        showApp();
+        render();
+      }
+    }
+    boot();
   })();
   </script>
 </body>

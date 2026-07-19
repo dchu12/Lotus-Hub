@@ -53,6 +53,18 @@ firebase deploy --only hosting
 
 Your app is then live at **https://lotus-hub.web.app**.
 
+## Thank-you card tracker (`/thank-you.html`)
+
+A private, shared tracker at **https://lots-hub.web.app/thank-you.html**. It syncs
+in real time through this same Firebase project (Firestore doc `trackers/wedding`)
+and is gated to an email **allowlist** in `firestore.rules` (`trackerAllowed()`).
+
+- `firebase deploy` publishes the site **and** the rules together, so the allowlist
+  takes effect on deploy — no extra step.
+- To add/remove who can open it, edit the email list in **two** places and redeploy:
+  `firestore.rules` (`trackerAllowed()`) and `ALLOWED_EMAILS` in `thank-you.html`.
+- If Firebase is unreachable, the page falls back to on-device storage so it still works.
+
 ## Custom domain (later)
 
 Firebase console → Hosting → **Add custom domain** → follow the DNS steps for a
