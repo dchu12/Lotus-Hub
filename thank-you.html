@@ -438,8 +438,7 @@
       { num: "TBD", guests: ["Liew Sau Yoong"] },
       { num: "TBD", guests: ["Lai Kheng Kok"] },
       { num: "TBD", guests: ["Kwok Yong Peng"] },
-      { num: "TBD", guests: ["Fong Sow Wai"] },
-      { num: "TBD", guests: ["Jayden Fong"] }
+      { num: "32", guests: ["Fong Sow Wai", "Jayden Fong"] }
     ];
 
     var STATUSES = [
@@ -459,7 +458,7 @@
         var raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           var saved = JSON.parse(raw);
-          if (Array.isArray(saved) && saved.length) return saved.map(normalize);
+          if (Array.isArray(saved) && saved.length) return migrate(saved.map(normalize));
         }
       } catch (e) { /* fall through to seed */ }
       return SEED.map(function (f, i) {
@@ -494,6 +493,37 @@
         notesDerek: f.notesDerek || f.notes || "",
         notesKelly: f.notesKelly || ""
       };
+    }
+
+    // One-time structural merges for existing (localStorage) trackers — safe
+    // and idempotent. Confirmed after launch: Fong Sow Wai + Jayden Fong are
+    // one household, so they share a single card.
+    function mergeTwo(list, nameA, nameB, num) {
+      function norm(s) { return String(s).trim().toLowerCase(); }
+      function solo(f, name) { return f.guests.length === 1 && norm(f.guests[0]) === norm(name); }
+      function has(f, name) { return f.guests.some(function (g) { return norm(g) === norm(name); }); }
+      // already merged into one family → nothing to do
+      if (list.some(function (f) { return has(f, nameA) && has(f, nameB); })) return list;
+      var ai = -1, bi = -1;
+      for (var i = 0; i < list.length; i++) {
+        if (ai < 0 && solo(list[i], nameA)) ai = i;
+        else if (bi < 0 && solo(list[i], nameB)) bi = i;
+      }
+      if (ai < 0 || bi < 0) return list; // one side was edited/removed — leave as-is
+      var keep = list[ai], drop = list[bi];
+      keep.guests = keep.guests.concat(drop.guests);
+      if (keep.num === "TBD" || keep.num == null) keep.num = num;
+      // fold in anything already entered on the dropped row, without overwriting
+      ["address", "message", "notesDerek", "notesKelly"].forEach(function (k) {
+        if (!keep[k] && drop[k]) keep[k] = drop[k];
+      });
+      if (keep.status === "not" && drop.status !== "not") keep.status = drop.status;
+      if (!keep.responsible && drop.responsible) keep.responsible = drop.responsible;
+      if (keep.delivery === "mail" && drop.delivery === "person") keep.delivery = drop.delivery;
+      return list.filter(function (_, i) { return i !== bi; });
+    }
+    function migrate(list) {
+      return mergeTwo(list, "Fong Sow Wai", "Jayden Fong", "32");
     }
 
     function save() {
@@ -779,6 +809,7 @@
     });
 
     // ---- go ----------------------------------------------------------------
+    save();   // persist any normalization / one-time merges from load()
     render();
   })();
   </script>
