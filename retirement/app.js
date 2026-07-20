@@ -84,7 +84,7 @@
    "status", "statusText", "verdictLine", "verdictSub", "progressFill", "progressPct",
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
    "spendLbl", "lastsAge", "lastsSub", "confidence", "chart", "chartX", "whatifList",
-   "resetBtn", "copyLink", "downloadData", "loadData", "dataMsg"].forEach(function (id) {
+   "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
 
@@ -539,14 +539,19 @@
           function () { promptLink(link); });
       } else { promptLink(link); }
     });
-    el.downloadData.addEventListener("click", function () {
+    el.saveFile.addEventListener("click", function () {
       try {
         var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
         var url = URL.createObjectURL(blob), a = document.createElement("a");
-        a.href = url; a.download = "retirement-plan.json"; document.body.appendChild(a); a.click();
+        a.href = url; a.download = "my-retirement-plan.json"; document.body.appendChild(a); a.click();
         document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-        flash("Saved a copy to your device.");
-      } catch (e) { flash("Couldn't download here — try the shareable link instead."); }
+        flash("Saved a file called “my-retirement-plan.json”. Keep it — “Open a saved file” loads it back anytime, on any device.");
+      } catch (e) {
+        // sandboxed previews can block downloads — fall back to the copyable link
+        var link = location.origin + location.pathname + "#d=" + encodeData();
+        promptLink(link);
+        flash("This view blocked the download — copy the link that just popped up instead, and keep it safe.");
+      }
     });
     el.loadData.addEventListener("change", function () {
       var file = el.loadData.files && el.loadData.files[0]; if (!file) return;
@@ -586,7 +591,24 @@
   }
 
   /* ---------- persistence ---------- */
-  function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+  var storageOk = true;
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); storageOk = true; }
+    catch (e) { storageOk = false; }
+    updateSaveStatus();
+  }
+  // Honest, plain-language indicator of whether auto-save is actually working
+  // here — some sandboxed/preview views block browser storage.
+  function updateSaveStatus() {
+    if (!el.saveStatus) return;
+    if (storageOk) {
+      el.saveStatus.className = "sb-status ok";
+      el.saveStatus.textContent = "✓ Auto-saving on this device — your numbers will be here when you come back. (Tip: “Save my plan to a file” keeps a backup you can’t lose.)";
+    } else {
+      el.saveStatus.className = "sb-status warn";
+      el.saveStatus.textContent = "⚠️ This preview can’t save your numbers. Open the website version (lots-hub.web.app/retirement/) — or tap “Save my plan to a file” and keep it safe.";
+    }
+  }
   function readKey(k) {
     try { var r = JSON.parse(localStorage.getItem(k)); if (r && r.settings && Array.isArray(r.accounts)) return r; } catch (e) {}
     return null;
@@ -630,4 +652,5 @@
   wire();
   renderAllLists();
   renderAll();
+  updateSaveStatus();
 })();
