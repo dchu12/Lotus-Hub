@@ -634,33 +634,35 @@
       return list.filter(function (_, i) { return i !== bi; });
     }
 
-    // Undo an earlier wrong merge: pull `guestName` back out of whatever family
-    // now contains both `anchorName` and `guestName`, restoring it as its own
-    // solo family. Idempotent — does nothing once they're already separate.
-    function splitOut(list, anchorName, guestName, restore) {
+    // Fold a solo family (soloName) into whichever family already contains
+    // anchorName. Idempotent — no-op once folded, or if either side is missing.
+    // Works whether the pieces are separate or already merged in the shared doc.
+    function foldInto(list, anchorName, soloName) {
       function norm(s) { return String(s).trim().toLowerCase(); }
       function has(f, name) { return f.guests.some(function (g) { return norm(g) === norm(name); }); }
-      var idx = -1;
-      for (var i = 0; i < list.length; i++) {
-        if (has(list[i], anchorName) && has(list[i], guestName)) { idx = i; break; }
-      }
-      if (idx < 0) return list; // already separate — nothing to do
-      var fam = list[idx];
-      fam.guests = fam.guests.filter(function (g) { return norm(g) !== norm(guestName); });
-      list.push({
-        id: restore.id, num: restore.num, guests: [guestName],
-        status: "not", responsible: restore.responsible || "",
-        delivery: restore.delivery || "mail", photosPrinted: false, mailed: false,
-        address: "", message: "", notesDerek: "", notesKelly: "", gift: ""
+      function solo(f, name) { return f.guests.length === 1 && norm(f.guests[0]) === norm(name); }
+      var anchor = null;
+      for (var a = 0; a < list.length; a++) { if (has(list[a], anchorName)) { anchor = list[a]; break; } }
+      if (!anchor || has(anchor, soloName)) return list; // no anchor, or already folded
+      var si = -1;
+      for (var i = 0; i < list.length; i++) { if (solo(list[i], soloName)) { si = i; break; } }
+      if (si < 0) return list;
+      var drop = list[si];
+      anchor.guests = anchor.guests.concat(drop.guests);
+      ["address", "message", "notesDerek", "notesKelly", "gift"].forEach(function (k) {
+        if (!anchor[k] && drop[k]) anchor[k] = drop[k];
       });
-      return list;
+      if (anchor.status === "not" && drop.status !== "not") anchor.status = drop.status;
+      if (!anchor.responsible && drop.responsible) anchor.responsible = drop.responsible;
+      if (anchor.delivery === "mail" && drop.delivery === "person") anchor.delivery = drop.delivery;
+      if (drop.photosPrinted) anchor.photosPrinted = true;
+      if (drop.mailed) anchor.mailed = true;
+      return list.filter(function (_, i) { return i !== si; });
     }
     function migrate(list) {
       list = mergeTwo(list, "Fong Sow Wai", "Jayden Fong", "32");
-      // The TBD relatives are each their own family — undo the earlier merge that
-      // folded Kwok Yong Peng into the Fong card.
-      list = splitOut(list, "Fong Sow Wai", "Kwok Yong Peng",
-        { id: "kwok-yong-peng", num: "TBD", responsible: "Kelly", delivery: "person" });
+      // Confirmed one family: Fong Sow Wai + Jayden Fong + Kwok Yong Peng (card #32).
+      list = foldInto(list, "Fong Sow Wai", "Kwok Yong Peng");
       return list;
     }
 
