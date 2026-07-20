@@ -33,6 +33,7 @@
       settings: {
         household: "Derek & Kelly",
         currentAge: 45,
+        partnerAge: 0,
         retireAge: 65,
         planThroughAge: 95,
         targetIncome: 95000,
@@ -67,7 +68,7 @@
         { id: "d2", name: "Car loan", balance: 14000,  apr: 6.9, payment: 420 },
       ],
       retIncomes: [
-        { id: "r1", name: "Social Security (combined)", amount: 38000, startAge: 67 },
+        { id: "r1", name: "Social Security (combined)", amount: 38000, startAge: 67, owner: "both" },
       ],
     };
   }
@@ -76,7 +77,7 @@
   var idSeq = 100;
 
   var el = {};
-  ["household", "currentAge", "retireAge", "planThroughAge", "targetIncome", "rate", "inflation", "cashYield",
+  ["household", "currentAge", "partnerAge", "retireAge", "planThroughAge", "targetIncome", "rate", "inflation", "cashYield",
    "investPct", "investPctLbl", "splitNote", "variable", "debtPaydown", "realNote",
    "addIncome", "addFixed", "addAcct", "addDebt", "addRet",
    "incomeList", "fixedList", "acctList", "debtList", "retList", "debtNote",
@@ -109,10 +110,19 @@
     var infl = num(state.settings.inflation) / 100;
     return (1 + num(nominalPct) / 100) / (1 + infl) - 1;
   }
-  // Retirement income (Social Security etc.) active at a given age, $/yr today.
-  function retIncomeAt(age) {
-    return state.retIncomes.reduce(function (s, r) {
-      return s + (age >= num(r.startAge) ? num(r.amount) : 0);
+  // Retirement income (CPP/OAS, Social Security, pensions) active when YOU are
+  // youAge. A source marked "partner" starts at the partner's age — since the
+  // whole timeline runs on your age, we shift it by the age gap so a younger
+  // partner's income kicks in the right number of years later.
+  function partnerGap() {
+    var s = state.settings, pa = num(s.partnerAge);
+    return (pa >= 10 && pa < 120) ? (num(s.currentAge) - pa) : 0; // + if partner is younger
+  }
+  function retIncomeAt(youAge) {
+    var gap = partnerGap();
+    return state.retIncomes.reduce(function (sum, r) {
+      var eff = (r.owner === "partner") ? num(r.startAge) + gap : num(r.startAge);
+      return sum + (youAge >= eff ? num(r.amount) : 0);
     }, 0);
   }
 
@@ -438,9 +448,13 @@
     state.retIncomes.forEach(function (r, idx) {
       var row = document.createElement("div");
       row.className = "ret-row";
+      var whoOpts = [["you", "You"], ["partner", "Partner"], ["both", "Both"]].map(function (o) {
+        return '<option value="' + o[0] + '"' + (((r.owner || "you") === o[0]) ? " selected" : "") + '>' + o[1] + '</option>';
+      }).join("");
       row.innerHTML =
-        '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(r.name) + '" placeholder="e.g. Social Security" autocomplete="off" /></span>'
-      + '<span class="cell-amt"><input type="number" inputmode="decimal" step="500" data-i="' + idx + '" data-f="amount" value="' + r.amount + '" placeholder="e.g. 38000" /></span>'
+        '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(r.name) + '" placeholder="e.g. CPP" autocomplete="off" /></span>'
+      + '<span class="cell-who"><select data-i="' + idx + '" data-f="owner">' + whoOpts + '</select></span>'
+      + '<span class="cell-amt"><input type="number" inputmode="decimal" step="500" data-i="' + idx + '" data-f="amount" value="' + r.amount + '" placeholder="e.g. 18000" /></span>'
       + '<span class="cell-age"><input type="number" inputmode="numeric" step="1" data-i="' + idx + '" data-f="startAge" value="' + r.startAge + '" placeholder="e.g. 67" /></span>'
       + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove">×</button></span>';
       c.appendChild(row);
@@ -505,6 +519,7 @@
     var s = state.settings;
     el.household.value = s.household;
     el.currentAge.value = s.currentAge;
+    el.partnerAge.value = s.partnerAge ? s.partnerAge : "";
     el.retireAge.value = s.retireAge;
     el.planThroughAge.value = s.planThroughAge;
     el.targetIncome.value = s.targetIncome;
@@ -517,7 +532,7 @@
   }
   function wire() {
     el.household.addEventListener("input", function () { state.settings.household = el.household.value; save(); renderAll(); });
-    [["currentAge", "currentAge"], ["retireAge", "retireAge"], ["planThroughAge", "planThroughAge"], ["targetIncome", "targetIncome"],
+    [["currentAge", "currentAge"], ["partnerAge", "partnerAge"], ["retireAge", "retireAge"], ["planThroughAge", "planThroughAge"], ["targetIncome", "targetIncome"],
      ["rate", "rate"], ["inflation", "inflation"], ["cashYield", "cashYield"], ["investPct", "investPct"], ["debtPaydown", "debtPaydown"]]
       .forEach(function (pair) { el[pair[0]].addEventListener("input", function () { state.settings[pair[1]] = num(el[pair[0]].value); save(); renderAll(); }); });
     el.variable.addEventListener("input", function () { state.variable = num(el.variable.value); save(); renderAll(); });

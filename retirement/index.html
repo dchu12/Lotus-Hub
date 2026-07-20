@@ -87,16 +87,17 @@
     <!-- ---- Step 4: goal ---- -->
     <section class="card step" aria-label="Your goal">
       <div class="step-head"><span class="step-no">4</span><h2 class="step-title">Your plan</h2></div>
-      <div class="goal-grid three">
+      <div class="goal-grid four">
         <label class="field"><span class="field-lbl">Your age now</span><input type="number" id="currentAge" min="18" max="90" step="1" inputmode="numeric" /></label>
-        <label class="field"><span class="field-lbl">Retire at age</span><input type="number" id="retireAge" min="30" max="90" step="1" inputmode="numeric" /></label>
+        <label class="field"><span class="field-lbl">Partner's age <em>if any</em></span><input type="number" id="partnerAge" min="18" max="90" step="1" inputmode="numeric" placeholder="—" /></label>
+        <label class="field"><span class="field-lbl">Retire at age <em>yours</em></span><input type="number" id="retireAge" min="30" max="90" step="1" inputmode="numeric" /></label>
         <label class="field"><span class="field-lbl">Yearly spending <em>today's money</em></span><div class="money"><span class="money-sym">$</span><input type="number" id="targetIncome" min="0" step="1000" inputmode="decimal" /></div></label>
       </div>
 
       <div class="sub-block">
         <div class="step-head sub"><h3 class="sub-title">Money you'll get in retirement</h3><button type="button" class="add-btn" id="addRet">+ Add</button></div>
-        <p class="step-help">Money you'll get in retirement that isn't from your savings — for most people, just Social Security. For each one, enter the <b>yearly amount</b> (in today's dollars) and the <b>age it starts</b> (67 is typical). No pension? Just leave Social Security as it is.</p>
-        <div class="ret-head"><span>Source</span><span class="dh-num">Amount / year</span><span class="dh-num">Starts at age</span><span></span></div>
+        <p class="step-help">Money you'll get in retirement that isn't from your savings — CPP, Old Age Security, pensions, Social Security. For each: <b>whose</b> it is, the <b>yearly amount</b> (today's dollars), and the <b>age they start</b> it. Mark a source <b>Partner</b> and it starts at your partner's age — so if they're younger, it kicks in later on its own.</p>
+        <div class="ret-head"><span>Source</span><span>Whose</span><span class="dh-num">Amount / yr</span><span class="dh-num">Starts age</span><span></span></div>
         <div id="retList" class="line-list"></div>
       </div>
 
