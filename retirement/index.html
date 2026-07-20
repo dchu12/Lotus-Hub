@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>Derek &amp; Kelly · Retirement</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="hd">
+      <div class="hd-brand">
+        <span class="hd-logo" aria-hidden="true">📈</span>
+        <div>
+          <h1 id="hhTitle">Derek &amp; Kelly</h1>
+          <p class="hd-sub">Are we on track to retire?</p>
+        </div>
+      </div>
+      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle dark mode" title="Toggle theme">🌙</button>
+    </header>
+
+    <!-- ---- The answer, first ---- -->
+    <section class="verdict card" aria-label="Where you stand">
+      <div class="status" id="status" role="status"><span class="status-dot"></span><span class="status-text" id="statusText">—</span></div>
+      <p class="verdict-line" id="verdictLine">—</p>
+      <p class="verdict-sub" id="verdictSub"></p>
+      <div class="progress">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-cap"><span id="progressPct">0%</span><span>of the way to funding your retirement</span></div>
+      </div>
+    </section>
+
+    <!-- ---- Step 1: earn ---- -->
+    <section class="card step" aria-label="What you earn">
+      <div class="step-head"><span class="step-no">1</span><h2 class="step-title">What you earn</h2><button type="button" class="add-btn" id="addIncome">+ Add</button></div>
+      <p class="step-help">Every source of money coming in now. Use the toggle for things that arrive once a year, like a bonus.</p>
+      <div id="incomeList" class="line-list"></div>
+      <div class="subtotal"><span>Coming in</span><b id="incMo">$0<em>/mo</em></b></div>
+    </section>
+
+    <!-- ---- Step 2: spend ---- -->
+    <section class="card step" aria-label="What you spend">
+      <div class="step-head"><span class="step-no">2</span><h2 class="step-title">What you spend</h2><button type="button" class="add-btn" id="addFixed">+ Add</button></div>
+      <p class="step-help">Your regular bills. Loan and mortgage payments are set in step 3 and added here for you.</p>
+      <div id="fixedList" class="line-list"></div>
+      <div class="var-row">
+        <span class="var-lbl">Everything else <em>groceries, gas, fun — a rough monthly total</em></span>
+        <div class="money var-money"><span class="money-sym">$</span><input type="number" id="variable" min="0" step="50" inputmode="decimal" /><span class="per">/mo</span></div>
+      </div>
+      <div class="subtotal"><span>Going out</span><b id="expMo">$0<em>/mo</em></b></div>
+      <div class="leaves" id="leaves">—</div>
+    </section>
+
+    <!-- ---- Step 3: own & owe ---- -->
+    <section class="card step" aria-label="What you own and owe">
+      <div class="step-head"><span class="step-no">3</span><h2 class="step-title">What you own &amp; owe</h2><button type="button" class="add-btn" id="addAcct">+ Add</button></div>
+      <p class="step-help">Your savings and investments — the money that will fund retirement — plus your home and any other assets.</p>
+      <div class="acct-head"><span>Account</span><span>Who</span><span>Kind</span><span class="ah-num">Amount</span><span></span></div>
+      <div id="acctList" class="line-list"></div>
+
+      <div class="sub-block">
+        <div class="step-head sub"><h3 class="sub-title">What you owe</h3><button type="button" class="add-btn" id="addDebt">+ Add</button></div>
+        <div class="debt-head"><span>Debt</span><span class="dh-num">Balance</span><span class="dh-num">Rate</span><span class="dh-num">Payment</span><span></span></div>
+        <div id="debtList" class="line-list"></div>
+        <p class="debt-note" id="debtNote"></p>
+      </div>
+
+      <div class="totals">
+        <div class="tt"><span class="tt-lbl">Net worth</span><span class="tt-val" id="netWorth">$0</span><span class="tt-hint">everything you own minus what you owe</span></div>
+        <div class="tt"><span class="tt-lbl">Retirement savings</span><span class="tt-val" id="portfolioNow">$0</span><span class="tt-hint">investments &amp; cash that will fund retirement</span></div>
+      </div>
+    </section>
+
+    <!-- ---- Step 4: goal ---- -->
+    <section class="card step" aria-label="Your goal">
+      <div class="step-head"><span class="step-no">4</span><h2 class="step-title">Your plan</h2></div>
+      <div class="goal-grid three">
+        <label class="field"><span class="field-lbl">Your age now</span><input type="number" id="currentAge" min="18" max="90" step="1" inputmode="numeric" /></label>
+        <label class="field"><span class="field-lbl">Retire at age</span><input type="number" id="retireAge" min="30" max="90" step="1" inputmode="numeric" /></label>
+        <label class="field"><span class="field-lbl">Yearly spending <em>today's money</em></span><div class="money"><span class="money-sym">$</span><input type="number" id="targetIncome" min="0" step="1000" inputmode="decimal" /></div></label>
+      </div>
+
+      <div class="sub-block">
+        <div class="step-head sub"><h3 class="sub-title">Money you'll get in retirement</h3><button type="button" class="add-btn" id="addRet">+ Add</button></div>
+        <p class="step-help">Social Security, pensions, annuities — income that isn't from your savings. It lowers how much your savings must cover.</p>
+        <div class="ret-head"><span>Source</span><span class="dh-num">$ / yr</span><span class="dh-num">Starts age</span><span></span></div>
+        <div id="retList" class="line-list"></div>
+      </div>
+
+      <div class="result">
+        <div class="result-stat">
+          <span class="rs-lbl">Spending <b id="spendLbl">$90,000</b> a year, your savings last to about</span>
+          <span class="rs-num" id="lastsAge">—</span>
+          <span class="rs-sub" id="lastsSub"></span>
+        </div>
+        <p class="confidence" id="confidence"></p>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-legend">
+          <span class="lg lg-savings"><i></i>Your savings, over your life</span>
+          <span class="lg lg-band"><i></i>Good–poor market range</span>
+          <span class="lg lg-retire"><i></i>Retire</span>
+        </div>
+        <div id="chart" class="chart"></div>
+        <div class="chart-x" id="chartX"></div>
+      </div>
+    </section>
+
+    <!-- ---- What if (live scenarios) ---- -->
+    <section class="card whatif" aria-label="What if">
+      <div class="step-head"><span class="step-ico" aria-hidden="true">🔮</span><h2 class="step-title">What if…</h2></div>
+      <p class="step-help">Quick scenarios based on your numbers — showing the age your money would last to. Nothing here changes your plan.</p>
+      <div id="whatifList" class="wi-list"></div>
+    </section>
+
+    <!-- ---- Advanced (collapsed) ---- -->
+    <details class="advanced card">
+      <summary>Fine-tune &amp; save your plan</summary>
+      <p class="step-help">Sensible defaults are set. Adjust only if you want to.</p>
+
+      <div class="field-wide">
+        <label class="field-lbl" for="household">Household name</label>
+        <input type="text" id="household" autocomplete="off" />
+      </div>
+
+      <div class="adv-grid">
+        <label class="field"><span class="field-lbl">Plan through age <em>life expectancy</em></span><input type="number" id="planThroughAge" min="65" max="110" step="1" inputmode="numeric" /></label>
+        <label class="field"><span class="field-lbl">Investment growth <em>per year, before inflation</em></span><div class="pct"><input type="number" id="rate" min="0" max="20" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div></label>
+        <label class="field"><span class="field-lbl">Inflation <em>per year</em></span><div class="pct"><input type="number" id="inflation" min="0" max="15" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div></label>
+        <label class="field"><span class="field-lbl">Savings interest <em>on cash, per year</em></span><div class="pct"><input type="number" id="cashYield" min="0" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div></label>
+      </div>
+      <div class="adv-note" id="realNote"></div>
+
+      <div class="alloc-block">
+        <div class="alloc">
+          <span class="alloc-lbl">Extra toward debt <em>on top of your payments, to pay it off faster</em></span>
+          <div class="money var-money"><span class="money-sym">$</span><input type="number" id="debtPaydown" min="0" step="50" inputmode="decimal" /><span class="per">/mo</span></div>
+        </div>
+        <label class="split-lbl" for="investPct">Of what's left over, invest <b id="investPctLbl">85%</b> <em>the rest stays as cash</em></label>
+        <input type="range" id="investPct" min="0" max="100" step="5" value="85" />
+        <p class="split-note" id="splitNote"></p>
+      </div>
+
+      <div class="data-block">
+        <h3 class="sub-title">Save or move your plan</h3>
+        <p class="step-help">Your numbers live only in this browser. Make a copy to open them on another device.</p>
+        <div class="data-row">
+          <button type="button" id="copyLink" class="data-btn">Copy shareable link</button>
+          <button type="button" id="downloadData" class="data-btn">Download a copy</button>
+          <label class="data-btn file">Load a copy<input type="file" id="loadData" accept="application/json,.json" hidden /></label>
+        </div>
+        <p class="data-msg" id="dataMsg"></p>
+      </div>
+
+      <div class="reset-row">
+        <button type="button" id="resetBtn" class="reset-btn">Reset to the example</button>
+        <span>Clears your numbers and loads the sample household.</span>
+      </div>
+    </details>
+
+    <footer class="ft">
+      <p>All numbers are in today's money. Saved on this device only — estimates, not financial advice.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
