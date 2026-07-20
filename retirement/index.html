@@ -32,6 +32,17 @@
       </div>
     </section>
 
+    <!-- ---- Saving your plan ---- -->
+    <section class="card savebar" aria-label="Saving your plan">
+      <p class="sb-status" id="saveStatus">—</p>
+      <div class="sb-actions">
+        <button type="button" id="saveFile" class="data-btn primary">💾 Save my plan to a file</button>
+        <label class="data-btn">📂 Open a saved file<input type="file" id="loadData" accept="application/json,.json" hidden /></label>
+        <button type="button" id="copyLink" class="data-btn ghost">🔗 Copy a link to my plan</button>
+      </div>
+      <p class="data-msg" id="dataMsg"></p>
+    </section>
+
     <!-- ---- Step 1: earn ---- -->
     <section class="card step" aria-label="What you earn">
       <div class="step-head"><span class="step-no">1</span><h2 class="step-title">What you earn</h2><button type="button" class="add-btn" id="addIncome">+ Add</button></div>
@@ -142,17 +153,6 @@
         <label class="split-lbl" for="investPct">Of what's left over, invest <b id="investPctLbl">85%</b> <em>the rest stays as cash</em></label>
         <input type="range" id="investPct" min="0" max="100" step="5" value="85" />
         <p class="split-note" id="splitNote"></p>
-      </div>
-
-      <div class="data-block">
-        <h3 class="sub-title">Save or move your plan</h3>
-        <p class="step-help">Your numbers live only in this browser. Make a copy to open them on another device.</p>
-        <div class="data-row">
-          <button type="button" id="copyLink" class="data-btn">Copy shareable link</button>
-          <button type="button" id="downloadData" class="data-btn">Download a copy</button>
-          <label class="data-btn file">Load a copy<input type="file" id="loadData" accept="application/json,.json" hidden /></label>
-        </div>
-        <p class="data-msg" id="dataMsg"></p>
       </div>
 
       <div class="reset-row">
