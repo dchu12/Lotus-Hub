@@ -111,7 +111,13 @@ body {
 .ret-head, .ret-row { display: grid; grid-template-columns: minmax(0,1.6fr) 1fr 84px 28px; gap: 8px; align-items: center; }
 .acct-head, .debt-head, .ret-head { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); padding: 2px 2px 4px; }
 .acct-head .ah-num, .debt-head .dh-num, .ret-head .dh-num { text-align: right; }
-.ret-row .cell-age input { text-align: right; }
+.ret-row .cell-age input { text-align: right; padding-left: 36px; }
+/* Always-visible unit hints so the fields make sense even when the column
+   headers are hidden (e.g. on phones): "$ … /yr" and "age …". */
+.ret-row .cell-amt input { padding-right: 30px; }
+.ret-row .cell-amt::after { content: "/yr"; position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: var(--faint); font-size: 11px; pointer-events: none; }
+.ret-row .cell-age { position: relative; }
+.ret-row .cell-age::before { content: "age"; position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--faint); font-size: 11px; pointer-events: none; }
 
 input, select {
   width: 100%; font: inherit; font-size: 14px; color: var(--ink);

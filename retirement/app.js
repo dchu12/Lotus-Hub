@@ -440,8 +440,8 @@
       row.className = "ret-row";
       row.innerHTML =
         '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(r.name) + '" placeholder="e.g. Social Security" autocomplete="off" /></span>'
-      + '<span class="cell-amt"><input type="number" inputmode="decimal" step="500" data-i="' + idx + '" data-f="amount" value="' + r.amount + '" /></span>'
-      + '<span class="cell-age"><input type="number" inputmode="numeric" step="1" data-i="' + idx + '" data-f="startAge" value="' + r.startAge + '" /></span>'
+      + '<span class="cell-amt"><input type="number" inputmode="decimal" step="500" data-i="' + idx + '" data-f="amount" value="' + r.amount + '" placeholder="e.g. 38000" /></span>'
+      + '<span class="cell-age"><input type="number" inputmode="numeric" step="1" data-i="' + idx + '" data-f="startAge" value="' + r.startAge + '" placeholder="e.g. 67" /></span>'
       + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove">×</button></span>';
       c.appendChild(row);
     });
