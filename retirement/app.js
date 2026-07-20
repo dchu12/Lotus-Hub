@@ -12,7 +12,11 @@
 (function () {
   "use strict";
 
-  var STORE_KEY = "dk-retire:v6";
+  // ONE stable storage key — deliberately un-versioned. It must NEVER change
+  // again: renaming it is what wiped data before. New fields are handled by
+  // merging with defaults on load (see mergeState), not by a new key.
+  var STORE_KEY = "dk-retire";
+  var LEGACY_KEYS = ["dk-retire:v6", "dk-retire:v5", "dk-retire:v4", "dk-retire:v3", "dk-retire:v2", "dk-retire:v1"];
   var THEME_KEY = "dk-retire:theme";
   var THIS_YEAR = new Date().getFullYear();
 
@@ -583,18 +587,22 @@
 
   /* ---------- persistence ---------- */
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+  function readKey(k) {
+    try { var r = JSON.parse(localStorage.getItem(k)); if (r && r.settings && Array.isArray(r.accounts)) return r; } catch (e) {}
+    return null;
+  }
   function load() {
-    // a shared link wins over local storage
-    if (location.hash.indexOf("#d=") === 0) {
-      if (importData(location.hash.slice(3))) {
-        try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
-        return;
-      }
+    // a shared link wins over everything
+    if (location.hash.indexOf("#d=") === 0 && importData(location.hash.slice(3))) {
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+      return;
     }
-    var raw = null;
-    try { raw = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) {}
-    if (raw && raw.settings && Array.isArray(raw.accounts)) state = mergeState(raw);
-    else state = defaults();
+    // the stable key first; if it's empty, recover the most recent data left
+    // under any older versioned key (they were orphaned, never deleted).
+    var raw = readKey(STORE_KEY);
+    if (!raw) { for (var i = 0; i < LEGACY_KEYS.length && !raw; i++) raw = readKey(LEGACY_KEYS[i]); }
+    state = raw ? mergeState(raw) : defaults();
+    save(); // write forward into the stable key so it persists across all future updates
   }
 
   /* ---------- theme ---------- */
