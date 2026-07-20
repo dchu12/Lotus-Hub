@@ -758,9 +758,18 @@
       return true;
     }
 
+    // Sort by card number ascending (1→35); unnumbered/new families (TBD) last.
+    function byCardNum(a, b) {
+      var na = parseInt(a.num, 10), nb = parseInt(b.num, 10);
+      var aNum = !isNaN(na), bNum = !isNaN(nb);
+      if (aNum && bNum) return na - nb;
+      if (aNum) return -1;
+      if (bNum) return 1;
+      return 0;
+    }
     function render() {
       updateStats();
-      var visible = families.filter(matches);
+      var visible = families.filter(matches).sort(byCardNum);
       emptyEl.hidden = visible.length !== 0;
       rowsEl.innerHTML = visible.map(rowHtml).join("");
     }
