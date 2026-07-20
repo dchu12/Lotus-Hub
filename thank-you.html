@@ -659,10 +659,22 @@
       if (drop.mailed) anchor.mailed = true;
       return list.filter(function (_, i) { return i !== si; });
     }
+    // Give the confirmed relatives real card numbers (were "TBD").
+    function assignNumbers(list) {
+      var NUMS = { "kok yoke peng": "33", "liew sau yoong": "34", "lai kheng kok": "35" };
+      list.forEach(function (f) {
+        if (f.guests.length === 1) {
+          var n = NUMS[String(f.guests[0]).trim().toLowerCase()];
+          if (n) f.num = n;
+        }
+      });
+      return list;
+    }
     function migrate(list) {
       list = mergeTwo(list, "Fong Sow Wai", "Jayden Fong", "32");
       // Confirmed one family: Fong Sow Wai + Jayden Fong + Kwok Yong Peng (card #32).
       list = foldInto(list, "Fong Sow Wai", "Kwok Yong Peng");
+      list = assignNumbers(list);
       return list;
     }
 
