@@ -20,9 +20,14 @@
   var THEME_KEY = "dk-retire:theme";
   var THIS_YEAR = new Date().getFullYear();
 
+  // taxWeight = share of a withdrawal that's taxable income in retirement:
+  //   1 = fully taxed (RRSP/401k), 0.5 ≈ non-registered (capital gains),
+  //   0 = tax-free (TFSA/Roth, or already-taxed cash).
   var TYPES = {
-    investment: { label: "Investments", income: true },
-    cash:       { label: "Cash / savings", income: true },
+    investment: { label: "Taxable (RRSP/401k)", income: true, taxWeight: 1 },
+    tfsa:       { label: "Tax-free (TFSA/Roth)", income: true, taxWeight: 0 },
+    nonreg:     { label: "Non-registered", income: true, taxWeight: 0.5 },
+    cash:       { label: "Cash / savings", income: true, taxWeight: 0 },
     realestate: { label: "Home / property", income: false },
     other:      { label: "Other asset", income: false },
   };
@@ -36,12 +41,13 @@
         partnerAge: 0,
         retireAge: 65,
         planThroughAge: 95,
-        targetIncome: 95000,
+        targetIncome: 80000,
         rate: 6.0,
         inflation: 2.5,
         cashYield: 3.5,
         investPct: 85,
         debtPaydown: 150,
+        retireTaxRate: 15,
       },
       incomes: [
         { id: "i1", name: "Derek — salary", amount: 5200, freq: "mo" },
@@ -57,9 +63,9 @@
       accounts: [
         { id: "a1", name: "Derek's 401(k)",     owner: "Derek", type: "investment", balance: 88000 },
         { id: "a2", name: "Kelly's 403(b)",     owner: "Kelly", type: "investment", balance: 54000 },
-        { id: "a3", name: "Roth IRA",           owner: "Derek", type: "investment", balance: 24000 },
-        { id: "a4", name: "Roth IRA",           owner: "Kelly", type: "investment", balance: 20000 },
-        { id: "a5", name: "Brokerage",          owner: "Joint", type: "investment", balance: 20000 },
+        { id: "a3", name: "Roth IRA",           owner: "Derek", type: "tfsa",       balance: 24000 },
+        { id: "a4", name: "Roth IRA",           owner: "Kelly", type: "tfsa",       balance: 20000 },
+        { id: "a5", name: "Brokerage",          owner: "Joint", type: "nonreg",     balance: 20000 },
         { id: "a6", name: "Emergency savings",  owner: "Joint", type: "cash",       balance: 22000 },
         { id: "a7", name: "Home",               owner: "Joint", type: "realestate", balance: 460000 },
       ],
@@ -71,6 +77,8 @@
         { id: "r1", name: "Social Security (combined)", amount: 38000, startAge: 67, owner: "both" },
       ],
       oneTime: [],
+      windfalls: [],
+      history: [],
     };
   }
 
@@ -79,9 +87,9 @@
 
   var el = {};
   ["household", "currentAge", "partnerAge", "retireAge", "planThroughAge", "targetIncome", "rate", "inflation", "cashYield",
-   "investPct", "investPctLbl", "splitNote", "variable", "debtPaydown", "realNote",
-   "addIncome", "addFixed", "addAcct", "addDebt", "addRet", "addOneTime",
-   "incomeList", "fixedList", "acctList", "debtList", "retList", "otList", "debtNote",
+   "investPct", "investPctLbl", "splitNote", "variable", "debtPaydown", "retireTaxRate", "realNote",
+   "addIncome", "addFixed", "addAcct", "addDebt", "addRet", "addOneTime", "addWindfall",
+   "incomeList", "fixedList", "acctList", "debtList", "retList", "otList", "wfList", "nwHistory", "debtNote",
    "theme-toggle", "hhTitle",
    "status", "statusText", "verdictLine", "verdictSub", "progressFill", "progressPct",
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
@@ -134,6 +142,26 @@
       return sum + (Math.round(num(o.atAge)) === age ? num(o.amount) : 0);
     }, 0);
   }
+  // One-time money coming in (downsizing, inheritance, a sale) — treated as
+  // tax-free lump sums added to savings at a given age.
+  function windfallAt(age) {
+    return state.windfalls.reduce(function (sum, w) {
+      return sum + (Math.round(num(w.atAge)) === age ? num(w.amount) : 0);
+    }, 0);
+  }
+  // Retirement taxes. taxWeight of the portfolio (share that's taxable when
+  // withdrawn) × the effective retirement tax rate gives the drag on
+  // withdrawals; retirement income (CPP/OAS/pension) is taxed at the full rate.
+  function retTaxRate() { return Math.max(0, Math.min(60, num(state.settings.retireTaxRate))) / 100; }
+  function portfolioTaxWeight() {
+    var tot = 0, wsum = 0;
+    state.accounts.forEach(function (a) {
+      var t = TYPES[a.type];
+      if (t && t.income) { var b = num(a.balance); tot += b; wsum += b * (t.taxWeight || 0); }
+    });
+    return tot > 0 ? wsum / tot : 0;
+  }
+  function taxInfo() { var rate = retTaxRate(); return { rate: rate, effW: Math.min(0.95, rate * portfolioTaxWeight()) }; }
 
   /* ---------- cash flow ---------- */
   function cashflow() {
@@ -168,9 +196,8 @@
 
     var invStart = 0, cashStart = 0;
     state.accounts.forEach(function (a) {
-      var b = num(a.balance);
-      if (a.type === "investment") invStart += b;
-      if (a.type === "cash") cashStart += b;
+      var t = TYPES[a.type]; if (!t || !t.income) return;
+      if (a.type === "cash") cashStart += num(a.balance); else invStart += num(a.balance); // tfsa/nonreg grow like investments
     });
     var liabs = state.debts.map(function (d) {
       return { bal: num(d.balance), rate: realMonthly(d.apr), payment: num(d.payment), paidOff: num(d.balance) <= 0 };
@@ -194,18 +221,22 @@
       invBal = invBal * (1 + rRet) + cf.investMo + pool * cf.pct;
       cashBal = cashBal * (1 + rCash) + cf.cashMo + pool * (1 - cf.pct);
       if (m % 12 === 0) {
-        var ot = oneTimeAt(currentAge + m / 12); // pay one-time costs from cash first, then investments
+        var yrAge = currentAge + m / 12;
+        var wf = windfallAt(yrAge); if (wf > 0) invBal += wf; // one-time money in lands in investments
+        var ot = oneTimeAt(yrAge);                            // one-time costs: cash first, then investments
         if (ot > 0) { var fromCash = Math.min(cashBal, ot); cashBal -= fromCash; invBal = Math.max(0, invBal - (ot - fromCash)); }
-        series.push({ age: currentAge + m / 12, bal: invBal + cashBal });
+        series.push({ age: yrAge, bal: invBal + cashBal });
       }
     }
 
     var retireBal = invBal + cashBal;
-    var bal = retireBal, runOutAge = null;
+    var bal = retireBal, runOutAge = null, tax = taxInfo();
     for (var age = retireAge; age < endAge; age++) {
+      bal += windfallAt(age); // one-time money in (tax-free, e.g. downsizing)
       if (bal > 0) {
-        var w = Math.max(0, num(s.targetIncome) - retIncomeAt(age)) + oneTimeAt(age);
-        bal -= w;
+        var netInc = retIncomeAt(age) * (1 - tax.rate);                       // CPP/OAS/pension after tax
+        var netNeed = Math.max(0, num(s.targetIncome) - netInc) + oneTimeAt(age);
+        bal -= netNeed / (1 - tax.effW);                                       // gross-up the taxable withdrawal
         if (bal <= 0) { bal = 0; if (runOutAge === null) runOutAge = age; }
         else bal *= (1 + rDraw);
       }
@@ -218,21 +249,27 @@
   // Portfolio needed at retirement so savings last exactly to the plan age
   // (present value of the withdrawals Social Security won't cover).
   function neededAtRetirement(rDraw) {
-    var s = state.settings, retireAge = num(s.retireAge), endAge = num(s.planThroughAge), needed = 0;
+    var s = state.settings, retireAge = num(s.retireAge), endAge = num(s.planThroughAge), needed = 0, tax = taxInfo();
     for (var t = 0; t < Math.max(0, endAge - retireAge); t++) {
-      var w = Math.max(0, num(s.targetIncome) - retIncomeAt(retireAge + t)) + oneTimeAt(retireAge + t);
-      needed += w / Math.pow(1 + rDraw, t);
+      var age = retireAge + t;
+      var netInc = retIncomeAt(age) * (1 - tax.rate);
+      var netNeed = Math.max(0, num(s.targetIncome) - netInc) + oneTimeAt(age);
+      var gross = netNeed / (1 - tax.effW) - windfallAt(age); // windfalls reduce what savings must cover
+      needed += gross / Math.pow(1 + rDraw, t);
     }
-    return needed;
+    return Math.max(0, needed);
   }
 
   // Largest yearly spending the retirement balance can sustain to the plan age.
   function maxSpend(retireBal, rDraw) {
     var s = state.settings, retireAge = num(s.retireAge), endAge = num(s.planThroughAge);
+    var tax = taxInfo();
     function lasts(spend) {
       var bal = retireBal;
       for (var age = retireAge; age < endAge; age++) {
-        bal -= Math.max(0, spend - retIncomeAt(age)) + oneTimeAt(age);
+        bal += windfallAt(age);
+        var netInc = retIncomeAt(age) * (1 - tax.rate);
+        bal -= (Math.max(0, spend - netInc) + oneTimeAt(age)) / (1 - tax.effW);
         if (bal < 0) return false;
         bal *= (1 + rDraw);
       }
@@ -259,6 +296,44 @@
     return found;
   }
 
+  // Standard normal via Box–Muller (for the market simulation).
+  function gaussian() {
+    var u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  // Chance of success: draw down the retirement pot under many random market
+  // paths (returns vary year to year) and count how often the money lasts.
+  function mcSuccess(retireBal, meanReal) {
+    var s = state.settings, retireAge = num(s.retireAge), endAge = num(s.planThroughAge), tax = taxInfo();
+    var sigma = 0.09, N = 300, ok = 0; // ~9% real annual volatility (diversified mix)
+    for (var i = 0; i < N; i++) {
+      var bal = retireBal, survived = true;
+      for (var age = retireAge; age < endAge; age++) {
+        bal += windfallAt(age);
+        var netInc = retIncomeAt(age) * (1 - tax.rate);
+        bal -= (Math.max(0, num(s.targetIncome) - netInc) + oneTimeAt(age)) / (1 - tax.effW);
+        if (bal <= 0) { survived = false; break; }
+        bal *= (1 + meanReal + sigma * gaussian());
+      }
+      if (survived) ok++;
+    }
+    return ok / N;
+  }
+
+  // Record a net-worth snapshot once per calendar month for the trend line.
+  function snapshotHistory() {
+    var m;
+    try { m = new Date().toISOString().slice(0, 7); } catch (e) { return; }
+    var nw = 0;
+    state.accounts.forEach(function (a) { nw += num(a.balance); });
+    state.debts.forEach(function (d) { nw -= num(d.balance); });
+    var h = state.history;
+    if (h.length && h[h.length - 1].m === m) h[h.length - 1].nw = nw;
+    else { h.push({ m: m, nw: nw }); if (h.length > 240) h.shift(); }
+  }
+
   /* ---------- render ---------- */
   function renderAll() {
     var s = state.settings;
@@ -279,10 +354,11 @@
 
     // step 3
     var netWorth = 0, portfolioNow = 0, debtStart = 0;
-    state.accounts.forEach(function (a) { netWorth += num(a.balance); if (a.type === "investment" || a.type === "cash") portfolioNow += num(a.balance); });
+    state.accounts.forEach(function (a) { var t = TYPES[a.type]; netWorth += num(a.balance); if (t && t.income) portfolioNow += num(a.balance); });
     state.debts.forEach(function (d) { debtStart += num(d.balance); netWorth -= num(d.balance); });
     el.netWorth.textContent = fmtMoney(netWorth);
     el.portfolioNow.textContent = fmtMoney(portfolioNow);
+    renderHistory();
 
     var validAges = s.retireAge > s.currentAge && s.planThroughAge > s.retireAge;
     var retireYear = THIS_YEAR + Math.round(s.retireAge - s.currentAge);
@@ -326,13 +402,17 @@
       el.lastsSub.textContent = "that's short of your plan through " + endAge + " · about " + fmtMoney(msMax) + "/yr would last the whole way";
     }
 
-    // confidence (poor market)
-    if (poor.lastsToEnd) {
+    // chance of success across many random market paths (Monte Carlo)
+    var success = Math.round(mcSuccess(exp.retireBal, realAnnual(s.rate)) * 100);
+    if (success >= 85) {
       el.confidence.className = "confidence good";
-      el.confidence.textContent = "Even in a poor market, your money still lasts through " + endAge + ". 👍";
+      el.confidence.textContent = "✅ Strong plan — your money lasts in about " + success + "% of market scenarios.";
+    } else if (success >= 70) {
+      el.confidence.className = "confidence";
+      el.confidence.textContent = "👍 Fairly safe — lasts in about " + success + "% of market scenarios. A cushion would help.";
     } else {
       el.confidence.className = "confidence warn";
-      el.confidence.textContent = "Heads up: in a poor market it could run short around age " + poor.runOutAge + " — worth keeping a cushion.";
+      el.confidence.textContent = "⚠️ Shaky — lasts in only about " + success + "% of market scenarios. Consider spending less, saving more, or retiring later.";
     }
 
     // earliest age you could retire at this spending
@@ -356,7 +436,7 @@
     if (exp.lastsToEnd) {
       setStatus(true, "On track");
       el.verdictLine.textContent = "Retiring at " + s.retireAge + " in " + retireYear + " and spending " + fmtMoney(s.targetIncome)
-        + " a year, your savings comfortably last through age " + endAge + ". You're on track. 🎉";
+        + " a year, your savings last through age " + endAge + ". You're on track. 🎉";
       el.verdictSub.textContent = "You could spend up to about " + fmtMoney(msMax) + " a year and still make it — room to enjoy more now, or retire earlier.";
     } else {
       setStatus(false, "Falls short");
@@ -545,6 +625,37 @@
     wireRows(c, state.oneTime, ["amount", "atAge"], renderOneTime);
   }
 
+  function renderWindfalls() {
+    var c = el.wfList;
+    if (!state.windfalls.length) { c.innerHTML = '<div class="acct-empty">None expected? Leave this empty.</div>'; return; }
+    c.innerHTML = "";
+    state.windfalls.forEach(function (o, idx) {
+      var row = document.createElement("div");
+      row.className = "ot-row";
+      row.innerHTML =
+        '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(o.name) + '" placeholder="e.g. Downsize home" autocomplete="off" /></span>'
+      + '<span class="cell-amt"><input type="text" inputmode="decimal" class="mnum" data-i="' + idx + '" data-f="amount" value="' + commafy(o.amount) + '" placeholder="e.g. 200,000" /></span>'
+      + '<span class="cell-age"><input type="number" inputmode="numeric" step="1" data-i="' + idx + '" data-f="atAge" value="' + o.atAge + '" placeholder="e.g. 60" /></span>'
+      + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove">×</button></span>';
+      c.appendChild(row);
+    });
+    wireRows(c, state.windfalls, ["amount", "atAge"], renderWindfalls);
+  }
+
+  function renderHistory() {
+    if (!el.nwHistory) return;
+    var h = state.history || [];
+    if (h.length < 2) { el.nwHistory.innerHTML = ""; return; }
+    var vals = h.map(function (p) { return num(p.nw); });
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), span = (max - min) || 1;
+    var W = 240, H = 40;
+    var pts = vals.map(function (v, i) { return ((W * i) / (vals.length - 1)).toFixed(1) + "," + (H - ((v - min) / span) * H).toFixed(1); });
+    var first = h[0], last = h[h.length - 1], delta = num(last.nw) - num(first.nw), up = delta >= 0;
+    el.nwHistory.innerHTML =
+        '<div class="nwh-head"><span>Net worth over time</span><span class="nwh-delta ' + (up ? "up" : "down") + '">' + (up ? "▲ " : "▼ ") + fmtMoney(Math.abs(delta)) + " since " + first.m + '</span></div>'
+      + '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" class="nwh-svg" aria-hidden="true"><polyline points="' + pts.join(" ") + '" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linejoin="round"/></svg>';
+  }
+
   function renderAccounts() {
     var c = el.acctList;
     if (!state.accounts.length) { c.innerHTML = '<div class="acct-empty">Add a 401(k), IRA, savings, home…</div>'; return; }
@@ -611,18 +722,20 @@
     el.cashYield.value = s.cashYield;
     el.investPct.value = s.investPct;
     el.debtPaydown.value = commafy(s.debtPaydown);
+    el.retireTaxRate.value = s.retireTaxRate;
     el.variable.value = commafy(state.variable);
   }
   function wire() {
     el.household.addEventListener("input", function () { state.settings.household = el.household.value; save(); renderAll(); });
     [["currentAge", "currentAge"], ["partnerAge", "partnerAge"], ["retireAge", "retireAge"], ["planThroughAge", "planThroughAge"], ["targetIncome", "targetIncome"],
-     ["rate", "rate"], ["inflation", "inflation"], ["cashYield", "cashYield"], ["investPct", "investPct"], ["debtPaydown", "debtPaydown"]]
+     ["rate", "rate"], ["inflation", "inflation"], ["cashYield", "cashYield"], ["investPct", "investPct"], ["debtPaydown", "debtPaydown"], ["retireTaxRate", "retireTaxRate"]]
       .forEach(function (pair) { el[pair[0]].addEventListener("input", function () { state.settings[pair[1]] = num(el[pair[0]].value); save(); renderAll(); }); });
     el.variable.addEventListener("input", function () { state.variable = num(el.variable.value); save(); renderAll(); });
     el.addIncome.addEventListener("click", function () { state.incomes.push({ id: "i" + (++idSeq), name: "", amount: 0, freq: "mo" }); save(); renderLineList(el.incomeList, state.incomes); renderAll(); });
     el.addFixed.addEventListener("click", function () { state.fixed.push({ id: "f" + (++idSeq), name: "", amount: 0, freq: "mo" }); save(); renderLineList(el.fixedList, state.fixed); renderAll(); });
     el.addRet.addEventListener("click", function () { state.retIncomes.push({ id: "r" + (++idSeq), name: "", amount: 0, startAge: state.settings.retireAge, owner: "you" }); save(); renderRet(); renderAll(); });
     el.addOneTime.addEventListener("click", function () { state.oneTime.push({ id: "o" + (++idSeq), name: "", amount: 0, atAge: state.settings.retireAge }); save(); renderOneTime(); renderAll(); });
+    el.addWindfall.addEventListener("click", function () { state.windfalls.push({ id: "w" + (++idSeq), name: "", amount: 0, atAge: state.settings.retireAge }); save(); renderWindfalls(); renderAll(); });
     el.addAcct.addEventListener("click", function () { state.accounts.push({ id: "a" + (++idSeq), name: "", owner: "Joint", type: "investment", balance: 0 }); save(); renderAccounts(); renderAll(); });
     el.addDebt.addEventListener("click", function () { state.debts.push({ id: "d" + (++idSeq), name: "", balance: 0, apr: 6, payment: 0 }); save(); renderDebts(); renderAll(); });
     el.resetBtn.addEventListener("click", function () {
@@ -665,7 +778,7 @@
   function renderAllLists() {
     renderLineList(el.incomeList, state.incomes);
     renderLineList(el.fixedList, state.fixed);
-    renderRet(); renderOneTime(); renderAccounts(); renderDebts();
+    renderRet(); renderOneTime(); renderWindfalls(); renderAccounts(); renderDebts();
   }
 
   /* ---------- data encode / decode ---------- */
@@ -688,6 +801,8 @@
       debts: Array.isArray(raw.debts) ? raw.debts : d.debts,
       retIncomes: Array.isArray(raw.retIncomes) ? raw.retIncomes : d.retIncomes,
       oneTime: Array.isArray(raw.oneTime) ? raw.oneTime : d.oneTime,
+      windfalls: Array.isArray(raw.windfalls) ? raw.windfalls : d.windfalls,
+      history: Array.isArray(raw.history) ? raw.history : d.history,
     };
   }
 
@@ -756,6 +871,7 @@
   /* ---------- boot ---------- */
   initTheme();
   load();
+  snapshotHistory();
   syncSettingsToForm();
   wire();
   renderAllLists();
