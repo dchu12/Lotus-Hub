@@ -84,6 +84,7 @@
         <div class="tt"><span class="tt-lbl">Net worth</span><span class="tt-val" id="netWorth">$0</span><span class="tt-hint">everything you own minus what you owe</span></div>
         <div class="tt"><span class="tt-lbl">Retirement savings</span><span class="tt-val" id="portfolioNow">$0</span><span class="tt-hint">investments &amp; cash that will fund retirement</span></div>
       </div>
+      <div class="nw-history" id="nwHistory"></div>
     </section>
 
     <!-- ---- Step 4: goal ---- -->
@@ -108,6 +109,13 @@
         <p class="step-help">Optional. Large future one-offs — a new car, a child's tuition, a big trip, a home reno. Enter the cost (today's dollars) and your age when it happens.</p>
         <div class="ot-head"><span>What</span><span class="dh-num">Cost</span><span class="dh-num">At your age</span><span></span></div>
         <div id="otList" class="line-list"></div>
+      </div>
+
+      <div class="sub-block">
+        <div class="step-head sub"><h3 class="sub-title">One-time money coming in</h3><button type="button" class="add-btn" id="addWindfall">+ Add</button></div>
+        <p class="step-help">Optional. Big future lump sums — downsizing your home, an inheritance, selling a business. Treated as tax-free money added to savings at that age.</p>
+        <div class="ot-head"><span>What</span><span class="dh-num">Amount</span><span class="dh-num">At your age</span><span></span></div>
+        <div id="wfList" class="line-list"></div>
       </div>
 
       <div class="result">
@@ -153,8 +161,10 @@
         <label class="field"><span class="field-lbl">Investment growth <em>per year, before inflation</em></span><div class="pct"><input type="number" id="rate" min="0" max="20" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div></label>
         <label class="field"><span class="field-lbl">Inflation <em>per year</em></span><div class="pct"><input type="number" id="inflation" min="0" max="15" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div></label>
         <label class="field"><span class="field-lbl">Savings interest <em>on cash, per year</em></span><div class="pct"><input type="number" id="cashYield" min="0" max="10" step="0.1" inputmode="decimal" /><span class="pct-sym">%</span></div></label>
+        <label class="field"><span class="field-lbl">Retirement tax rate <em>on taxable withdrawals &amp; CPP/OAS</em></span><div class="pct"><input type="number" id="retireTaxRate" min="0" max="50" step="1" inputmode="decimal" /><span class="pct-sym">%</span></div></label>
       </div>
       <div class="adv-note" id="realNote"></div>
+      <div class="adv-note">Tag each account by its tax kind in step 3 (RRSP/401k = taxed, TFSA/Roth = tax-free, non-registered = partly). The rate above is applied to the taxable share when you draw it down.</div>
 
       <div class="alloc-block">
         <div class="alloc">
