@@ -652,8 +652,8 @@
   function initTheme() {
     var saved = null;
     try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
-    if (!saved) saved = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
-    applyTheme(saved);
+    // Default to light for everyone; only honor a theme the user explicitly picked.
+    applyTheme(saved === "dark" || saved === "light" ? saved : "light");
   }
   el.themeToggle.addEventListener("click", function () {
     var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
