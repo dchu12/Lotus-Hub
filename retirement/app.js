@@ -84,7 +84,7 @@
    "theme-toggle", "hhTitle",
    "status", "statusText", "verdictLine", "verdictSub", "progressFill", "progressPct",
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
-   "spendLbl", "lastsAge", "lastsSub", "confidence", "chart", "chartX", "whatifList",
+   "spendLbl", "lastsAge", "lastsSub", "confidence", "earliest", "chart", "chartX", "whatifList",
    "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
@@ -230,6 +230,22 @@
     return lo;
   }
 
+  // Soonest retirement age at which the money still lasts to the plan age,
+  // holding everything else constant. Temporarily varies retireAge for the sim.
+  function earliestRetireAge(cf) {
+    var s = state.settings;
+    var saved = s.retireAge;
+    var start = Math.max(Math.round(num(s.currentAge)) + 1, 25);
+    var end = Math.round(num(s.planThroughAge)) - 1;
+    var found = null;
+    for (var a = start; a <= end; a++) {
+      s.retireAge = a;
+      if (simulate(cf, s.rate).lastsToEnd) { found = a; break; }
+    }
+    s.retireAge = saved;
+    return found;
+  }
+
   /* ---------- render ---------- */
   function renderAll() {
     var s = state.settings;
@@ -267,7 +283,8 @@
       el.verdictSub.textContent = "";
       el.progressFill.style.width = "0%"; el.progressPct.textContent = "—";
       el.spendLbl.textContent = fmtMoney(s.targetIncome);
-      el.lastsAge.textContent = "—"; el.lastsSub.textContent = ""; el.confidence.textContent = "";
+      el.lastsAge.textContent = "—"; el.lastsSub.textContent = ""; el.confidence.textContent = ""; el.confidence.className = "confidence";
+      el.earliest.textContent = ""; el.earliest.className = "earliest";
       el.chart.innerHTML = ""; el.chartX.innerHTML = "";
       renderWhatif(); renderAdvancedNote(cf);
       return;
@@ -302,6 +319,23 @@
     } else {
       el.confidence.className = "confidence warn";
       el.confidence.textContent = "Heads up: in a poor market it could run short around age " + poor.runOutAge + " — worth keeping a cushion.";
+    }
+
+    // earliest age you could retire at this spending
+    var earliest = earliestRetireAge(cf);
+    var chosen = Math.round(num(s.retireAge));
+    if (earliest == null) {
+      el.earliest.className = "earliest warn";
+      el.earliest.textContent = "Even by working longer, spending " + fmtMoney(s.targetIncome) + "/yr doesn't quite last — trimming spending a little would fix it.";
+    } else if (earliest < chosen) {
+      el.earliest.className = "earliest good";
+      el.earliest.textContent = "🎯 Earliest you could retire: about age " + earliest + " — that's " + (chosen - earliest) + " year" + (chosen - earliest === 1 ? "" : "s") + " sooner than your plan.";
+    } else if (earliest === chosen) {
+      el.earliest.className = "earliest";
+      el.earliest.textContent = "🎯 Age " + chosen + " is about the earliest you can retire at this spending.";
+    } else {
+      el.earliest.className = "earliest";
+      el.earliest.textContent = "🎯 Earliest you could retire at this spending: about age " + earliest + ".";
     }
 
     // verdict

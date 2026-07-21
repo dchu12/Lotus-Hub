@@ -180,6 +180,10 @@ input:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px va
 .confidence { margin: 12px 0 0; font-size: 13px; font-weight: 600; padding: 10px 13px; border-radius: var(--radius-sm); }
 .confidence.good { background: var(--good-soft); color: var(--good); }
 .confidence.warn { background: var(--warn-soft); color: var(--warn); }
+.earliest { margin: 10px 0 0; font-size: 13px; font-weight: 600; padding: 10px 13px; border-radius: var(--radius-sm); background: var(--brand-soft); color: var(--ink); }
+.earliest.good { background: var(--good-soft); color: var(--good); }
+.earliest.warn { background: var(--warn-soft); color: var(--warn); }
+.earliest:empty { display: none; }
 
 /* chart */
 .chart-wrap { margin-top: 16px; }
