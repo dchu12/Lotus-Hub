@@ -108,10 +108,14 @@
       display: inline-flex; align-items: center; gap: 6px;
       padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
       background: var(--s-not-bg); color: var(--s-not);
+      border: 2px solid transparent; cursor: pointer; font-family: inherit;
     }
+    .status-chips .chip:hover { filter: brightness(0.97); }
+    .status-chips .chip.chip-active { border-color: currentColor; }
     .status-chips .chip b { font-size: 15px; }
     .status-chips .chip.prog { background: var(--s-prog-bg); color: var(--s-prog); }
     .status-chips .chip.done { background: var(--s-done-bg); color: var(--s-done); }
+    .gift-filter.active { background: var(--accent); color: #4a3200; border-color: var(--accent); }
     .mini-stats {
       display: flex; flex-wrap: wrap; gap: 6px 16px;
       margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);
@@ -239,10 +243,21 @@
     .fc-field.f-gift label { color: var(--accent-ink); }
     textarea.gift { border-left: 3px solid var(--accent); background: #fffdf6; }
     .gift-badge {
-      display: inline-block; margin-top: 6px;
+      display: inline-block; margin-top: 6px; margin-right: 6px;
       background: var(--accent-soft); color: var(--accent-ink);
       border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700;
     }
+    .sent-stamp {
+      display: inline-block; margin-top: 6px;
+      background: var(--s-done-bg); color: var(--s-done);
+      border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700;
+    }
+    .copy-addr {
+      border: 1px solid var(--line-strong); background: var(--card); color: var(--brand);
+      font: inherit; font-size: 11px; font-weight: 600; cursor: pointer;
+      border-radius: 999px; padding: 1px 9px; margin-left: 6px; vertical-align: middle;
+    }
+    .copy-addr:hover { background: var(--brand-soft); }
 
     /* checkbox toggles (photos printed / mailed) */
     .chk {
@@ -328,6 +343,12 @@
       z-index: 50;
     }
     .toast.show { opacity: 1; }
+    .toast-undo {
+      pointer-events: auto; cursor: pointer;
+      margin-left: 10px; border: 0; border-radius: 999px;
+      background: var(--accent); color: #4a3200; font: inherit; font-weight: 700;
+      font-size: 12.5px; padding: 3px 12px;
+    }
 
     /* sync status bar */
     .syncbar {
@@ -414,10 +435,10 @@
         <div class="seg-done" id="p-bar-done" style="width:0%"></div>
         <div class="seg-prog" id="p-bar-prog" style="width:0%"></div>
       </div>
-      <div class="status-chips">
-        <span class="chip"><b id="s-not">0</b> Not started</span>
-        <span class="chip prog"><b id="s-prog">0</b> In progress</span>
-        <span class="chip done"><b id="s-done">0</b> Done</span>
+      <div class="status-chips" id="status-chips">
+        <button type="button" class="chip" data-cf="not"><b id="s-not">0</b> Not started</button>
+        <button type="button" class="chip prog" data-cf="in-progress"><b id="s-prog">0</b> In progress</button>
+        <button type="button" class="chip done" data-cf="done"><b id="s-done">0</b> Done</button>
       </div>
       <div class="mini-stats">
         <span>Kelly <b id="s-kelly">0</b></span>
@@ -448,6 +469,7 @@
     <div class="toolbar">
       <div class="seg-filter" id="status-filter">
         <button data-f="all" class="active">All</button>
+        <button data-f="remaining">Still to send</button>
         <button data-f="not">Not started</button>
         <button data-f="in-progress">In&nbsp;progress</button>
         <button data-f="done">Done</button>
@@ -457,6 +479,7 @@
         <button data-r="Kelly">Kelly</button>
         <button data-r="Derek">Derek</button>
       </div>
+      <button type="button" class="btn gift-filter" id="gift-filter">💰 Gifts</button>
     </div>
 
     <div id="rows" class="cards"></div>
@@ -539,7 +562,7 @@
     var idSeed = 1;
     function newId() { return "f" + (idSeed++) + "-" + (families.length + 1); }
     var families = [];
-    var filter = { status: "all", resp: "all", q: "" };
+    var filter = { status: "all", resp: "all", q: "", gift: false };
 
     // sync state
     var mode = "local";          // "cloud" once Firebase is available
@@ -578,7 +601,8 @@
           message: "",       // the thank-you message to write in the card
           notesDerek: "",    // Derek's private notes
           notesKelly: "",    // Kelly's private notes
-          gift: ""           // wedding gift (money) — e.g. "CAD 200"
+          gift: "",          // wedding gift (money) — e.g. "CAD 200"
+          sentDate: ""       // ISO date the card was marked Done
         };
       });
     }
@@ -600,7 +624,8 @@
         // legacy single "notes" field folds into Derek's notes
         notesDerek: f.notesDerek || f.notes || "",
         notesKelly: f.notesKelly || "",
-        gift: f.gift || ""
+        gift: f.gift || "",
+        sentDate: f.sentDate || ""   // ISO date the card was marked Done
       };
     }
 
@@ -743,14 +768,27 @@
       var s = STATUSES.filter(function (x) { return x.v === v; })[0];
       return s ? s.cls : "not";
     }
+    function pad2(n) { return (n < 10 ? "0" : "") + n; }
+    function todayISO() {
+      var d = new Date();
+      return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+    }
+    function fmtDate(iso) {
+      var p = String(iso || "").split("-");
+      if (p.length !== 3) return iso || "";
+      var d = new Date(+p[0], +p[1] - 1, +p[2]);
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
 
     // ---- rendering ---------------------------------------------------------
     var rowsEl = document.getElementById("rows");
     var emptyEl = document.getElementById("empty");
 
     function matches(f) {
-      if (filter.status !== "all" && f.status !== filter.status) return false;
+      if (filter.status === "remaining") { if (f.status === "done") return false; }
+      else if (filter.status !== "all" && f.status !== filter.status) return false;
       if (filter.resp !== "all" && f.responsible !== filter.resp) return false;
+      if (filter.gift && !f.gift) return false;
       if (filter.q) {
         var hay = (f.guests.join(" ") + " " + f.address + " " + f.message + " " + f.notesDerek + " " + f.notesKelly + " " + f.gift + " " + f.num).toLowerCase();
         if (hay.indexOf(filter.q) === -1) return false;
@@ -796,12 +834,15 @@
           '<input type="checkbox" data-field="mailed"' + (f.mailed ? " checked" : "") + " />" +
           "<span>📮 Mailed</span></label>";
       var giftBadge = f.gift ? '<span class="gift-badge">💰 ' + esc(f.gift) + "</span>" : "";
+      var sentStamp = (f.status === "done" && f.sentDate) ? '<span class="sent-stamp">✅ Sent ' + esc(fmtDate(f.sentDate)) + "</span>" : "";
+      var addrLabel = inPerson ? "Mailing address"
+        : 'Mailing address <button type="button" class="copy-addr">📋 Copy</button>';
       var hasDetails = f.gift || f.message || f.notesDerek || f.notesKelly || (!inPerson && f.address);
       return (
         '<article class="fam-card ' + (f.status === "done" ? "done-row" : "") + '" data-id="' + esc(f.id) + '">' +
           '<div class="fc-head">' +
             '<span class="fam-num ' + (isTbd ? "tbd" : "") + '">' + esc(f.num) + "</span>" +
-            '<div class="fc-names"><div class="guests" contenteditable="false">' + guestNames + "</div>" + giftBadge +
+            '<div class="fc-names"><div class="guests" contenteditable="false">' + guestNames + "</div>" + giftBadge + sentStamp +
               '<textarea class="cell" data-field="guests" rows="2" placeholder="Names (one per line)" style="display:none">' + esc(f.guests.join("\n")) + "</textarea></div>" +
             '<button class="row-del" title="Remove family" aria-label="Remove family">✕</button>' +
           "</div>" +
@@ -822,7 +863,7 @@
             "<summary>Address, message &amp; notes" + (hasDetails ? '<span class="fc-summary-flags">· filled in</span>' : "") + "</summary>" +
             '<div class="fc-detail-body">' +
               '<div class="fc-field f-gift"><label>💰 Wedding gift (money received)</label><textarea class="cell gift" data-field="gift" rows="1" placeholder="e.g. CAD 200 — leave blank if none">' + esc(f.gift) + "</textarea></div>" +
-              '<div class="fc-field"><label>Mailing address</label>' + addrCell + "</div>" +
+              '<div class="fc-field"><label>' + addrLabel + "</label>" + addrCell + "</div>" +
               '<div class="fc-field f-msg"><label>Thank-you message</label><textarea class="cell msg" data-field="message" rows="2" placeholder="The note to write in this card">' + esc(f.message) + "</textarea></div>" +
               '<div class="fc-field f-derek"><label>Derek\'s notes</label><textarea class="cell note-derek" data-field="notesDerek" rows="2" placeholder="Private notes">' + esc(f.notesDerek) + "</textarea></div>" +
               '<div class="fc-field f-kelly"><label>Kelly\'s notes</label><textarea class="cell note-kelly" data-field="notesKelly" rows="2" placeholder="Private notes">' + esc(f.notesKelly) + "</textarea></div>" +
@@ -880,9 +921,11 @@
       markDirty(f.id);
       if (field === "status") {
         f.status = e.target.value;
-        e.target.className = "status " + statusCls(f.status);
-        tr.classList.toggle("done-row", f.status === "done");
-        updateStats();
+        // stamp the date it was marked Done (first time only)
+        if (f.status === "done" && !f.sentDate) f.sentDate = todayISO();
+        save();
+        render();   // reflect the ✅ Sent stamp + done styling
+        return;
       } else if (field === "responsible") {
         f.responsible = e.target.value;
         e.target.className = "resp " + (f.responsible === "Kelly" ? "kelly" : f.responsible === "Derek" ? "derek" : "");
@@ -944,26 +987,90 @@
     });
 
     rowsEl.addEventListener("click", function (e) {
-      if (!e.target.classList.contains("row-del")) return;
-      var tr = e.target.closest("[data-id]");
-      var f = find(tr.dataset.id);
-      if (!f) return;
-      if (!confirm("Remove " + (f.guests[0] || "this family") + "'s card from the tracker?")) return;
-      families = families.filter(function (x) { return x.id !== f.id; });
-      markStructural();
-      save();
-      render();
+      // remove a family (with Undo)
+      if (e.target.classList.contains("row-del")) {
+        var tr = e.target.closest("[data-id]");
+        var f = find(tr.dataset.id);
+        if (!f) return;
+        families = families.filter(function (x) { return x.id !== f.id; });
+        markStructural(); save(); render();
+        toastUndo("Removed " + (f.guests[0] || "family") + "'s card", function () {
+          families.push(f);
+          markStructural(); save(); render();
+          toast("Card restored.");
+        });
+        return;
+      }
+      // copy a mailing address
+      var copyBtn = e.target.closest && e.target.closest(".copy-addr");
+      if (copyBtn) {
+        var card = copyBtn.closest("[data-id]");
+        var cf = find(card.dataset.id);
+        var addr = cf && (cf.address || "").trim();
+        if (!addr) { toast("No address to copy yet."); return; }
+        copyText(addr);
+        return;
+      }
     });
+
+    function copyText(text) {
+      function done() { toast("📋 Address copied."); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
+      } else { fallbackCopy(text, done); }
+    }
+    function fallbackCopy(text, done) {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta); done();
+      } catch (e) { toast("Couldn't copy — select the text to copy it manually."); }
+    }
+
+    // Toast with an Undo action (used for delete).
+    var undoTimer = null;
+    function toastUndo(msg, onUndo) {
+      toastEl.innerHTML = esc(msg) + ' <button type="button" class="toast-undo">Undo</button>';
+      toastEl.classList.add("show");
+      clearTimeout(undoTimer);
+      toastEl.querySelector(".toast-undo").addEventListener("click", function () {
+        clearTimeout(undoTimer);
+        toastEl.classList.remove("show");
+        toastEl.textContent = "";
+        onUndo();
+      });
+      undoTimer = setTimeout(function () { toastEl.classList.remove("show"); toastEl.textContent = ""; }, 6000);
+    }
 
     // ---- toolbar -----------------------------------------------------------
     document.getElementById("search").addEventListener("input", function (e) {
       filter.q = e.target.value.trim().toLowerCase();
       render();
     });
+    function applyStatusFilter(val) {
+      filter.status = val;
+      var seg = document.getElementById("status-filter");
+      Array.prototype.forEach.call(seg.querySelectorAll("button"), function (x) {
+        x.classList.toggle("active", x.dataset.f === val);
+      });
+      Array.prototype.forEach.call(document.querySelectorAll("#status-chips .chip"), function (c) {
+        c.classList.toggle("chip-active", c.dataset.cf === val);
+      });
+      render();
+    }
     document.getElementById("status-filter").addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
-      filter.status = b.dataset.f;
-      setActive(this, b);
+      applyStatusFilter(b.dataset.f);
+    });
+    // tap a summary chip to filter to that status (tap again to clear)
+    document.getElementById("status-chips").addEventListener("click", function (e) {
+      var c = e.target.closest(".chip"); if (!c) return;
+      applyStatusFilter(filter.status === c.dataset.cf ? "all" : c.dataset.cf);
+    });
+    document.getElementById("gift-filter").addEventListener("click", function () {
+      filter.gift = !filter.gift;
+      this.classList.toggle("active", filter.gift);
       render();
     });
     document.getElementById("resp-filter").addEventListener("click", function (e) {
@@ -981,16 +1088,16 @@
       families.push({
         id: newId(), num: "TBD", guests: ["New guest"], status: "not",
         responsible: "", delivery: "mail", photosPrinted: false, mailed: false,
-        address: "", message: "", notesDerek: "", notesKelly: "", gift: ""
+        address: "", message: "", notesDerek: "", notesKelly: "", gift: "", sentDate: ""
       });
       markStructural();
       // clear filters so the new row is visible
-      filter = { status: "all", resp: "all", q: "" };
+      filter = { status: "all", resp: "all", q: "", gift: false };
       document.getElementById("search").value = "";
-      setActive(document.getElementById("status-filter"), document.querySelector('#status-filter [data-f="all"]'));
+      document.getElementById("gift-filter").classList.remove("active");
       setActive(document.getElementById("resp-filter"), document.querySelector('#resp-filter [data-r="all"]'));
       save();
-      render();
+      applyStatusFilter("all");   // syncs status seg + chips and re-renders
       window.scrollTo(0, document.body.scrollHeight);
       toast("Family added — double-click the names to edit.");
     });
@@ -1012,13 +1119,13 @@
       return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     }
     document.getElementById("export-csv").addEventListener("click", function () {
-      var head = ["Card #", "Guests", "Status", "Responsible", "Delivery", "Photos Printed", "Mailed", "Wedding Gift", "Mailing Address", "Thank You Message", "Derek's Notes", "Kelly's Notes"];
+      var head = ["Card #", "Guests", "Status", "Sent On", "Responsible", "Delivery", "Photos Printed", "Mailed", "Wedding Gift", "Mailing Address", "Thank You Message", "Derek's Notes", "Kelly's Notes"];
       var lines = [head.map(csvCell).join(",")];
       families.forEach(function (f) {
         var label = STATUSES.filter(function (s) { return s.v === f.status; }).map(function (s) { return s.label; })[0] || f.status;
         var inPerson = f.delivery === "person";
         lines.push([
-          f.num, f.guests.join(" & "), label, f.responsible || "",
+          f.num, f.guests.join(" & "), label, (f.status === "done" ? (f.sentDate || "") : ""), f.responsible || "",
           inPerson ? "In person" : "Mail",
           f.photosPrinted ? "Yes" : "No",
           inPerson ? "N/A (drop-off)" : (f.mailed ? "Yes" : "No"),
