@@ -10,6 +10,7 @@
 </head>
 <body>
   <div class="wrap">
+    <section class="print-only" id="printSummary" aria-hidden="true"></section>
     <header class="hd">
       <div class="hd-brand">
         <span class="hd-logo" aria-hidden="true">📈</span>
@@ -39,6 +40,7 @@
         <button type="button" id="saveFile" class="data-btn primary">💾 Save my plan to a file</button>
         <label class="data-btn">📂 Open a saved file<input type="file" id="loadData" accept="application/json,.json" hidden /></label>
         <button type="button" id="copyLink" class="data-btn ghost">🔗 Copy a link to my plan</button>
+        <button type="button" id="printBtn" class="data-btn ghost">🖨️ Save as PDF</button>
       </div>
       <p class="data-msg" id="dataMsg"></p>
     </section>
@@ -58,7 +60,7 @@
       <div id="fixedList" class="line-list"></div>
       <div class="var-row">
         <span class="var-lbl">Everything else <em>groceries, gas, fun — a rough monthly total</em></span>
-        <div class="money var-money"><span class="money-sym">$</span><input type="number" id="variable" min="0" step="50" inputmode="decimal" /><span class="per">/mo</span></div>
+        <div class="money var-money"><span class="money-sym">$</span><input type="text" inputmode="decimal" class="mnum" id="variable" /><span class="per">/mo</span></div>
       </div>
       <div class="subtotal"><span>Going out</span><b id="expMo">$0<em>/mo</em></b></div>
       <div class="leaves" id="leaves">—</div>
@@ -91,7 +93,7 @@
         <label class="field"><span class="field-lbl">Your age now</span><input type="number" id="currentAge" min="18" max="90" step="1" inputmode="numeric" /></label>
         <label class="field"><span class="field-lbl">Partner's age <em>if any</em></span><input type="number" id="partnerAge" min="18" max="90" step="1" inputmode="numeric" placeholder="—" /></label>
         <label class="field"><span class="field-lbl">Retire at age <em>yours</em></span><input type="number" id="retireAge" min="30" max="90" step="1" inputmode="numeric" /></label>
-        <label class="field"><span class="field-lbl">Yearly spending <em>today's money</em></span><div class="money"><span class="money-sym">$</span><input type="number" id="targetIncome" min="0" step="1000" inputmode="decimal" /></div></label>
+        <label class="field"><span class="field-lbl">Yearly spending <em>today's money</em></span><div class="money"><span class="money-sym">$</span><input type="text" inputmode="decimal" class="mnum" id="targetIncome" /></div></label>
       </div>
 
       <div class="sub-block">
@@ -99,6 +101,13 @@
         <p class="step-help">Money you'll get in retirement that isn't from your savings — CPP, Old Age Security, pensions, Social Security. For each: <b>whose</b> it is, the <b>yearly amount</b> (today's dollars), and the <b>age they start</b> it. Mark a source <b>Partner</b> and it starts at your partner's age — so if they're younger, it kicks in later on its own.</p>
         <div class="ret-head"><span>Source</span><span>Whose</span><span class="dh-num">Amount / yr</span><span class="dh-num">Starts age</span><span></span></div>
         <div id="retList" class="line-list"></div>
+      </div>
+
+      <div class="sub-block">
+        <div class="step-head sub"><h3 class="sub-title">Big one-time costs</h3><button type="button" class="add-btn" id="addOneTime">+ Add</button></div>
+        <p class="step-help">Optional. Large future one-offs — a new car, a child's tuition, a big trip, a home reno. Enter the cost (today's dollars) and your age when it happens.</p>
+        <div class="ot-head"><span>What</span><span class="dh-num">Cost</span><span class="dh-num">At your age</span><span></span></div>
+        <div id="otList" class="line-list"></div>
       </div>
 
       <div class="result">
@@ -150,7 +159,7 @@
       <div class="alloc-block">
         <div class="alloc">
           <span class="alloc-lbl">Extra toward debt <em>on top of your payments, to pay it off faster</em></span>
-          <div class="money var-money"><span class="money-sym">$</span><input type="number" id="debtPaydown" min="0" step="50" inputmode="decimal" /><span class="per">/mo</span></div>
+          <div class="money var-money"><span class="money-sym">$</span><input type="text" inputmode="decimal" class="mnum" id="debtPaydown" /><span class="per">/mo</span></div>
         </div>
         <label class="split-lbl" for="investPct">Of what's left over, invest <b id="investPctLbl">85%</b> <em>the rest stays as cash</em></label>
         <input type="range" id="investPct" min="0" max="100" step="5" value="85" />

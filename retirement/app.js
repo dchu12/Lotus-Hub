@@ -70,6 +70,7 @@
       retIncomes: [
         { id: "r1", name: "Social Security (combined)", amount: 38000, startAge: 67, owner: "both" },
       ],
+      oneTime: [],
     };
   }
 
@@ -79,13 +80,13 @@
   var el = {};
   ["household", "currentAge", "partnerAge", "retireAge", "planThroughAge", "targetIncome", "rate", "inflation", "cashYield",
    "investPct", "investPctLbl", "splitNote", "variable", "debtPaydown", "realNote",
-   "addIncome", "addFixed", "addAcct", "addDebt", "addRet",
-   "incomeList", "fixedList", "acctList", "debtList", "retList", "debtNote",
+   "addIncome", "addFixed", "addAcct", "addDebt", "addRet", "addOneTime",
+   "incomeList", "fixedList", "acctList", "debtList", "retList", "otList", "debtNote",
    "theme-toggle", "hhTitle",
    "status", "statusText", "verdictLine", "verdictSub", "progressFill", "progressPct",
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
    "spendLbl", "lastsAge", "lastsSub", "confidence", "earliest", "chart", "chartX", "whatifList",
-   "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus"].forEach(function (id) {
+   "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus", "printBtn", "printSummary"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
 
@@ -95,7 +96,9 @@
     n = Math.round(n);
     return (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("en-US");
   }
-  function num(v, fb) { var x = parseFloat(v); return isFinite(x) ? x : (fb || 0); }
+  function num(v, fb) { var x = parseFloat(String(v).replace(/[$,\s]/g, "")); return isFinite(x) ? x : (fb || 0); }
+  // Format a money value with thousands separators for display in an input.
+  function commafy(v) { var n = num(v); return isFinite(n) ? Math.round(n).toLocaleString("en-US") : "0"; }
   function monthlyOf(item) { return item.freq === "yr" ? num(item.amount) / 12 : num(item.amount); }
   function escapeHtml(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
@@ -123,6 +126,12 @@
     return state.retIncomes.reduce(function (sum, r) {
       var eff = (r.owner === "partner") ? num(r.startAge) + gap : num(r.startAge);
       return sum + (youAge >= eff ? num(r.amount) : 0);
+    }, 0);
+  }
+  // Big one-time costs (a car, tuition, a trip) that fall on a given age.
+  function oneTimeAt(age) {
+    return state.oneTime.reduce(function (sum, o) {
+      return sum + (Math.round(num(o.atAge)) === age ? num(o.amount) : 0);
     }, 0);
   }
 
@@ -184,14 +193,18 @@
       var pool = freed + Math.max(0, extra);
       invBal = invBal * (1 + rRet) + cf.investMo + pool * cf.pct;
       cashBal = cashBal * (1 + rCash) + cf.cashMo + pool * (1 - cf.pct);
-      if (m % 12 === 0) series.push({ age: currentAge + m / 12, bal: invBal + cashBal });
+      if (m % 12 === 0) {
+        var ot = oneTimeAt(currentAge + m / 12); // pay one-time costs from cash first, then investments
+        if (ot > 0) { var fromCash = Math.min(cashBal, ot); cashBal -= fromCash; invBal = Math.max(0, invBal - (ot - fromCash)); }
+        series.push({ age: currentAge + m / 12, bal: invBal + cashBal });
+      }
     }
 
     var retireBal = invBal + cashBal;
     var bal = retireBal, runOutAge = null;
     for (var age = retireAge; age < endAge; age++) {
       if (bal > 0) {
-        var w = Math.max(0, num(s.targetIncome) - retIncomeAt(age));
+        var w = Math.max(0, num(s.targetIncome) - retIncomeAt(age)) + oneTimeAt(age);
         bal -= w;
         if (bal <= 0) { bal = 0; if (runOutAge === null) runOutAge = age; }
         else bal *= (1 + rDraw);
@@ -207,7 +220,7 @@
   function neededAtRetirement(rDraw) {
     var s = state.settings, retireAge = num(s.retireAge), endAge = num(s.planThroughAge), needed = 0;
     for (var t = 0; t < Math.max(0, endAge - retireAge); t++) {
-      var w = Math.max(0, num(s.targetIncome) - retIncomeAt(retireAge + t));
+      var w = Math.max(0, num(s.targetIncome) - retIncomeAt(retireAge + t)) + oneTimeAt(retireAge + t);
       needed += w / Math.pow(1 + rDraw, t);
     }
     return needed;
@@ -219,7 +232,7 @@
     function lasts(spend) {
       var bal = retireBal;
       for (var age = retireAge; age < endAge; age++) {
-        bal -= Math.max(0, spend - retIncomeAt(age));
+        bal -= Math.max(0, spend - retIncomeAt(age)) + oneTimeAt(age);
         if (bal < 0) return false;
         bal *= (1 + rDraw);
       }
@@ -286,6 +299,7 @@
       el.lastsAge.textContent = "—"; el.lastsSub.textContent = ""; el.confidence.textContent = ""; el.confidence.className = "confidence";
       el.earliest.textContent = ""; el.earliest.className = "earliest";
       el.chart.innerHTML = ""; el.chartX.innerHTML = "";
+      el.printSummary.innerHTML = '<p class="ps-fine">Enter your ages and plan to see a summary.</p>';
       renderWhatif(); renderAdvancedNote(cf);
       return;
     }
@@ -359,6 +373,24 @@
     drawChart(exp, poor, good, s);
     renderWhatif();
     renderAdvancedNote(cf);
+
+    // printable one-page summary (shown only when printing / saving as PDF)
+    function psItem(label, val) { return '<div class="ps-item"><span>' + label + '</span><b>' + escapeHtml(String(val)) + '</b></div>'; }
+    el.printSummary.innerHTML =
+        '<div class="ps-head"><h1>' + escapeHtml(s.household || "Retirement") + '</h1><p>Retirement summary — all figures in today’s dollars</p></div>'
+      + '<p class="ps-verdict">' + escapeHtml(el.verdictLine.textContent) + '</p>'
+      + '<div class="ps-grid">'
+      + psItem("Money lasts to", el.lastsAge.textContent)
+      + psItem("Retire at age", s.retireAge + " (in " + retireYear + ")")
+      + psItem("Yearly spending", fmtMoney(s.targetIncome))
+      + psItem("On track", Math.round(ratio * 100) + "% of your goal")
+      + psItem("Net worth today", fmtMoney(netWorth))
+      + psItem("Retirement savings", fmtMoney(portfolioNow))
+      + psItem("Saving per month", fmtMoney(cf.saveMo))
+      + psItem("Could spend up to", fmtMoney(msMax) + "/yr")
+      + '</div>'
+      + '<p class="ps-note">' + escapeHtml(el.earliest.textContent) + '</p>'
+      + '<p class="ps-fine">Estimates only — not financial advice. Revisit as your plan changes.</p>';
   }
 
   function setStatus(ok, text) { el.status.className = "status" + (ok ? "" : " warn"); el.statusText.textContent = text; }
@@ -467,7 +499,7 @@
       row.className = "line-row";
       row.innerHTML =
         '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(item.name) + '" placeholder="Name" autocomplete="off" /></span>'
-      + '<span class="cell-amt"><input type="number" inputmode="decimal" step="50" data-i="' + idx + '" data-f="amount" value="' + item.amount + '" /></span>'
+      + '<span class="cell-amt"><input type="text" inputmode="decimal" class="mnum" data-i="' + idx + '" data-f="amount" value="' + commafy(item.amount) + '" /></span>'
       + '<span class="cell-freq"><select data-i="' + idx + '" data-f="freq"><option value="mo"' + (item.freq === "mo" ? " selected" : "") + '>/mo</option><option value="yr"' + (item.freq === "yr" ? " selected" : "") + '>/yr</option></select></span>'
       + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove">×</button></span>';
       container.appendChild(row);
@@ -488,12 +520,29 @@
       row.innerHTML =
         '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(r.name) + '" placeholder="e.g. CPP" autocomplete="off" /></span>'
       + '<span class="cell-who"><select data-i="' + idx + '" data-f="owner">' + whoOpts + '</select></span>'
-      + '<span class="cell-amt"><input type="number" inputmode="decimal" step="500" data-i="' + idx + '" data-f="amount" value="' + r.amount + '" placeholder="e.g. 18000" /></span>'
+      + '<span class="cell-amt"><input type="text" inputmode="decimal" class="mnum" data-i="' + idx + '" data-f="amount" value="' + commafy(r.amount) + '" placeholder="e.g. 18,000" /></span>'
       + '<span class="cell-age"><input type="number" inputmode="numeric" step="1" data-i="' + idx + '" data-f="startAge" value="' + r.startAge + '" placeholder="e.g. 67" /></span>'
       + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove">×</button></span>';
       c.appendChild(row);
     });
     wireRows(c, state.retIncomes, ["amount", "startAge"], renderRet);
+  }
+
+  function renderOneTime() {
+    var c = el.otList;
+    if (!state.oneTime.length) { c.innerHTML = '<div class="acct-empty">None planned? Leave this empty.</div>'; return; }
+    c.innerHTML = "";
+    state.oneTime.forEach(function (o, idx) {
+      var row = document.createElement("div");
+      row.className = "ot-row";
+      row.innerHTML =
+        '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(o.name) + '" placeholder="e.g. New car" autocomplete="off" /></span>'
+      + '<span class="cell-amt"><input type="text" inputmode="decimal" class="mnum" data-i="' + idx + '" data-f="amount" value="' + commafy(o.amount) + '" placeholder="e.g. 35,000" /></span>'
+      + '<span class="cell-age"><input type="number" inputmode="numeric" step="1" data-i="' + idx + '" data-f="atAge" value="' + o.atAge + '" placeholder="e.g. 55" /></span>'
+      + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove">×</button></span>';
+      c.appendChild(row);
+    });
+    wireRows(c, state.oneTime, ["amount", "atAge"], renderOneTime);
   }
 
   function renderAccounts() {
@@ -509,7 +558,7 @@
         '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(a.name) + '" placeholder="Account" autocomplete="off" /></span>'
       + '<span class="cell-owner"><select data-i="' + idx + '" data-f="owner">' + ownerOpts + '</select></span>'
       + '<span class="cell-type"><select data-i="' + idx + '" data-f="type">' + typeOpts + '</select></span>'
-      + '<span class="cell-bal"><input type="number" inputmode="decimal" step="100" data-i="' + idx + '" data-f="balance" value="' + a.balance + '" /></span>'
+      + '<span class="cell-bal"><input type="text" inputmode="decimal" class="mnum" data-i="' + idx + '" data-f="balance" value="' + commafy(a.balance) + '" /></span>'
       + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove">×</button></span>';
       c.appendChild(row);
     });
@@ -525,9 +574,9 @@
       row.className = "debt-row";
       row.innerHTML =
         '<span class="cell-name"><input type="text" data-i="' + idx + '" data-f="name" value="' + escapeHtml(d.name) + '" placeholder="Debt" autocomplete="off" /></span>'
-      + '<span class="cell-bal"><input type="number" inputmode="decimal" step="100" data-i="' + idx + '" data-f="balance" value="' + d.balance + '" /></span>'
+      + '<span class="cell-bal"><input type="text" inputmode="decimal" class="mnum" data-i="' + idx + '" data-f="balance" value="' + commafy(d.balance) + '" /></span>'
       + '<span class="cell-apr"><input type="number" inputmode="decimal" step="0.1" data-i="' + idx + '" data-f="apr" value="' + d.apr + '" /></span>'
-      + '<span class="cell-pmt"><input type="number" inputmode="decimal" step="25" data-i="' + idx + '" data-f="payment" value="' + d.payment + '" /></span>'
+      + '<span class="cell-pmt"><input type="text" inputmode="decimal" class="mnum" data-i="' + idx + '" data-f="payment" value="' + commafy(d.payment) + '" /></span>'
       + '<span class="cell-del"><button type="button" class="del-btn" data-del="' + idx + '" aria-label="Remove">×</button></span>';
       c.appendChild(row);
     });
@@ -556,13 +605,13 @@
     el.partnerAge.value = s.partnerAge ? s.partnerAge : "";
     el.retireAge.value = s.retireAge;
     el.planThroughAge.value = s.planThroughAge;
-    el.targetIncome.value = s.targetIncome;
+    el.targetIncome.value = commafy(s.targetIncome);
     el.rate.value = s.rate;
     el.inflation.value = s.inflation;
     el.cashYield.value = s.cashYield;
     el.investPct.value = s.investPct;
-    el.debtPaydown.value = s.debtPaydown;
-    el.variable.value = state.variable;
+    el.debtPaydown.value = commafy(s.debtPaydown);
+    el.variable.value = commafy(state.variable);
   }
   function wire() {
     el.household.addEventListener("input", function () { state.settings.household = el.household.value; save(); renderAll(); });
@@ -572,7 +621,8 @@
     el.variable.addEventListener("input", function () { state.variable = num(el.variable.value); save(); renderAll(); });
     el.addIncome.addEventListener("click", function () { state.incomes.push({ id: "i" + (++idSeq), name: "", amount: 0, freq: "mo" }); save(); renderLineList(el.incomeList, state.incomes); renderAll(); });
     el.addFixed.addEventListener("click", function () { state.fixed.push({ id: "f" + (++idSeq), name: "", amount: 0, freq: "mo" }); save(); renderLineList(el.fixedList, state.fixed); renderAll(); });
-    el.addRet.addEventListener("click", function () { state.retIncomes.push({ id: "r" + (++idSeq), name: "", amount: 0, startAge: state.settings.retireAge }); save(); renderRet(); renderAll(); });
+    el.addRet.addEventListener("click", function () { state.retIncomes.push({ id: "r" + (++idSeq), name: "", amount: 0, startAge: state.settings.retireAge, owner: "you" }); save(); renderRet(); renderAll(); });
+    el.addOneTime.addEventListener("click", function () { state.oneTime.push({ id: "o" + (++idSeq), name: "", amount: 0, atAge: state.settings.retireAge }); save(); renderOneTime(); renderAll(); });
     el.addAcct.addEventListener("click", function () { state.accounts.push({ id: "a" + (++idSeq), name: "", owner: "Joint", type: "investment", balance: 0 }); save(); renderAccounts(); renderAll(); });
     el.addDebt.addEventListener("click", function () { state.debts.push({ id: "d" + (++idSeq), name: "", balance: 0, apr: 6, payment: 0 }); save(); renderDebts(); renderAll(); });
     el.resetBtn.addEventListener("click", function () {
@@ -609,12 +659,13 @@
       reader.readAsText(file);
     });
   }
+  el.printBtn.addEventListener("click", function () { try { window.print(); } catch (e) {} });
   function flash(msg) { el.dataMsg.textContent = msg; }
   function promptLink(link) { try { window.prompt("Copy this link to open your plan elsewhere:", link); } catch (e) { flash("Copy failed."); } }
   function renderAllLists() {
     renderLineList(el.incomeList, state.incomes);
     renderLineList(el.fixedList, state.fixed);
-    renderRet(); renderAccounts(); renderDebts();
+    renderRet(); renderOneTime(); renderAccounts(); renderDebts();
   }
 
   /* ---------- data encode / decode ---------- */
@@ -636,6 +687,7 @@
       accounts: raw.accounts,
       debts: Array.isArray(raw.debts) ? raw.debts : d.debts,
       retIncomes: Array.isArray(raw.retIncomes) ? raw.retIncomes : d.retIncomes,
+      oneTime: Array.isArray(raw.oneTime) ? raw.oneTime : d.oneTime,
     };
   }
 
@@ -692,6 +744,13 @@
   el.themeToggle.addEventListener("click", function () {
     var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
     applyTheme(next); try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  });
+
+  // Re-format any money field with thousands separators when it loses focus
+  // (kept raw while typing so the cursor doesn't jump).
+  document.addEventListener("focusout", function (e) {
+    var t = e.target;
+    if (t && t.classList && t.classList.contains("mnum")) t.value = commafy(t.value);
   });
 
   /* ---------- boot ---------- */
