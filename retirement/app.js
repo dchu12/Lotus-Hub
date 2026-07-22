@@ -94,7 +94,9 @@
    "status", "statusText", "verdictLine", "verdictSub", "progressFill", "progressPct",
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
    "spendLbl", "lastsAge", "lastsSub", "confidence", "earliest", "chart", "chartX", "whatifList",
-   "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus", "printBtn", "printSummary"].forEach(function (id) {
+   "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus", "printBtn", "printSummary",
+   "viewToggle", "journeyView", "detailedView", "jrName", "jrTagline", "jrMoney", "jrAge", "jrPlay",
+   "jrLinks", "jrBoard", "jrToken", "jrToast", "jrVerdict"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
 
@@ -334,6 +336,156 @@
     else { h.push({ m: m, nw: nw }); if (h.length > 240) h.shift(); }
   }
 
+  /* ---------- journey (board game) view ---------- */
+  var boardTiles = [], animStep = 0, animPlaying = false, animTimer = null;
+  function fmtCompact(n) { n = Math.round(num(n)); var a = Math.abs(n); if (a >= 1e6) return "$" + (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M"; if (a >= 1e3) return "$" + Math.round(n / 1e3) + "k"; return "$" + n; }
+  function shortName(name) { name = String(name || "").trim(); return name.length > 14 ? name.slice(0, 13) + "…" : name; }
+  function journeyVisible() { return !el.journeyView.hasAttribute("hidden"); }
+
+  function debtFreeAge(cf) {
+    if (!state.debts.length) return null;
+    var liabs = state.debts.map(function (d) { return { bal: num(d.balance), rate: realMonthly(d.apr), payment: num(d.payment), paidOff: num(d.balance) <= 0 }; });
+    if (liabs.every(function (l) { return l.paidOff; })) return null;
+    for (var m = 1; m <= 12 * 60; m++) {
+      var extra = cf.debtMo;
+      liabs.forEach(function (l) { if (l.paidOff) return; l.bal *= (1 + l.rate); if (l.payment >= l.bal) { extra += l.payment - l.bal; l.bal = 0; l.paidOff = true; } else l.bal -= l.payment; });
+      liabs.filter(function (l) { return !l.paidOff; }).sort(function (a, b) { return b.rate - a.rate; }).forEach(function (l) { if (extra <= 0) return; var ap = Math.min(extra, l.bal); l.bal -= ap; extra -= ap; if (l.bal <= 0) l.paidOff = true; });
+      if (liabs.every(function (l) { return l.paidOff; })) return Math.round(num(state.settings.currentAge) + Math.ceil(m / 12));
+    }
+    return null;
+  }
+
+  function renderBoard(exp, cf) {
+    var s = state.settings;
+    el.jrName.textContent = s.household ? s.household + "'s" : "Your";
+    if (!exp || !(num(s.retireAge) > num(s.currentAge) && num(s.planThroughAge) > num(s.retireAge))) {
+      el.jrBoard.innerHTML = ""; el.jrLinks.innerHTML = ""; boardTiles = [];
+      el.jrVerdict.textContent = "Add your ages and plan in the Detailed view to see your journey.";
+      el.jrTagline.textContent = "";
+      return;
+    }
+    var startAge = Math.round(num(s.currentAge)), endAgePlan = Math.round(num(s.planThroughAge));
+    var fail = !exp.lastsToEnd ? exp.runOutAge : null, finishAge = fail || endAgePlan;
+
+    var balAt = {};
+    (exp.series || []).forEach(function (d) { balAt[Math.round(d.age)] = d.bal; });
+    function moneyAt(age) { if (balAt[age] != null) return balAt[age]; var best = null, bd = 1e9; Object.keys(balAt).forEach(function (k) { var dd = Math.abs(k - age); if (dd < bd) { bd = dd; best = +k; } }); return best != null ? balAt[best] : 0; }
+
+    var miles = {};
+    function setMile(age, ico, label, kind) { age = Math.round(num(age)); if (age < startAge || age > finishAge) return; if (!miles[age] || kind === "finish" || kind === "fail") miles[age] = { ico: ico, label: label, kind: kind }; }
+    setMile(startAge, "🏁", "START", "start");
+    setMile(s.retireAge, "🏖️", "Retire!", "big");
+    var dfa = debtFreeAge(cf); if (dfa) setMile(dfa, "⭐", "Debt-free!", "boost");
+    var gap = partnerGap();
+    state.retIncomes.forEach(function (r) { if (num(r.amount) <= 0) return; var a = (r.owner === "partner") ? num(r.startAge) + gap : num(r.startAge); setMile(a, /oas|old age/i.test(r.name) ? "🏛️" : "💰", shortName(r.name) + " starts", "boost"); });
+    state.windfalls.forEach(function (w) { if (num(w.amount) <= 0) return; setMile(w.atAge, "🎁", shortName(w.name) + " +" + fmtCompact(w.amount), "boost"); });
+    state.oneTime.forEach(function (o) { if (num(o.amount) <= 0) return; setMile(o.atAge, "💸", shortName(o.name) + " −" + fmtCompact(o.amount), "chute"); });
+    setMile(finishAge, fail ? "🛑" : "🎉", fail ? "Ran out!" : "You made it!", fail ? "fail" : "finish");
+
+    var mileAges = Object.keys(miles).map(Number);
+    var span = Math.max(1, finishAge - startAge), step = Math.max(2, Math.round(span / 19));
+    var ages = mileAges.slice();
+    for (var a = startAge; a <= finishAge; a += step) { if (!mileAges.some(function (mm) { return Math.abs(mm - a) <= 1; })) ages.push(a); }
+    ages = ages.sort(function (x, y) { return x - y; }).filter(function (v, i, arr) { return i === 0 || v !== arr[i - 1]; });
+
+    boardTiles = ages.map(function (age, i) {
+      var m = miles[age], money = Math.max(0, moneyAt(age)), cls, ico = "", label = "", kind = "";
+      if (m) { ico = m.ico; label = m.label; kind = m.kind; cls = (m.kind === "start" ? "start" : m.kind === "finish" ? "finish" : m.kind === "fail" ? "fail" : "c" + (i % 5)) + " big"; }
+      else cls = "c" + (i % 5);
+      return { age: age, ico: ico, label: label, money: money, cls: cls, kind: kind };
+    });
+
+    el.jrBoard.innerHTML = boardTiles.map(function (t, i) {
+      return '<div class="jr-tile ' + t.cls + '" id="jrt' + i + '"><span class="jr-tage">' + t.age + '</span>'
+        + (t.ico ? '<span class="jr-tico">' + t.ico + '</span>' : '')
+        + (t.label ? '<span class="jr-tlbl">' + escapeHtml(t.label) + '</span>' : '')
+        + '<span class="jr-tmon">' + fmtCompact(t.money) + '</span></div>';
+    }).join("");
+
+    el.jrTagline.textContent = "From age " + startAge + " to " + finishAge + " — watch your money climb the ladders and dodge the chutes.";
+    el.jrVerdict.textContent = fail
+      ? "⚠️ At " + fmtMoney(s.targetIncome) + "/yr, the money runs out at age " + fail + ". Tweak things in 📊 Detailed and watch the finish line move."
+      : "🎉 Your money lasts all the way to age " + endAgePlan + "! Hit ▶ Take the journey to watch it play out.";
+    animStep = 0;
+    updateHud(0);
+    placeBoard();
+    if (journeyVisible()) drawBoardLinks();
+  }
+
+  function placeBoard() {
+    var n = boardTiles.length; if (!n) return;
+    var COLS = window.innerWidth <= 620 ? 3 : 5;
+    el.jrBoard.style.gridTemplateColumns = "repeat(" + COLS + ",1fr)";
+    var rows = Math.ceil(n / COLS);
+    for (var i = 0; i < n; i++) {
+      var e = document.getElementById("jrt" + i); if (!e) continue;
+      var r = Math.floor(i / COLS), col = i % COLS;
+      e.style.gridRow = rows - r;
+      e.style.gridColumn = (r % 2 === 0) ? (col + 1) : (COLS - col);
+    }
+  }
+
+  function tileCenter(i) { var e = document.getElementById("jrt" + i); if (!e) return null; var b = el.jrBoard.getBoundingClientRect(), r = e.getBoundingClientRect(); return { x: r.left - b.left + r.width / 2, y: r.top - b.top + r.height / 2 }; }
+
+  function drawBoardLinks() {
+    if (!boardTiles.length) { el.jrLinks.innerHTML = ""; return; }
+    var pts = [], i;
+    for (i = 0; i < boardTiles.length; i++) { var c = tileCenter(i); if (!c) return; pts.push(c); }
+    var out = '<path d="M' + pts.map(function (p) { return p.x.toFixed(1) + "," + p.y.toFixed(1); }).join(" L ") + '" fill="none" stroke="#08221e" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12" opacity=".28"/>';
+    function connector(av, bv, color, dash) {
+      var p = pts[av], q = pts[bv]; if (!p || !q) return "";
+      var str = '<line x1="' + p.x + '" y1="' + p.y + '" x2="' + q.x + '" y2="' + q.y + '" stroke="' + color + '" stroke-width="6" ' + (dash ? 'stroke-dasharray="9 7"' : '') + ' stroke-linecap="round"/>';
+      for (var k = 1; k <= 3; k++) { var t = k / 4, mx = p.x + (q.x - p.x) * t, my = p.y + (q.y - p.y) * t, dx = (q.y - p.y), dy = -(q.x - p.x), L = Math.hypot(dx, dy) || 1; dx = dx / L * 8; dy = dy / L * 8; str += '<line x1="' + (mx - dx) + '" y1="' + (my - dy) + '" x2="' + (mx + dx) + '" y2="' + (my + dy) + '" stroke="' + color + '" stroke-width="3.5" stroke-linecap="round"/>'; }
+      return str;
+    }
+    boardTiles.forEach(function (t, idx) {
+      if (t.kind === "boost" && idx + 2 < boardTiles.length) out += connector(idx, idx + 2, "#2ecc71", false);
+      else if (t.kind === "chute" && idx + 1 < boardTiles.length) out += connector(idx, idx + 1, "#ff6b4a", true);
+    });
+    el.jrLinks.innerHTML = out;
+    moveToken(animStep);
+  }
+
+  function moveToken(i) {
+    var e = document.getElementById("jrt" + i); if (!e) return;
+    var b = el.jrBoard.getBoundingClientRect(), r = e.getBoundingClientRect();
+    el.jrToken.style.left = (r.left - b.left + r.width / 2 - 23) + "px";
+    el.jrToken.style.top = (r.top - b.top + r.height / 2 - 24) + "px";
+    for (var k = 0; k < boardTiles.length; k++) { var t = document.getElementById("jrt" + k); if (t) t.classList.toggle("here", k === i); }
+  }
+  function updateHud(i) { var t = boardTiles[i]; if (!t) return; el.jrMoney.textContent = fmtMoney(t.money); el.jrAge.textContent = "age " + t.age; }
+  function jrToast(msg) { el.jrToast.textContent = msg; el.jrToast.hidden = false; clearTimeout(jrToast._t); jrToast._t = setTimeout(function () { el.jrToast.hidden = true; }, 1700); }
+
+  function playJourney() {
+    if (animPlaying || !boardTiles.length) return;
+    animPlaying = true; el.jrPlay.disabled = true; animStep = 0; moveToken(0); updateHud(0);
+    animTimer = setInterval(function () {
+      animStep++;
+      if (animStep >= boardTiles.length) {
+        clearInterval(animTimer); animPlaying = false; el.jrPlay.disabled = false;
+        var last = boardTiles[boardTiles.length - 1];
+        jrToast(last.ico + " " + last.label);
+        if (last.kind === "finish") confetti();
+        return;
+      }
+      moveToken(animStep); updateHud(animStep);
+      var t = boardTiles[animStep];
+      if (t.label) jrToast((t.ico ? t.ico + " " : "") + t.label + (t.kind === "finish" || t.kind === "fail" ? "" : " · " + fmtCompact(t.money)));
+    }, 520);
+  }
+
+  function confetti() {
+    var wrap = el.jrBoard.parentElement, bits = ["🎉", "⭐", "💰", "🎊", "✨"];
+    for (var i = 0; i < 16; i++) {
+      var s = document.createElement("span");
+      s.className = "jr-confetti"; s.textContent = bits[i % bits.length];
+      s.style.left = (8 + (i * 5.5) % 84) + "%";
+      s.style.animationDelay = (i % 6) * 0.12 + "s";
+      wrap.appendChild(s);
+      (function (node) { setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 2600); })(s);
+    }
+  }
+
   /* ---------- render ---------- */
   function renderAll() {
     var s = state.settings;
@@ -376,7 +528,7 @@
       el.earliest.textContent = ""; el.earliest.className = "earliest";
       el.chart.innerHTML = ""; el.chartX.innerHTML = "";
       el.printSummary.innerHTML = '<p class="ps-fine">Enter your ages and plan to see a summary.</p>';
-      renderWhatif(); renderAdvancedNote(cf);
+      renderWhatif(); renderAdvancedNote(cf); renderBoard(null, cf);
       return;
     }
 
@@ -453,6 +605,7 @@
     drawChart(exp, poor, good, s);
     renderWhatif();
     renderAdvancedNote(cf);
+    renderBoard(exp, cf);
 
     // printable one-page summary (shown only when printing / saving as PDF)
     function psItem(label, val) { return '<div class="ps-item"><span>' + label + '</span><b>' + escapeHtml(String(val)) + '</b></div>'; }
@@ -773,6 +926,18 @@
     });
   }
   el.printBtn.addEventListener("click", function () { try { window.print(); } catch (e) {} });
+
+  // view toggle: Detailed <-> Journey
+  function switchView(v) {
+    var journey = v === "journey";
+    el.journeyView.hidden = !journey;
+    el.detailedView.hidden = journey;
+    el.viewToggle.querySelectorAll(".vt-btn").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-view") === v); });
+    if (journey) { placeBoard(); drawBoardLinks(); }
+  }
+  el.viewToggle.querySelectorAll(".vt-btn").forEach(function (b) { b.addEventListener("click", function () { switchView(b.getAttribute("data-view")); }); });
+  el.jrPlay.addEventListener("click", playJourney);
+  window.addEventListener("resize", function () { if (journeyVisible()) { placeBoard(); drawBoardLinks(); } });
   function flash(msg) { el.dataMsg.textContent = msg; }
   function promptLink(link) { try { window.prompt("Copy this link to open your plan elsewhere:", link); } catch (e) { flash("Copy failed."); } }
   function renderAllLists() {
