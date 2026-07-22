@@ -131,6 +131,7 @@
         </div>
         <p class="confidence" id="confidence"></p>
         <p class="earliest" id="earliest"></p>
+        <p class="longevity" id="longevity"></p>
       </div>
 
       <div class="chart-wrap">
@@ -148,6 +149,22 @@
     <section class="card whatif" aria-label="What if">
       <div class="step-head"><span class="step-ico" aria-hidden="true">🔮</span><h2 class="step-title">What if…</h2></div>
       <p class="step-help">Quick scenarios based on your numbers — showing the age your money would last to. Nothing here changes your plan.</p>
+
+      <div class="wi-play" id="wiPlay" hidden>
+        <div class="wi-sliders">
+          <label class="wi-slider">
+            <span class="wi-s-lbl">Retire at <b id="wiRetireVal">65</b></span>
+            <input type="range" id="wiRetire" min="50" max="75" step="1" />
+          </label>
+          <label class="wi-slider">
+            <span class="wi-s-lbl">Spend <b id="wiSpendVal">$80,000</b> / yr</span>
+            <input type="range" id="wiSpend" min="30000" max="160000" step="1000" />
+          </label>
+        </div>
+        <p class="wi-result" id="wiResult"></p>
+        <button type="button" class="wi-reset" id="wiReset" hidden>↺ Back to my plan</button>
+      </div>
+
       <div id="whatifList" class="wi-list"></div>
     </section>
 
