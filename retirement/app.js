@@ -94,9 +94,7 @@
    "status", "statusText", "verdictLine", "verdictSub", "progressFill", "progressPct",
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
    "spendLbl", "lastsAge", "lastsSub", "confidence", "earliest", "chart", "chartX", "whatifList",
-   "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus", "printBtn", "printSummary",
-   "viewToggle", "journeyView", "detailedView", "jrName", "jrTagline", "jrMoney", "jrAge", "jrPlay",
-   "jrToast", "jrVerdict"].forEach(function (id) {
+   "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus", "printBtn", "printSummary"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
 
@@ -336,160 +334,6 @@
     else { h.push({ m: m, nw: nw }); if (h.length > 240) h.shift(); }
   }
 
-  /* ---------- journey (board game) view ---------- */
-  var boardWays = [], animPlaying = false, animRAF = null;
-  function fmtCompact(n) { n = Math.round(num(n)); var a = Math.abs(n); if (a >= 1e6) return "$" + (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M"; if (a >= 1e3) return "$" + Math.round(n / 1e3) + "k"; return "$" + n; }
-  function shortName(name) { name = String(name || "").trim(); return name.length > 14 ? name.slice(0, 13) + "…" : name; }
-  function journeyVisible() { return !el.journeyView.hasAttribute("hidden"); }
-
-  function debtFreeAge(cf) {
-    if (!state.debts.length) return null;
-    var liabs = state.debts.map(function (d) { return { bal: num(d.balance), rate: realMonthly(d.apr), payment: num(d.payment), paidOff: num(d.balance) <= 0 }; });
-    if (liabs.every(function (l) { return l.paidOff; })) return null;
-    for (var m = 1; m <= 12 * 60; m++) {
-      var extra = cf.debtMo;
-      liabs.forEach(function (l) { if (l.paidOff) return; l.bal *= (1 + l.rate); if (l.payment >= l.bal) { extra += l.payment - l.bal; l.bal = 0; l.paidOff = true; } else l.bal -= l.payment; });
-      liabs.filter(function (l) { return !l.paidOff; }).sort(function (a, b) { return b.rate - a.rate; }).forEach(function (l) { if (extra <= 0) return; var ap = Math.min(extra, l.bal); l.bal -= ap; extra -= ap; if (l.bal <= 0) l.paidOff = true; });
-      if (liabs.every(function (l) { return l.paidOff; })) return Math.round(num(state.settings.currentAge) + Math.ceil(m / 12));
-    }
-    return null;
-  }
-
-  // small illustrated landmark for a milestone, drawn above the signpost
-  function stampFor(kind) {
-    var inner = "";
-    if (kind === "retire") inner = '<line x1="4" y1="10" x2="0" y2="-10" stroke="#7a5a34" stroke-width="3"/><path d="M0,-12 A20 20 0 0 1 20 2 L0 2 Z" fill="#e0663a"/><path d="M0,-12 A20 20 0 0 0 -20 2 L0 2 Z" fill="#f3c34a"/>';
-    else if (kind === "debtfree") inner = '<rect x="-16" y="-2" width="32" height="18" rx="2" fill="#f2e6c8" stroke="#7a5a34" stroke-width="1.5"/><path d="M-20,-2 L0,-18 L20,-2 Z" fill="#b25a3e" stroke="#6b3a26" stroke-width="1.5"/><rect x="-4" y="6" width="8" height="10" fill="#8a5c38"/>';
-    else if (kind === "income" || kind === "oas") inner = '<ellipse cx="0" cy="10" rx="18" ry="5" fill="#e6b84a"/><g fill="#ffd24a" stroke="#b07d1a" stroke-width="1.5"><ellipse cx="-5" cy="4" rx="10" ry="4"/><ellipse cx="-5" cy="0" rx="10" ry="4"/><ellipse cx="7" cy="6" rx="10" ry="4"/></g>';
-    else if (kind === "windfall") inner = '<rect x="-16" y="0" width="32" height="16" rx="2" fill="#a9704a" stroke="#5a3410" stroke-width="2"/><path d="M-16,2 Q0,-12 16,2 Z" fill="#c48a54" stroke="#5a3410" stroke-width="2"/><rect x="-2" y="-2" width="4" height="10" fill="#ffd24a"/>';
-    else if (kind === "cost") inner = '<ellipse cx="0" cy="0" rx="18" ry="10" fill="#9fb0be"/><ellipse cx="9" cy="-3" rx="12" ry="8" fill="#b7c6d2"/><g stroke="#6f97c8" stroke-width="2.5" stroke-linecap="round"><line x1="-8" y1="10" x2="-11" y2="18"/><line x1="2" y1="11" x2="-1" y2="19"/><line x1="10" y1="10" x2="7" y2="18"/></g>';
-    else if (kind === "finish") return '<g transform="translate(0,-74) scale(.95)"><path d="M-40,10 A40 40 0 0 1 40 10 Z" fill="#ffcf6b" opacity=".9"/><g transform="translate(0,8)"><rect x="-18" y="-2" width="36" height="22" rx="2" fill="#f2e6c8" stroke="#7a5a34" stroke-width="2"/><path d="M-22,-2 L0,-20 L22,-2 Z" fill="#b84a6a" stroke="#7a2f14" stroke-width="2"/><rect x="-5" y="6" width="10" height="14" fill="#8a5c38"/></g></g>';
-    else if (kind === "fail") return '<g transform="translate(0,-68) scale(.9)"><circle r="16" fill="#e5675a" opacity=".9"/><path d="M-7,-7 L7,7 M7,-7 L-7,7" stroke="#fff" stroke-width="4" stroke-linecap="round"/></g>';
-    else return "";
-    return '<g transform="translate(0,-70) scale(.78)">' + inner + '</g>';
-  }
-  // a little wooden signpost showing age + money, standing above the point
-  function jrSign(age, money) {
-    return '<g><rect x="-2" y="-26" width="4" height="24" fill="#8a5c38"/>'
-      + '<rect x="-31" y="-54" width="62" height="28" rx="5" fill="#dcc493" stroke="#7a5a34" stroke-width="2.5"/>'
-      + '<text x="0" y="-41" text-anchor="middle" font-family="Georgia,serif" font-size="10.5" font-weight="bold" fill="#5a3a12">Age ' + age + '</text>'
-      + '<text x="0" y="-30" text-anchor="middle" font-family="Georgia,serif" font-size="11" font-weight="bold" fill="#2e6b2f">' + fmtCompact(money) + '</text></g>';
-  }
-  function coupleSVG() {
-    return '<g transform="translate(-9,0)"><path d="M-9,-14 q9,-8 18,0 l2,18 h-22 z" fill="#e07a97" stroke="#8a3a52" stroke-width="1.2"/><circle cx="0" cy="-22" r="8" fill="#ffe0c4" stroke="#7a4a2e" stroke-width="1.2"/><path d="M0,-32 a9 9 0 0 1 9 9 h-18 a9 9 0 0 1 9 -9" fill="#6b4a30"/></g>'
-      + '<g transform="translate(9,0)"><path d="M-9,-14 q9,-8 18,0 l2,18 h-22 z" fill="#5a86c0" stroke="#33507a" stroke-width="1.2"/><circle cx="0" cy="-22" r="8" fill="#ffe0c4" stroke="#7a4a2e" stroke-width="1.2"/><path d="M-10,-24 a10 6 0 0 1 20 0 z" fill="#d9b56a"/><path d="M-12,-23 h24" stroke="#b8934a" stroke-width="2"/></g>';
-  }
-  function narrate(w) {
-    switch (w.kind) {
-      case "retire": return "🏖️ At " + w.age + ", they hung up their boots and set off for the sea.";
-      case "debtfree": return "⭐ At " + w.age + ", the last of the debt melted away.";
-      case "income": return "💰 " + w.label + " began to arrive — a little extra each year.";
-      case "oas": return "🏛️ " + w.label + " started at " + w.age + ".";
-      case "windfall": return "🎁 " + w.label + " — a happy surprise at " + w.age + "!";
-      case "cost": return "💸 " + w.label + " came due at " + w.age + " — a little bump.";
-      case "finish": return "🎉 And they lived happily, right through age " + w.age + ".";
-      case "fail": return "The coins ran short at " + w.age + "… let's tweak the tale.";
-      default: return "Age " + w.age + " · " + fmtCompact(w.money);
-    }
-  }
-
-  function renderBoard(exp, cf) {
-    var s = state.settings;
-    el.jrName.textContent = s.household || "Your";
-    var road = document.getElementById("jrRoad"), dyn = document.getElementById("jrDynamic");
-    if (!road || !dyn) return;
-    if (!exp || !(num(s.retireAge) > num(s.currentAge) && num(s.planThroughAge) > num(s.retireAge))) {
-      dyn.innerHTML = ""; boardWays = [];
-      el.jrTagline.textContent = "Add your ages in 📊 Detailed to begin the story.";
-      el.jrVerdict.textContent = ""; el.jrMoney.textContent = "—"; el.jrAge.textContent = "";
-      return;
-    }
-    var startAge = Math.round(num(s.currentAge)), endAgePlan = Math.round(num(s.planThroughAge));
-    var fail = !exp.lastsToEnd ? exp.runOutAge : null, finishAge = fail || endAgePlan;
-
-    var balAt = {};
-    (exp.series || []).forEach(function (d) { balAt[Math.round(d.age)] = d.bal; });
-    function moneyAt(age) { if (balAt[age] != null) return balAt[age]; var best = null, bd = 1e9; Object.keys(balAt).forEach(function (k) { var dd = Math.abs(k - age); if (dd < bd) { bd = dd; best = +k; } }); return best != null ? balAt[best] : 0; }
-
-    var miles = {};
-    function setMile(age, kind, label) { age = Math.round(num(age)); if (age < startAge || age > finishAge) return; if (!miles[age] || kind === "finish" || kind === "fail") miles[age] = { kind: kind, label: label }; }
-    setMile(startAge, "start", "Start");
-    setMile(s.retireAge, "retire", "Retire");
-    var dfa = debtFreeAge(cf); if (dfa) setMile(dfa, "debtfree", "Debt-free");
-    var gap = partnerGap();
-    state.retIncomes.forEach(function (r) { if (num(r.amount) <= 0) return; var a = (r.owner === "partner") ? num(r.startAge) + gap : num(r.startAge); setMile(a, /oas|old age/i.test(r.name) ? "oas" : "income", shortName(r.name)); });
-    state.windfalls.forEach(function (w) { if (num(w.amount) <= 0) return; setMile(w.atAge, "windfall", shortName(w.name)); });
-    state.oneTime.forEach(function (o) { if (num(o.amount) <= 0) return; setMile(o.atAge, "cost", shortName(o.name)); });
-    setMile(finishAge, fail ? "fail" : "finish", fail ? "Ran out" : "The End");
-
-    var mileAges = Object.keys(miles).map(Number);
-    var span = Math.max(1, finishAge - startAge), step = Math.max(3, Math.round(span / 11));
-    var ages = mileAges.slice();
-    for (var a = startAge; a <= finishAge; a += step) { if (!mileAges.some(function (mm) { return Math.abs(mm - a) <= 2; })) ages.push(a); }
-    ages = ages.sort(function (x, y) { return x - y; }).filter(function (v, i, arr) { return i === 0 || v !== arr[i - 1]; });
-
-    var L = road.getTotalLength();
-    boardWays = ages.map(function (age, i) {
-      var frac = ages.length > 1 ? i / (ages.length - 1) : 0;
-      var pt = road.getPointAtLength(frac * L);
-      var m = miles[age];
-      return { age: age, frac: frac, x: pt.x, y: pt.y, money: Math.max(0, moneyAt(age)), kind: m ? m.kind : "", label: m ? m.label : "" };
-    });
-
-    var svg = boardWays.map(function (w) {
-      return '<g transform="translate(' + w.x.toFixed(1) + ',' + w.y.toFixed(1) + ')">'
-        + (w.kind && w.kind !== "start" ? stampFor(w.kind) : "") + jrSign(w.age, w.money) + '</g>';
-    }).join("");
-    var p0 = boardWays[0];
-    svg += '<g class="jr-couple" id="jrCouple" transform="translate(' + p0.x.toFixed(1) + ',' + (p0.y - 4).toFixed(1) + ')">' + coupleSVG() + '</g>';
-    dyn.innerHTML = svg;
-
-    el.jrMoney.textContent = fmtMoney(p0.money); el.jrAge.textContent = "age " + p0.age;
-    el.jrTagline.textContent = "~ from age " + startAge + " to " + finishAge + " ~";
-    el.jrVerdict.textContent = fail
-      ? "At " + fmtMoney(s.targetIncome) + "/yr the coins run short around age " + fail + ". Adjust in 📊 Detailed and watch the ending change."
-      : "🎉 The savings last all the way to age " + endAgePlan + ". Press ❧ Begin the story to watch it unfold.";
-  }
-
-  function jrToast(msg) { el.jrToast.textContent = msg; el.jrToast.hidden = false; clearTimeout(jrToast._t); jrToast._t = setTimeout(function () { el.jrToast.hidden = true; }, 2000); }
-
-  function playJourney() {
-    if (animPlaying || !boardWays.length) return;
-    var road = document.getElementById("jrRoad"), couple = document.getElementById("jrCouple");
-    if (!road || !couple) return;
-    animPlaying = true; el.jrPlay.disabled = true;
-    var L = road.getTotalLength(), n = boardWays.length, dur = Math.max(4200, n * 640), t0 = null, lastCross = -1;
-    couple.classList.add("jr-here");
-    function frame(ts) {
-      if (t0 === null) t0 = ts;
-      var p = Math.min(1, (ts - t0) / dur), pt = road.getPointAtLength(p * L);
-      couple.setAttribute("transform", "translate(" + pt.x.toFixed(1) + "," + (pt.y - 4).toFixed(1) + ")");
-      var f = p * (n - 1), i0 = Math.floor(f), i1 = Math.min(n - 1, i0 + 1), fr = f - i0;
-      el.jrMoney.textContent = fmtMoney(boardWays[i0].money + (boardWays[i1].money - boardWays[i0].money) * fr);
-      el.jrAge.textContent = "age " + boardWays[Math.min(n - 1, Math.round(f))].age;
-      var crossed = Math.floor(f + 0.0001);
-      if (crossed > lastCross) { for (var k = lastCross + 1; k <= crossed; k++) { if (boardWays[k] && boardWays[k].kind) jrToast(narrate(boardWays[k])); } lastCross = crossed; }
-      if (p < 1) animRAF = requestAnimationFrame(frame);
-      else {
-        animPlaying = false; el.jrPlay.disabled = false; couple.classList.remove("jr-here");
-        var last = boardWays[n - 1]; jrToast(narrate(last)); if (last.kind === "finish") confetti();
-      }
-    }
-    animRAF = requestAnimationFrame(frame);
-  }
-
-  function confetti() {
-    var wrap = document.querySelector(".jr-frame"); if (!wrap) return;
-    var bits = ["🎉", "⭐", "🌸", "🎊", "✨"];
-    for (var i = 0; i < 16; i++) {
-      var s = document.createElement("span");
-      s.className = "jr-confetti"; s.textContent = bits[i % bits.length];
-      s.style.left = (6 + (i * 6) % 86) + "%"; s.style.animationDelay = (i % 6) * 0.12 + "s";
-      wrap.appendChild(s);
-      (function (node) { setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 2800); })(s);
-    }
-  }
-
   /* ---------- render ---------- */
   function renderAll() {
     var s = state.settings;
@@ -532,7 +376,7 @@
       el.earliest.textContent = ""; el.earliest.className = "earliest";
       el.chart.innerHTML = ""; el.chartX.innerHTML = "";
       el.printSummary.innerHTML = '<p class="ps-fine">Enter your ages and plan to see a summary.</p>';
-      renderWhatif(); renderAdvancedNote(cf); renderBoard(null, cf);
+      renderWhatif(); renderAdvancedNote(cf);
       return;
     }
 
@@ -609,7 +453,6 @@
     drawChart(exp, poor, good, s);
     renderWhatif();
     renderAdvancedNote(cf);
-    renderBoard(exp, cf);
 
     // printable one-page summary (shown only when printing / saving as PDF)
     function psItem(label, val) { return '<div class="ps-item"><span>' + label + '</span><b>' + escapeHtml(String(val)) + '</b></div>'; }
@@ -931,15 +774,6 @@
   }
   el.printBtn.addEventListener("click", function () { try { window.print(); } catch (e) {} });
 
-  // view toggle: Detailed <-> Journey
-  function switchView(v) {
-    var journey = v === "journey";
-    el.journeyView.hidden = !journey;
-    el.detailedView.hidden = journey;
-    el.viewToggle.querySelectorAll(".vt-btn").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-view") === v); });
-  }
-  el.viewToggle.querySelectorAll(".vt-btn").forEach(function (b) { b.addEventListener("click", function () { switchView(b.getAttribute("data-view")); }); });
-  el.jrPlay.addEventListener("click", playJourney);
   function flash(msg) { el.dataMsg.textContent = msg; }
   function promptLink(link) { try { window.prompt("Copy this link to open your plan elsewhere:", link); } catch (e) { flash("Copy failed."); } }
   function renderAllLists() {
