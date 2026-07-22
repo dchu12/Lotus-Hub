@@ -22,6 +22,38 @@
       <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle dark mode" title="Toggle theme">🌙</button>
     </header>
 
+    <div class="viewtoggle" id="viewToggle" role="tablist">
+      <button type="button" class="vt-btn active" data-view="detailed">📊 Detailed</button>
+      <button type="button" class="vt-btn" data-view="journey">🎲 Journey</button>
+    </div>
+
+    <!-- ---- Journey (board game) view ---- -->
+    <section id="journeyView" hidden aria-label="Your retirement journey">
+      <div class="jr-top">
+        <div class="jr-title">
+          <h2>🎲 <span id="jrName">Your</span> Road to Retirement</h2>
+          <p id="jrTagline">From today to the finish line — watch your money climb the ladders and dodge the chutes.</p>
+        </div>
+        <div class="jr-hud">
+          <div class="jr-chip"><span class="jr-k">Savings</span><span class="jr-v" id="jrMoney">$0</span><span class="jr-a" id="jrAge">age —</span></div>
+          <button type="button" class="jr-spin" id="jrPlay">▶ Take the journey</button>
+        </div>
+      </div>
+      <div class="jr-boardwrap">
+        <svg class="jr-links" id="jrLinks" aria-hidden="true"></svg>
+        <div class="jr-board" id="jrBoard"></div>
+        <div class="jr-token" id="jrToken"><div class="jr-car"><span class="jr-peg p1"></span><span class="jr-peg p2"></span></div></div>
+        <div class="jr-toast" id="jrToast" hidden></div>
+      </div>
+      <p class="jr-verdict" id="jrVerdict"></p>
+      <div class="jr-legend">
+        <span class="jr-lg ladder"><i></i>Ladder — a boost (debt-free, a windfall, CPP/OAS)</span>
+        <span class="jr-lg chute"><i></i>Chute — a big cost or setback</span>
+      </div>
+      <p class="jr-foot">Every square is your real plan — tap 📊 Detailed to change your numbers.</p>
+    </section>
+
+    <div id="detailedView">
     <!-- ---- The answer, first ---- -->
     <section class="verdict card" aria-label="Where you stand">
       <div class="status" id="status" role="status"><span class="status-dot"></span><span class="status-text" id="statusText">—</span></div>
@@ -181,6 +213,7 @@
         <span>Clears your numbers and loads the sample household.</span>
       </div>
     </details>
+    </div><!-- /#detailedView -->
 
     <footer class="ft">
       <p>All numbers are in today's money. Saved on this device only — estimates, not financial advice.</p>
