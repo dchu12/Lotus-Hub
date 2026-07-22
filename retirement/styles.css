@@ -90,6 +90,17 @@ body {
 .progress-cap span:first-child { font-weight: 800; color: var(--ink); }
 
 /* ---- steps ---- */
+/* collapsible step cards: summary row shows the number, title, and live total */
+.step-sum { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; user-select: none; }
+.step-sum::-webkit-details-marker { display: none; }
+.step-sum .step-title { flex: 1; min-width: 0; }
+.step-sum-v { font-size: 14px; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.chev { flex: 0 0 auto; color: var(--faint); font-size: 13px; transition: transform .15s; }
+details[open] > .step-sum .chev { transform: rotate(180deg); }
+details[open] > .step-sum .step-sum-v { color: var(--ink); }
+.step-body { margin-top: 16px; }
+.step-sum:hover .step-title { color: var(--brand); }
+
 .step-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .step-no { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: var(--brand-ink); font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
 .step-title { margin: 0; font-size: 17px; letter-spacing: -.01em; flex: 1; }
@@ -202,8 +213,8 @@ input:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px va
 .milestones { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
 .milestones[hidden] { display: none; }
 .ms-chip { flex: 0 0 auto; font-size: 12.5px; font-weight: 800; padding: 6px 13px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); border: 1px solid var(--line-strong); white-space: nowrap; }
-.ms-coast { flex: 1 1 220px; min-width: 0; font-size: 13px; font-weight: 600; line-height: 1.45; color: var(--muted); }
-.ms-coast.good { color: var(--good); }
+.ms-coast { margin: 10px 0 0; font-size: 13px; font-weight: 600; line-height: 1.45; padding: 10px 13px; border-radius: var(--radius-sm); background: var(--brand-soft); color: var(--ink); }
+.ms-coast.good { background: var(--good-soft); color: var(--good); }
 .ms-coast:empty { display: none; }
 
 /* emergency-fund cushion note (in the accounts card) */
@@ -274,6 +285,12 @@ input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 
 .wi-reset[hidden] { display: none; }
 @media (max-width: 520px) { .wi-sliders { grid-template-columns: 1fr; } }
 
+.wi-more > summary { cursor: pointer; list-style: none; font-size: 13px; font-weight: 700; color: var(--brand); padding: 4px 0; user-select: none; }
+.wi-more > summary::-webkit-details-marker { display: none; }
+.wi-more > summary::before { content: "▸ "; font-size: 11px; }
+.wi-more[open] > summary::before { content: "▾ "; }
+.wi-more[open] > summary { margin-bottom: 8px; }
+
 .wi-list { display: flex; flex-direction: column; gap: 8px; }
 .wi-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; }
 .wi-label { font-size: 13.5px; font-weight: 600; }
@@ -287,8 +304,9 @@ input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 
 .wi-pill.mute { background: var(--line); color: var(--faint); }
 
 /* save bar (top) + data buttons */
-.savebar { display: flex; flex-direction: column; gap: 10px; }
-.sb-status { margin: 0; font-size: 13px; font-weight: 600; display: flex; align-items: flex-start; gap: 6px; }
+.savebar { display: flex; flex-direction: column; gap: 8px; padding: 13px 16px; }
+.savebar .data-btn { font-size: 12px; padding: 6px 11px; }
+.sb-status { margin: 0; font-size: 12px; font-weight: 600; display: flex; align-items: flex-start; gap: 6px; }
 .sb-status.ok { color: var(--good); }
 .sb-status.warn { color: var(--warn); }
 .sb-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -339,7 +357,7 @@ input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 
   }
   body { background: #fff; }
   .wrap { max-width: 100%; padding: 14px 18px; gap: 0; }
-  .hd, .verdict, .savebar, .step, .whatif, .advanced, .ft, #theme-toggle { display: none !important; }
+  .hd, .verdict, .savebar, .step, .whatif, .insights, .advanced, .ft, #theme-toggle { display: none !important; }
   .print-only { display: block !important; }
 
   .ps-head { border-bottom: 2px solid var(--brand); padding-bottom: 10px; margin-bottom: 16px; }
