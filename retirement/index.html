@@ -27,30 +27,62 @@
       <button type="button" class="vt-btn" data-view="journey">🎲 Journey</button>
     </div>
 
-    <!-- ---- Journey (board game) view ---- -->
+    <!-- ---- Journey (Ghibli storybook) view ---- -->
     <section id="journeyView" hidden aria-label="Your retirement journey">
-      <div class="jr-top">
-        <div class="jr-title">
-          <h2>🎲 <span id="jrName">Your</span> Road to Retirement</h2>
-          <p id="jrTagline">From today to the finish line — watch your money climb the ladders and dodge the chutes.</p>
+      <div class="jr-frame">
+        <div class="jr-titlebar">
+          <h2><span id="jrName">Your</span> Story</h2>
+          <p id="jrTagline">~ a gentle journey to a happy retirement ~</p>
         </div>
-        <div class="jr-hud">
-          <div class="jr-chip"><span class="jr-k">Savings</span><span class="jr-v" id="jrMoney">$0</span><span class="jr-a" id="jrAge">age —</span></div>
-          <button type="button" class="jr-spin" id="jrPlay">▶ Take the journey</button>
-        </div>
-      </div>
-      <div class="jr-boardwrap">
-        <svg class="jr-links" id="jrLinks" aria-hidden="true"></svg>
-        <div class="jr-board" id="jrBoard"></div>
-        <div class="jr-token" id="jrToken"><div class="jr-car"><span class="jr-peg p1"></span><span class="jr-peg p2"></span></div></div>
+        <svg id="jrSvg" viewBox="0 0 660 980" preserveAspectRatio="xMidYMid meet" role="img" aria-label="An illustrated storybook of your retirement journey">
+          <defs>
+            <linearGradient id="jrSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b9fd4"/><stop offset=".45" stop-color="#a9d3e6"/><stop offset=".72" stop-color="#e9e4c9"/><stop offset="1" stop-color="#f5e3b8"/></linearGradient>
+            <radialGradient id="jrSun" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff7de"/><stop offset=".6" stop-color="#ffe9a8"/><stop offset="1" stop-color="#ffd77a" stop-opacity="0"/></radialGradient>
+            <radialGradient id="jrCloud" cx="50%" cy="35%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#f3f0ea"/><stop offset="1" stop-color="#cdd6de"/></radialGradient>
+            <linearGradient id="jrMtn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fb6cf"/><stop offset="1" stop-color="#b9cadb"/></linearGradient>
+            <linearGradient id="jrHFar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcd79a"/><stop offset="1" stop-color="#a7cd86"/></linearGradient>
+            <linearGradient id="jrHMid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#93c66f"/><stop offset="1" stop-color="#7bb85c"/></linearGradient>
+            <linearGradient id="jrHFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#66a84c"/><stop offset="1" stop-color="#4f9440"/></linearGradient>
+            <radialGradient id="jrTree" cx="42%" cy="32%" r="72%"><stop offset="0" stop-color="#9ccc6e"/><stop offset=".5" stop-color="#6faf52"/><stop offset="1" stop-color="#4c8a3f"/></radialGradient>
+            <linearGradient id="jrPath" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e7d3a6"/><stop offset="1" stop-color="#d3ba85"/></linearGradient>
+            <radialGradient id="jrWarm" cx="78%" cy="16%" r="90%"><stop offset="0" stop-color="#fff0c8" stop-opacity=".5"/><stop offset=".5" stop-color="#ffe6b0" stop-opacity=".1"/><stop offset="1" stop-color="#ffe6b0" stop-opacity="0"/></radialGradient>
+            <radialGradient id="jrVig" cx="50%" cy="46%" r="75%"><stop offset=".62" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#20321f" stop-opacity=".38"/></radialGradient>
+            <filter id="jrSoft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.2"/></filter>
+            <filter id="jrSofter" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>
+            <filter id="jrRough"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="6" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="12" xChannelSelector="R" yChannelSelector="G"/></filter>
+            <filter id="jrRoughSoft"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="7"/></filter>
+          </defs>
+          <!-- backdrop -->
+          <rect x="0" y="0" width="660" height="980" fill="url(#jrSky)"/>
+          <g filter="url(#jrSofter)"><circle cx="512" cy="150" r="120" fill="url(#jrSun)"/></g>
+          <g opacity=".5" filter="url(#jrSofter)" fill="#fff3cf"><path d="M512,150 L300,470 L360,500 Z"/><path d="M512,150 L470,560 L540,560 Z"/><path d="M512,150 L700,470 L660,510 Z"/></g>
+          <circle cx="512" cy="150" r="52" fill="#fff8e6"/>
+          <g opacity=".55" filter="url(#jrSoft)"><path d="M-20,360 L120,240 L240,340 L360,230 L500,350 L640,250 L720,360 V420 H-20 Z" fill="url(#jrMtn)"/></g>
+          <g filter="url(#jrSoft)" opacity=".9"><g transform="translate(150,170)"><circle cx="0" cy="0" r="34" fill="url(#jrCloud)"/><circle cx="34" cy="8" r="26" fill="url(#jrCloud)"/><circle cx="-32" cy="10" r="24" fill="url(#jrCloud)"/><circle cx="12" cy="-16" r="24" fill="url(#jrCloud)"/></g></g>
+          <g filter="url(#jrSoft)"><g transform="translate(230,270)"><ellipse cx="0" cy="26" rx="150" ry="26" fill="#dfe6ea" opacity=".7"/><circle cx="-90" cy="8" r="34" fill="url(#jrCloud)"/><circle cx="-40" cy="-14" r="46" fill="url(#jrCloud)"/><circle cx="18" cy="-26" r="52" fill="url(#jrCloud)"/><circle cx="78" cy="-8" r="40" fill="url(#jrCloud)"/><circle cx="120" cy="8" r="30" fill="url(#jrCloud)"/><circle cx="40" cy="10" r="44" fill="url(#jrCloud)"/><circle cx="-20" cy="18" r="40" fill="url(#jrCloud)"/></g></g>
+          <path filter="url(#jrRoughSoft)" d="M-20,470 Q160,410 340,470 T700,455 V620 H-20 Z" fill="url(#jrHFar)"/>
+          <path filter="url(#jrRoughSoft)" d="M-20,590 Q200,520 420,585 T720,565 V760 H-20 Z" fill="url(#jrHMid)"/>
+          <g transform="translate(560,545)" opacity=".92"><g fill="#c14e2e"><rect x="-22" y="-30" width="44" height="7" rx="2"/><rect x="-18" y="-22" width="36" height="5"/><rect x="-15" y="-22" width="6" height="34"/><rect x="9" y="-22" width="6" height="34"/></g></g>
+          <path filter="url(#jrRough)" d="M-20,740 Q210,650 460,735 T740,715 V990 H-20 Z" fill="url(#jrHFront)"/>
+          <g transform="translate(110,690)"><path d="M0,90 C-6,40 -6,10 -2,-10 C0,-22 6,-22 8,-8 C12,20 12,55 8,92 Z" fill="#6b4a30"/><g filter="url(#jrRoughSoft)"><circle cx="0" cy="-60" r="60" fill="url(#jrTree)"/><circle cx="-46" cy="-30" r="40" fill="url(#jrTree)"/><circle cx="46" cy="-32" r="42" fill="url(#jrTree)"/><circle cx="0" cy="-96" r="42" fill="url(#jrTree)"/><circle cx="-30" cy="-78" r="34" fill="url(#jrTree)"/><circle cx="34" cy="-76" r="34" fill="url(#jrTree)"/></g><g fill="#bfe08a" opacity=".7"><circle cx="-18" cy="-96" r="12"/><circle cx="22" cy="-88" r="10"/><circle cx="-40" cy="-52" r="10"/></g></g>
+          <!-- winding path -->
+          <path id="jrRoad" d="M150,930 C150,850 540,860 540,775 C540,700 150,705 150,625 C150,560 470,565 470,505 C470,455 250,455 250,415 C250,375 360,375 360,330 C360,300 320,300 316,276" fill="none" stroke="#b89a63" stroke-width="26" stroke-linecap="round" filter="url(#jrSoft)" opacity=".9"/>
+          <path d="M150,930 C150,850 540,860 540,775 C540,700 150,705 150,625 C150,560 470,565 470,505 C470,455 250,455 250,415 C250,375 360,375 360,330 C360,300 320,300 316,276" fill="none" stroke="url(#jrPath)" stroke-width="19" stroke-linecap="round"/>
+          <!-- dynamic: waypoints + couple (built by app.js) -->
+          <g id="jrDynamic"></g>
+          <!-- overlay -->
+          <rect x="0" y="0" width="660" height="980" fill="url(#jrWarm)" pointer-events="none"/>
+          <g fill="#fff7d8" opacity=".8" pointer-events="none"><circle cx="330" cy="360" r="2.5"/><circle cx="410" cy="300" r="2"/><circle cx="260" cy="420" r="2"/><circle cx="480" cy="380" r="2.5"/><circle cx="200" cy="330" r="1.8"/><circle cx="560" cy="430" r="2"/></g>
+          <rect x="0" y="0" width="660" height="980" fill="url(#jrVig)" pointer-events="none"/>
+        </svg>
         <div class="jr-toast" id="jrToast" hidden></div>
+        <div class="jr-hud">
+          <div class="jr-chip"><span class="jr-k">Their savings</span><span class="jr-v" id="jrMoney">$0</span><span class="jr-a" id="jrAge">age —</span></div>
+          <button type="button" class="jr-spin" id="jrPlay">❧ Begin the story</button>
+        </div>
       </div>
       <p class="jr-verdict" id="jrVerdict"></p>
-      <div class="jr-legend">
-        <span class="jr-lg ladder"><i></i>Ladder — a boost (debt-free, a windfall, CPP/OAS)</span>
-        <span class="jr-lg chute"><i></i>Chute — a big cost or setback</span>
-      </div>
-      <p class="jr-foot">Every square is your real plan — tap 📊 Detailed to change your numbers.</p>
+      <p class="jr-foot">A storybook of your real plan — every stop is your money at that age. Tap 📊 Detailed to change your numbers.</p>
     </section>
 
     <div id="detailedView">
