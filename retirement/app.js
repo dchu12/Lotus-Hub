@@ -95,6 +95,7 @@
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
    "spendLbl", "lastsAge", "lastsSub", "confidence", "earliest", "chart", "chartX", "whatifList",
    "milestones", "countdown", "coastLine", "efund",
+   "wiPlay", "wiRetire", "wiSpend", "wiRetireVal", "wiSpendVal", "wiResult", "wiReset", "longevity",
    "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus", "printBtn", "printSummary"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
@@ -391,10 +392,11 @@
       el.spendLbl.textContent = fmtMoney(s.targetIncome);
       el.lastsAge.textContent = "—"; el.lastsSub.textContent = ""; el.confidence.textContent = ""; el.confidence.className = "confidence";
       el.earliest.textContent = ""; el.earliest.className = "earliest";
+      el.longevity.textContent = ""; el.longevity.className = "longevity";
       el.milestones.hidden = true;
       el.chart.innerHTML = ""; el.chartX.innerHTML = "";
       el.printSummary.innerHTML = '<p class="ps-fine">Enter your ages and plan to see a summary.</p>';
-      renderWhatif(); renderAdvancedNote(cf);
+      renderWhatif(); syncWhatifPlay(); renderAdvancedNote(cf);
       return;
     }
 
@@ -452,6 +454,7 @@
 
     // countdown to retirement + "coast" point (when you could stop adding to savings)
     renderMilestones(cf, exp);
+    renderLongevity(cf);
 
     // verdict
     if (exp.lastsToEnd) {
@@ -473,6 +476,7 @@
 
     drawChart(exp, poor, good, s);
     renderWhatif();
+    syncWhatifPlay();
     renderAdvancedNote(cf);
 
     // printable one-page summary (shown only when printing / saving as PDF)
@@ -548,6 +552,31 @@
     el.milestones.hidden = false;
   }
 
+  // Long-life check: same plan, but living to 100. Uses the usual
+  // override-and-restore pattern so nothing is saved.
+  function renderLongevity(cf) {
+    var s = state.settings;
+    var planEnd = Math.round(num(s.planThroughAge));
+    if (planEnd >= 100) {
+      el.longevity.className = "longevity";
+      el.longevity.textContent = "🧭 Long-life check: your plan already runs through age " + planEnd + ".";
+      return;
+    }
+    var saved = s.planThroughAge;
+    s.planThroughAge = 100;
+    var sim = simulate(cf, s.rate);
+    var okSpend = sim.lastsToEnd ? 0 : maxSpend(sim.retireBal, sim.rDraw);
+    s.planThroughAge = saved;
+    if (sim.lastsToEnd) {
+      el.longevity.className = "longevity good";
+      el.longevity.textContent = "🧭 Long-life check: even living to 100, you're still covered — about " + fmtMoney(sim.leftover) + " to spare.";
+    } else {
+      el.longevity.className = "longevity";
+      el.longevity.textContent = "🧭 Long-life check: living to 100, the money would run out around age " + sim.runOutAge
+        + " (your plan through " + planEnd + " still holds). Spending about " + fmtMoney(okSpend) + "/yr would last all the way to 100.";
+    }
+  }
+
   // Emergency fund: how many months of expenses your cash covers (aim for 3–6).
   function renderEmergencyFund(cf) {
     var cash = 0;
@@ -616,6 +645,47 @@
       return '<div class="wi-row"><span class="wi-label">' + escapeHtml(sc.label) + (detail ? ' <em>(' + detail + ')</em>' : '')
         + '</span><span class="wi-out"><span class="wi-income">' + out + '</span><span class="wi-pill ' + cls + '">' + pill + '</span></span></div>';
     }).join("");
+  }
+
+  /* ---------- live playground sliders (what-if, never saved) ----------
+     Values live only in the sliders; the saved plan is untouched. The sliders
+     snap back to the real plan whenever the plan itself changes. */
+  function syncWhatifPlay() {
+    var s = state.settings;
+    var nowAge = Math.round(num(s.currentAge)), retire = Math.round(num(s.retireAge));
+    if (!(s.retireAge > s.currentAge && s.planThroughAge > s.retireAge)) { el.wiPlay.hidden = true; return; }
+    el.wiPlay.hidden = false;
+    var rMin = nowAge + 1;
+    var rMax = Math.max(retire + 5, Math.min(Math.round(num(s.planThroughAge)) - 5, 80));
+    if (rMax <= rMin) rMax = rMin + 1;
+    el.wiRetire.min = rMin; el.wiRetire.max = rMax; el.wiRetire.value = retire;
+    var spend = Math.round(num(s.targetIncome));
+    el.wiSpend.min = Math.min(30000, spend);
+    el.wiSpend.max = Math.max(160000, Math.ceil((spend * 2) / 5000) * 5000);
+    el.wiSpend.value = spend;
+    updateWhatifPlay();
+  }
+  function updateWhatifPlay() {
+    var s = state.settings;
+    var wr = Math.round(num(el.wiRetire.value)), ws = Math.round(num(el.wiSpend.value));
+    el.wiRetireVal.textContent = wr;
+    el.wiSpendVal.textContent = fmtMoney(ws);
+    var diverged = wr !== Math.round(num(s.retireAge)) || ws !== Math.round(num(s.targetIncome));
+    el.wiReset.hidden = !diverged;
+
+    var savedR = s.retireAge, savedT = s.targetIncome;
+    s.retireAge = wr; s.targetIncome = ws;
+    var sim = simulate(cashflow(), s.rate);
+    var endAge = Math.round(num(s.planThroughAge));
+    s.retireAge = savedR; s.targetIncome = savedT; // restore — never saved
+
+    if (sim.lastsToEnd) {
+      el.wiResult.className = "wi-result good";
+      el.wiResult.textContent = "Retire at " + wr + ", spend " + fmtMoney(ws) + "/yr → lasts to " + endAge + "+ with about " + fmtMoney(sim.leftover) + " left ✓" + (diverged ? "" : " (your current plan)");
+    } else {
+      el.wiResult.className = "wi-result warn";
+      el.wiResult.textContent = "Retire at " + wr + ", spend " + fmtMoney(ws) + "/yr → runs out around age " + sim.runOutAge + " ⚠" + (diverged ? "" : " (your current plan)");
+    }
   }
 
   /* ---------- chart: whole-life balance with a good/poor band ---------- */
@@ -854,6 +924,11 @@
     });
   }
   el.printBtn.addEventListener("click", function () { try { window.print(); } catch (e) {} });
+
+  // playground sliders (never saved)
+  el.wiRetire.addEventListener("input", updateWhatifPlay);
+  el.wiSpend.addEventListener("input", updateWhatifPlay);
+  el.wiReset.addEventListener("click", syncWhatifPlay);
 
   function flash(msg) { el.dataMsg.textContent = msg; }
   function promptLink(link) { try { window.prompt("Copy this link to open your plan elsewhere:", link); } catch (e) { flash("Copy failed."); } }

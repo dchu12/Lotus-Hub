@@ -194,6 +194,9 @@ input:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px va
 .earliest.good { background: var(--good-soft); color: var(--good); }
 .earliest.warn { background: var(--warn-soft); color: var(--warn); }
 .earliest:empty { display: none; }
+.longevity { margin: 10px 0 0; font-size: 13px; font-weight: 600; padding: 10px 13px; border-radius: var(--radius-sm); background: var(--brand-soft); color: var(--ink); }
+.longevity.good { background: var(--good-soft); color: var(--good); }
+.longevity:empty { display: none; }
 
 /* countdown + coast milestones (in the verdict card) */
 .milestones { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
@@ -255,6 +258,22 @@ input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 
 
 /* what if */
 .step-ico { flex: 0 0 auto; font-size: 20px; line-height: 1; }
+/* live playground sliders */
+.wi-play { margin: 2px 0 16px; padding: 14px 15px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; }
+.wi-play[hidden] { display: none; }
+.wi-sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
+.wi-slider { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.wi-s-lbl { font-size: 13px; font-weight: 600; color: var(--muted); }
+.wi-s-lbl b { color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+.wi-slider input[type=range] { width: 100%; margin: 0; accent-color: var(--brand); cursor: pointer; }
+.wi-result { margin: 12px 0 0; font-size: 13.5px; font-weight: 700; line-height: 1.45; }
+.wi-result.good { color: var(--good); }
+.wi-result.warn { color: var(--warn); }
+.wi-reset { margin-top: 8px; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--brand); background: var(--brand-soft); border: 1px solid transparent; border-radius: 999px; padding: 5px 14px; cursor: pointer; }
+.wi-reset:hover { background: var(--brand); color: var(--brand-ink); }
+.wi-reset[hidden] { display: none; }
+@media (max-width: 520px) { .wi-sliders { grid-template-columns: 1fr; } }
+
 .wi-list { display: flex; flex-direction: column; gap: 8px; }
 .wi-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; }
 .wi-label { font-size: 13.5px; font-weight: 600; }
