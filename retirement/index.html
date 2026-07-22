@@ -31,6 +31,10 @@
         <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
         <div class="progress-cap"><span id="progressPct">0%</span><span>of the way to funding your retirement</span></div>
       </div>
+      <div class="milestones" id="milestones" hidden>
+        <span class="ms-chip" id="countdown"></span>
+        <span class="ms-coast" id="coastLine"></span>
+      </div>
     </section>
 
     <!-- ---- Saving your plan ---- -->
@@ -84,6 +88,7 @@
         <div class="tt"><span class="tt-lbl">Net worth</span><span class="tt-val" id="netWorth">$0</span><span class="tt-hint">everything you own minus what you owe</span></div>
         <div class="tt"><span class="tt-lbl">Retirement savings</span><span class="tt-val" id="portfolioNow">$0</span><span class="tt-hint">investments &amp; cash that will fund retirement</span></div>
       </div>
+      <p class="efund" id="efund" hidden></p>
       <div class="nw-history" id="nwHistory"></div>
     </section>
 
