@@ -94,6 +94,7 @@
    "status", "statusText", "verdictLine", "verdictSub", "progressFill", "progressPct",
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
    "spendLbl", "lastsAge", "lastsSub", "confidence", "earliest", "chart", "chartX", "whatifList",
+   "milestones", "countdown", "coastLine", "efund",
    "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus", "printBtn", "printSummary"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
@@ -187,7 +188,8 @@
      nominalRate lets scenarios/market-range vary the investment return.
      Returns a per-age balance series covering the whole plan, plus the
      retirement balance and the age (if any) the money runs out. */
-  function simulate(cf, nominalRate) {
+  function simulate(cf, nominalRate, stopSaveAge) {
+    if (stopSaveAge == null) stopSaveAge = Infinity; // age at which new saving stops (coast); Infinity = save the whole way
     var s = state.settings;
     var currentAge = num(s.currentAge), retireAge = num(s.retireAge), endAge = num(s.planThroughAge);
     var accumYears = Math.max(0, Math.round(retireAge - currentAge));
@@ -206,9 +208,10 @@
     var invBal = invStart, cashBal = cashStart;
     var series = [{ age: currentAge, bal: invStart + cashStart }];
     for (var m = 1; m <= months; m++) {
+      var contribute = (currentAge + m / 12) < stopSaveAge; // once coasting, debts still amortize but no new money is added
       var freed = 0;
       liabs.forEach(function (l) { if (l.paidOff) freed += l.payment; });
-      var extra = cf.debtMo;
+      var extra = contribute ? cf.debtMo : 0;
       liabs.forEach(function (l) {
         if (l.paidOff) return;
         l.bal *= (1 + l.rate);
@@ -217,9 +220,9 @@
       });
       liabs.filter(function (l) { return !l.paidOff; }).sort(function (a, b) { return b.rate - a.rate; })
            .forEach(function (l) { if (extra <= 0) return; var ap = Math.min(extra, l.bal); l.bal -= ap; extra -= ap; if (l.bal <= 0) l.paidOff = true; });
-      var pool = freed + Math.max(0, extra);
-      invBal = invBal * (1 + rRet) + cf.investMo + pool * cf.pct;
-      cashBal = cashBal * (1 + rCash) + cf.cashMo + pool * (1 - cf.pct);
+      var pool = contribute ? (freed + Math.max(0, extra)) : 0;
+      invBal = invBal * (1 + rRet) + (contribute ? cf.investMo : 0) + pool * cf.pct;
+      cashBal = cashBal * (1 + rCash) + (contribute ? cf.cashMo : 0) + pool * (1 - cf.pct);
       if (m % 12 === 0) {
         var yrAge = currentAge + m / 12;
         var wf = windfallAt(yrAge); if (wf > 0) invBal += wf; // one-time money in lands in investments
@@ -296,6 +299,19 @@
     return found;
   }
 
+  // "Coast" age: the earliest age you could stop adding new money to savings and
+  // still have the plan last to the end (your pot keeps growing on its own). Null
+  // if the plan doesn't last even when saving the whole way.
+  function coastStopAge(cf) {
+    var s = state.settings;
+    if (!simulate(cf, s.rate).lastsToEnd) return null;
+    var start = Math.round(num(s.currentAge)), retire = Math.round(num(s.retireAge));
+    for (var a = start; a <= retire; a++) {
+      if (simulate(cf, s.rate, a).lastsToEnd) return a;
+    }
+    return retire;
+  }
+
   // Standard normal via Box–Muller (for the market simulation).
   function gaussian() {
     var u = 0, v = 0;
@@ -359,6 +375,7 @@
     el.netWorth.textContent = fmtMoney(netWorth);
     el.portfolioNow.textContent = fmtMoney(portfolioNow);
     renderHistory();
+    renderEmergencyFund(cf);
 
     var validAges = s.retireAge > s.currentAge && s.planThroughAge > s.retireAge;
     var retireYear = THIS_YEAR + Math.round(s.retireAge - s.currentAge);
@@ -374,6 +391,7 @@
       el.spendLbl.textContent = fmtMoney(s.targetIncome);
       el.lastsAge.textContent = "—"; el.lastsSub.textContent = ""; el.confidence.textContent = ""; el.confidence.className = "confidence";
       el.earliest.textContent = ""; el.earliest.className = "earliest";
+      el.milestones.hidden = true;
       el.chart.innerHTML = ""; el.chartX.innerHTML = "";
       el.printSummary.innerHTML = '<p class="ps-fine">Enter your ages and plan to see a summary.</p>';
       renderWhatif(); renderAdvancedNote(cf);
@@ -431,6 +449,9 @@
       el.earliest.className = "earliest";
       el.earliest.textContent = "🎯 Earliest you could retire at this spending: about age " + earliest + ".";
     }
+
+    // countdown to retirement + "coast" point (when you could stop adding to savings)
+    renderMilestones(cf, exp);
 
     // verdict
     if (exp.lastsToEnd) {
@@ -494,6 +515,66 @@
     } else {
       el.debtNote.innerHTML = "You owe <b>" + fmtMoney(debtStart) + "</b> today.";
     }
+  }
+
+  // Countdown to retirement + the "coast" point — the age you could stop adding
+  // to savings and still coast to the finish.
+  function renderMilestones(cf, exp) {
+    var s = state.settings;
+    var years = Math.max(0, Math.round(num(s.retireAge) - num(s.currentAge)));
+    var retireYear = THIS_YEAR + years;
+    el.countdown.textContent = years <= 0
+      ? "⏳ Retirement age reached"
+      : "⏳ " + years + " year" + (years === 1 ? "" : "s") + " to retirement · around " + retireYear;
+
+    if (!exp.lastsToEnd) {
+      // not on track — the verdict already explains; keep the coast line quiet
+      el.coastLine.textContent = "";
+      el.coastLine.className = "ms-coast";
+    } else {
+      var coast = coastStopAge(cf), nowAge = Math.round(num(s.currentAge));
+      if (coast != null && coast <= nowAge) {
+        el.coastLine.className = "ms-coast good";
+        el.coastLine.textContent = "🏖️ You're already there — you could stop adding to savings today and still coast to the finish.";
+      } else if (coast != null && coast < Math.round(num(s.retireAge))) {
+        el.coastLine.className = "ms-coast good";
+        el.coastLine.textContent = "🏖️ Coast point: you could stop saving at age " + coast + " (in "
+          + (coast - nowAge) + " year" + (coast - nowAge === 1 ? "" : "s") + ") and your savings would still last — everything after that is a cushion.";
+      } else {
+        el.coastLine.className = "ms-coast";
+        el.coastLine.textContent = "🏖️ Plan to keep saving right up to retirement — that's what keeps you on track.";
+      }
+    }
+    el.milestones.hidden = false;
+  }
+
+  // Emergency fund: how many months of expenses your cash covers (aim for 3–6).
+  function renderEmergencyFund(cf) {
+    var cash = 0;
+    state.accounts.forEach(function (a) { if (a.type === "cash") cash += num(a.balance); });
+    var monthly = cf.expenseMo;
+    if (monthly <= 0) { el.efund.hidden = true; return; }
+    var target = monthly * 3;
+    if (cash <= 0) {
+      el.efund.className = "efund warn";
+      el.efund.innerHTML = "🛟 <b>No cash set aside for emergencies yet.</b> A 3–6 month cushion (about " + fmtMoney(target)
+        + ") keeps a surprise from derailing the plan. Mark savings as “Cash / savings” in the list above.";
+    } else {
+      var months = cash / monthly;
+      var m1 = months.toFixed(months < 10 ? 1 : 0);
+      if (months >= 6) {
+        el.efund.className = "efund good";
+        el.efund.innerHTML = "🛟 <b>Emergency fund: " + m1 + " months</b> of expenses in cash — plenty of cushion. 👍";
+      } else if (months >= 3) {
+        el.efund.className = "efund good";
+        el.efund.innerHTML = "🛟 <b>Emergency fund: " + m1 + " months</b> of expenses in cash — a solid cushion.";
+      } else {
+        el.efund.className = "efund warn";
+        el.efund.innerHTML = "🛟 <b>Emergency fund: " + m1 + " months</b> of expenses in cash — most folks aim for 3–6 (about "
+          + fmtMoney(target) + "). Building this up protects the plan.";
+      }
+    }
+    el.efund.hidden = false;
   }
 
   function renderAdvancedNote(cf) {
