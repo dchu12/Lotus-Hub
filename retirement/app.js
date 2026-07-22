@@ -96,6 +96,7 @@
    "spendLbl", "lastsAge", "lastsSub", "confidence", "earliest", "chart", "chartX", "whatifList",
    "milestones", "countdown", "coastLine", "efund",
    "wiPlay", "wiRetire", "wiSpend", "wiRetireVal", "wiSpendVal", "wiResult", "wiReset", "longevity",
+   "sumEarn", "sumSpend", "sumOwn", "sumPlan",
    "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus", "printBtn", "printSummary"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
@@ -378,6 +379,12 @@
     renderHistory();
     renderEmergencyFund(cf);
 
+    // collapsed-step summary totals
+    el.sumEarn.textContent = fmtMoney(cf.incomeMo) + "/mo";
+    el.sumSpend.textContent = fmtMoney(cf.expenseMo) + "/mo";
+    el.sumOwn.textContent = fmtMoney(netWorth);
+    el.sumPlan.textContent = "retire at " + Math.round(num(s.retireAge)) + " · " + fmtMoney(s.targetIncome) + "/yr";
+
     var validAges = s.retireAge > s.currentAge && s.planThroughAge > s.retireAge;
     var retireYear = THIS_YEAR + Math.round(s.retireAge - s.currentAge);
 
@@ -393,6 +400,7 @@
       el.lastsAge.textContent = "—"; el.lastsSub.textContent = ""; el.confidence.textContent = ""; el.confidence.className = "confidence";
       el.earliest.textContent = ""; el.earliest.className = "earliest";
       el.longevity.textContent = ""; el.longevity.className = "longevity";
+      el.coastLine.textContent = ""; el.coastLine.className = "ms-coast";
       el.milestones.hidden = true;
       el.chart.innerHTML = ""; el.chartX.innerHTML = "";
       el.printSummary.innerHTML = '<p class="ps-fine">Enter your ages and plan to see a summary.</p>';

@@ -33,7 +33,6 @@
       </div>
       <div class="milestones" id="milestones" hidden>
         <span class="ms-chip" id="countdown"></span>
-        <span class="ms-coast" id="coastLine"></span>
       </div>
     </section>
 
@@ -50,51 +49,61 @@
     </section>
 
     <!-- ---- Step 1: earn ---- -->
-    <section class="card step" aria-label="What you earn">
-      <div class="step-head"><span class="step-no">1</span><h2 class="step-title">What you earn</h2><button type="button" class="add-btn" id="addIncome">+ Add</button></div>
-      <p class="step-help">Every source of money coming in now. Use the toggle for things that arrive once a year, like a bonus.</p>
-      <div id="incomeList" class="line-list"></div>
-      <div class="subtotal"><span>Coming in</span><b id="incMo">$0<em>/mo</em></b></div>
-    </section>
+    <details class="card step" aria-label="What you earn">
+      <summary class="step-sum"><span class="step-no">1</span><h2 class="step-title">What you earn</h2><b class="step-sum-v" id="sumEarn">—</b><span class="chev" aria-hidden="true">▾</span></summary>
+      <div class="step-body">
+        <div class="step-head sub"><h3 class="sub-title">Money coming in</h3><button type="button" class="add-btn" id="addIncome">+ Add</button></div>
+        <p class="step-help">Every source of money coming in now. Use the toggle for things that arrive once a year, like a bonus.</p>
+        <div id="incomeList" class="line-list"></div>
+        <div class="subtotal"><span>Coming in</span><b id="incMo">$0<em>/mo</em></b></div>
+      </div>
+    </details>
 
     <!-- ---- Step 2: spend ---- -->
-    <section class="card step" aria-label="What you spend">
-      <div class="step-head"><span class="step-no">2</span><h2 class="step-title">What you spend</h2><button type="button" class="add-btn" id="addFixed">+ Add</button></div>
-      <p class="step-help">Your regular bills. Loan and mortgage payments are set in step 3 and added here for you.</p>
-      <div id="fixedList" class="line-list"></div>
-      <div class="var-row">
-        <span class="var-lbl">Everything else <em>groceries, gas, fun — a rough monthly total</em></span>
-        <div class="money var-money"><span class="money-sym">$</span><input type="text" inputmode="decimal" class="mnum" id="variable" /><span class="per">/mo</span></div>
+    <details class="card step" aria-label="What you spend">
+      <summary class="step-sum"><span class="step-no">2</span><h2 class="step-title">What you spend</h2><b class="step-sum-v" id="sumSpend">—</b><span class="chev" aria-hidden="true">▾</span></summary>
+      <div class="step-body">
+        <div class="step-head sub"><h3 class="sub-title">Regular bills</h3><button type="button" class="add-btn" id="addFixed">+ Add</button></div>
+        <p class="step-help">Your regular bills. Loan and mortgage payments are set in step 3 and added here for you.</p>
+        <div id="fixedList" class="line-list"></div>
+        <div class="var-row">
+          <span class="var-lbl">Everything else <em>groceries, gas, fun — a rough monthly total</em></span>
+          <div class="money var-money"><span class="money-sym">$</span><input type="text" inputmode="decimal" class="mnum" id="variable" /><span class="per">/mo</span></div>
+        </div>
+        <div class="subtotal"><span>Going out</span><b id="expMo">$0<em>/mo</em></b></div>
+        <div class="leaves" id="leaves">—</div>
       </div>
-      <div class="subtotal"><span>Going out</span><b id="expMo">$0<em>/mo</em></b></div>
-      <div class="leaves" id="leaves">—</div>
-    </section>
+    </details>
 
     <!-- ---- Step 3: own & owe ---- -->
-    <section class="card step" aria-label="What you own and owe">
-      <div class="step-head"><span class="step-no">3</span><h2 class="step-title">What you own &amp; owe</h2><button type="button" class="add-btn" id="addAcct">+ Add</button></div>
-      <p class="step-help">Your savings and investments — the money that will fund retirement — plus your home and any other assets.</p>
-      <div class="acct-head"><span>Account</span><span>Who</span><span>Kind</span><span class="ah-num">Amount</span><span></span></div>
-      <div id="acctList" class="line-list"></div>
+    <details class="card step" aria-label="What you own and owe">
+      <summary class="step-sum"><span class="step-no">3</span><h2 class="step-title">What you own &amp; owe</h2><b class="step-sum-v" id="sumOwn">—</b><span class="chev" aria-hidden="true">▾</span></summary>
+      <div class="step-body">
+        <div class="step-head sub"><h3 class="sub-title">What you own</h3><button type="button" class="add-btn" id="addAcct">+ Add</button></div>
+        <p class="step-help">Your savings and investments — the money that will fund retirement — plus your home and any other assets.</p>
+        <div class="acct-head"><span>Account</span><span>Who</span><span>Kind</span><span class="ah-num">Amount</span><span></span></div>
+        <div id="acctList" class="line-list"></div>
 
-      <div class="sub-block">
-        <div class="step-head sub"><h3 class="sub-title">What you owe</h3><button type="button" class="add-btn" id="addDebt">+ Add</button></div>
-        <div class="debt-head"><span>Debt</span><span class="dh-num">Balance</span><span class="dh-num">Rate</span><span class="dh-num">Payment</span><span></span></div>
-        <div id="debtList" class="line-list"></div>
-        <p class="debt-note" id="debtNote"></p>
-      </div>
+        <div class="sub-block">
+          <div class="step-head sub"><h3 class="sub-title">What you owe</h3><button type="button" class="add-btn" id="addDebt">+ Add</button></div>
+          <div class="debt-head"><span>Debt</span><span class="dh-num">Balance</span><span class="dh-num">Rate</span><span class="dh-num">Payment</span><span></span></div>
+          <div id="debtList" class="line-list"></div>
+          <p class="debt-note" id="debtNote"></p>
+        </div>
 
-      <div class="totals">
-        <div class="tt"><span class="tt-lbl">Net worth</span><span class="tt-val" id="netWorth">$0</span><span class="tt-hint">everything you own minus what you owe</span></div>
-        <div class="tt"><span class="tt-lbl">Retirement savings</span><span class="tt-val" id="portfolioNow">$0</span><span class="tt-hint">investments &amp; cash that will fund retirement</span></div>
+        <div class="totals">
+          <div class="tt"><span class="tt-lbl">Net worth</span><span class="tt-val" id="netWorth">$0</span><span class="tt-hint">everything you own minus what you owe</span></div>
+          <div class="tt"><span class="tt-lbl">Retirement savings</span><span class="tt-val" id="portfolioNow">$0</span><span class="tt-hint">investments &amp; cash that will fund retirement</span></div>
+        </div>
+        <p class="efund" id="efund" hidden></p>
+        <div class="nw-history" id="nwHistory"></div>
       </div>
-      <p class="efund" id="efund" hidden></p>
-      <div class="nw-history" id="nwHistory"></div>
-    </section>
+    </details>
 
     <!-- ---- Step 4: goal ---- -->
-    <section class="card step" aria-label="Your goal">
-      <div class="step-head"><span class="step-no">4</span><h2 class="step-title">Your plan</h2></div>
+    <details class="card step" aria-label="Your goal">
+      <summary class="step-sum"><span class="step-no">4</span><h2 class="step-title">Your plan</h2><b class="step-sum-v" id="sumPlan">—</b><span class="chev" aria-hidden="true">▾</span></summary>
+      <div class="step-body">
       <div class="goal-grid four">
         <label class="field"><span class="field-lbl">Your age now</span><input type="number" id="currentAge" min="18" max="90" step="1" inputmode="numeric" /></label>
         <label class="field"><span class="field-lbl">Partner's age <em>if any</em></span><input type="number" id="partnerAge" min="18" max="90" step="1" inputmode="numeric" placeholder="—" /></label>
@@ -122,33 +131,13 @@
         <div class="ot-head"><span>What</span><span class="dh-num">Amount</span><span class="dh-num">At your age</span><span></span></div>
         <div id="wfList" class="line-list"></div>
       </div>
-
-      <div class="result">
-        <div class="result-stat">
-          <span class="rs-lbl">Spending <b id="spendLbl">$90,000</b> a year, your savings last to about</span>
-          <span class="rs-num" id="lastsAge">—</span>
-          <span class="rs-sub" id="lastsSub"></span>
-        </div>
-        <p class="confidence" id="confidence"></p>
-        <p class="earliest" id="earliest"></p>
-        <p class="longevity" id="longevity"></p>
       </div>
+    </details>
 
-      <div class="chart-wrap">
-        <div class="chart-legend">
-          <span class="lg lg-savings"><i></i>Your savings, over your life</span>
-          <span class="lg lg-band"><i></i>Good–poor market range</span>
-          <span class="lg lg-retire"><i></i>Retire</span>
-        </div>
-        <div id="chart" class="chart"></div>
-        <div class="chart-x" id="chartX"></div>
-      </div>
-    </section>
-
-    <!-- ---- What if (live scenarios) ---- -->
+    <!-- ---- What if (live sliders + collapsed scenarios) ---- -->
     <section class="card whatif" aria-label="What if">
       <div class="step-head"><span class="step-ico" aria-hidden="true">🔮</span><h2 class="step-title">What if…</h2></div>
-      <p class="step-help">Quick scenarios based on your numbers — showing the age your money would last to. Nothing here changes your plan.</p>
+      <p class="step-help">Drag the sliders to try a different retirement — nothing here changes your plan.</p>
 
       <div class="wi-play" id="wiPlay" hidden>
         <div class="wi-sliders">
@@ -165,8 +154,39 @@
         <button type="button" class="wi-reset" id="wiReset" hidden>↺ Back to my plan</button>
       </div>
 
-      <div id="whatifList" class="wi-list"></div>
+      <details class="wi-more">
+        <summary>Quick scenarios</summary>
+        <div id="whatifList" class="wi-list"></div>
+      </details>
     </section>
+
+    <!-- ---- The full picture (collapsed insights) ---- -->
+    <details class="card insights" aria-label="The full picture">
+      <summary class="step-sum"><span class="step-ico" aria-hidden="true">📈</span><h2 class="step-title">The full picture</h2><span class="chev" aria-hidden="true">▾</span></summary>
+      <div class="step-body">
+        <div class="result">
+          <div class="result-stat">
+            <span class="rs-lbl">Spending <b id="spendLbl">$90,000</b> a year, your savings last to about</span>
+            <span class="rs-num" id="lastsAge">—</span>
+            <span class="rs-sub" id="lastsSub"></span>
+          </div>
+          <p class="confidence" id="confidence"></p>
+          <p class="earliest" id="earliest"></p>
+          <p class="ms-coast" id="coastLine"></p>
+          <p class="longevity" id="longevity"></p>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-legend">
+            <span class="lg lg-savings"><i></i>Your savings, over your life</span>
+            <span class="lg lg-band"><i></i>Good–poor market range</span>
+            <span class="lg lg-retire"><i></i>Retire</span>
+          </div>
+          <div id="chart" class="chart"></div>
+          <div class="chart-x" id="chartX"></div>
+        </div>
+      </div>
+    </details>
 
     <!-- ---- Advanced (collapsed) ---- -->
     <details class="advanced card">
