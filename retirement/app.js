@@ -90,7 +90,7 @@
    "investPct", "investPctLbl", "splitNote", "variable", "debtPaydown", "retireTaxRate", "realNote",
    "addIncome", "addFixed", "addAcct", "addDebt", "addRet", "addOneTime", "addWindfall",
    "incomeList", "fixedList", "acctList", "debtList", "retList", "otList", "wfList", "nwHistory", "debtNote",
-   "theme-toggle", "hhTitle",
+   "theme-toggle", "hhTitle", "gearBtn", "settingsPanel",
    "status", "statusText", "verdictLine", "verdictSub", "progressFill", "progressPct",
    "incMo", "expMo", "leaves", "netWorth", "portfolioNow",
    "spendLbl", "lastsAge", "lastsSub", "confidence", "earliest", "chart", "chartX", "whatifList",
@@ -988,6 +988,8 @@
     } else {
       el.saveStatus.className = "sb-status warn";
       el.saveStatus.textContent = "⚠️ This preview can’t save your numbers. Open the website version (lots-hub.web.app/retirement/) — or tap “Save my plan to a file” and keep it safe.";
+      // a storage problem must never hide behind the gear — force the panel open
+      if (el.settingsPanel) { el.settingsPanel.hidden = false; if (el.gearBtn) el.gearBtn.setAttribute("aria-expanded", "true"); }
     }
   }
   function readKey(k) {
@@ -1011,7 +1013,7 @@
   /* ---------- theme ---------- */
   function applyTheme(t) {
     document.documentElement.setAttribute("data-theme", t);
-    el.themeToggle.textContent = t === "dark" ? "☀️" : "🌙";
+    el.themeToggle.textContent = t === "dark" ? "☀️ Light mode" : "🌙 Dark mode";
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", t === "dark" ? "#0e1613" : "#0f766e");
   }
@@ -1024,6 +1026,12 @@
   el.themeToggle.addEventListener("click", function () {
     var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
     applyTheme(next); try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  });
+  // gear: show/hide the settings panel (saving + appearance)
+  el.gearBtn.addEventListener("click", function () {
+    var show = el.settingsPanel.hidden;
+    el.settingsPanel.hidden = !show;
+    el.gearBtn.setAttribute("aria-expanded", show ? "true" : "false");
   });
 
   // Re-format any money field with thousands separators when it loses focus
