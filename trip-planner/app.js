@@ -36,6 +36,22 @@
 
   var COVER_EMOJIS = ["🏖️","🌴","🏝️","⛱️","🌊","☀️","🐚","🍹","✈️","🗺️","⛰️","🏔️","🎿","🏙️","🗽","🎡","🛳️","🏕️","🌋","🦩"];
 
+  // Selectable currencies. CAD is the default. `zero` = no minor units (JPY).
+  // `sym` is the display symbol; `pad` reserves left space for it inside inputs.
+  var CURRENCIES = {
+    CAD: { sym: "$",  code: "CAD", flag: "🇨🇦", name: "Canadian Dollar",   pad: "22px", zero: false },
+    JPY: { sym: "¥",  code: "JPY", flag: "🇯🇵", name: "Japanese Yen",      pad: "22px", zero: true  },
+    MYR: { sym: "RM", code: "MYR", flag: "🇲🇾", name: "Malaysian Ringgit", pad: "36px", zero: false },
+  };
+
+  // A friendly, beach-flavoured starter packing list (added on request).
+  var PACKING_STARTER = [
+    "Passport & travel documents", "Wallet, cash & cards", "Phone & charger",
+    "Swimsuit", "Sunscreen (SPF 50)", "Sunglasses", "Sun hat", "Flip flops / sandals",
+    "Beach towel", "Reusable water bottle", "Toiletries", "Medications",
+    "Travel adapter", "Light clothing", "Light jacket / cover-up", "Camera",
+  ];
+
   // ---- State ---------------------------------------------------------------
   var state = load();
   var saveTimer = null;
@@ -56,11 +72,13 @@
       startDate: "",
       endDate: "",
       coverEmoji: "🏖️",
+      currency: "CAD", // one of CURRENCIES keys — drives all money formatting
       budgetCap: "",
       flights: [],   // {id,label,airline,flightNo,from,to,depart,arrive,confirmation,seat,cost}
       hotels: [],    // {id,name,checkIn,checkOut,address,confirmation,cost,notes}
       plans: [],     // {id,date,time,type,title,location,confirmation,cost,notes}
       budget: [],    // {id,cat,label,planned,actual,paid,src}
+      packing: [],   // {id,text,checked}
       notes: "",
     };
   }
@@ -84,7 +102,7 @@
     raw.trips = raw.trips.map(function (t) {
       var base = blankTrip();
       var merged = Object.assign(base, t);
-      ["flights", "hotels", "plans", "budget"].forEach(function (k) {
+      ["flights", "hotels", "plans", "budget", "packing"].forEach(function (k) {
         if (!Array.isArray(merged[k])) merged[k] = [];
       });
       return merged;
@@ -124,9 +142,26 @@
     });
   }
   function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+  // Active trip's currency config (falls back to CAD for safety).
+  function curCfg() {
+    var t = activeTrip();
+    return CURRENCIES[(t && t.currency) || "CAD"] || CURRENCIES.CAD;
+  }
   function money(v) {
     var n = num(v);
-    return "$" + n.toLocaleString(undefined, { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+    var c = curCfg();
+    var max = c.zero ? 0 : 2;
+    var min = c.zero ? 0 : (n % 1 ? 2 : 0);
+    var sep = c.sym.length > 1 ? " " : ""; // "RM 1,200" but "$1,200"
+    return c.sym + sep + n.toLocaleString(undefined, { minimumFractionDigits: min, maximumFractionDigits: max });
+  }
+  // Push the active currency's symbol/padding into CSS vars so the "$" prefix
+  // baked into money inputs (via ::before) reflects the chosen currency.
+  function applyCurrencyVars() {
+    var c = curCfg();
+    var root = document.documentElement;
+    root.style.setProperty("--cur-symbol", '"' + c.sym + '"');
+    root.style.setProperty("--cur-pad", c.pad);
   }
   // Parse a yyyy-mm-dd string into a LOCAL date (avoids UTC off-by-one).
   function parseDate(s) {
@@ -166,6 +201,7 @@
   //  RENDER
   // =========================================================================
   function renderAll() {
+    applyCurrencyVars();
     renderTripSelect();
     renderHero();
     renderMain();
@@ -247,6 +283,7 @@
     else if (view === "flights") main.appendChild(viewFlights());
     else if (view === "hotels") main.appendChild(viewHotels());
     else if (view === "itinerary") main.appendChild(viewItinerary());
+    else if (view === "packing") main.appendChild(viewPacking());
     else if (view === "budget") main.appendChild(viewBudget());
     else if (view === "details") main.appendChild(viewDetails());
   }
@@ -351,9 +388,13 @@
     grid.appendChild(ovCard("🎟️", t.plans.filter(function (p) { return p.type === "ticket" || p.type === "reservation"; }).length, "Bookings"));
     if (cap) {
       var pct = cap ? Math.min(100, Math.round((totalBudget / cap) * 100)) : 0;
-      var c = ovCard("🎯", pct + "%", "of $" + cap.toLocaleString() + " budget");
+      var c = ovCard("🎯", pct + "%", "of " + money(cap) + " budget");
       c.classList.add("accent");
       grid.appendChild(c);
+    }
+    if (t.packing.length) {
+      var packed = t.packing.filter(function (p) { return p.checked; }).length;
+      grid.appendChild(ovCard("🧳", packed + "/" + t.packing.length, "Packed"));
     }
     frag.appendChild(grid);
 
@@ -588,6 +629,126 @@
   }
 
   // =========================================================================
+  //  PACKING CHECKLIST
+  // =========================================================================
+  function viewPacking() {
+    var t = activeTrip();
+    var frag = document.createDocumentFragment();
+    frag.appendChild(sectionHead("Packing list", "Tick things off as you pack. Add your own, or drop in the beach essentials to get started.", null, null));
+
+    var card = el("div", "card");
+
+    // Add-item row (Enter or button)
+    var addRow = el("div", "pack-add");
+    var input = el("input", "pack-input");
+    input.type = "text";
+    input.placeholder = "Add an item… (press Enter)";
+    var addBtn = el("button", "add-btn", "＋ Add");
+    addBtn.type = "button";
+    function commit() {
+      var v = input.value.trim();
+      if (!v) return;
+      t.packing.push({ id: uid(), text: v, checked: false });
+      save(); renderMain();
+      setTimeout(function () { var i = document.querySelector(".pack-input"); if (i) i.focus(); }, 0);
+    }
+    addBtn.addEventListener("click", commit);
+    input.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); commit(); } });
+    addRow.appendChild(input);
+    addRow.appendChild(addBtn);
+    card.appendChild(addRow);
+
+    var total = t.packing.length;
+    var done = t.packing.filter(function (x) { return x.checked; }).length;
+
+    // Progress bar (only when there are items)
+    if (total) {
+      var pct = Math.round((done / total) * 100);
+      var prog = el("div", "pack-progress");
+      prog.innerHTML =
+        '<div class="budget-bar' + (pct === 100 ? " done" : "") + '"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="budget-bar-legend"><span>' + done + " of " + total + ' packed</span><span>' + (pct === 100 ? "All set! 🎉" : pct + "%") + '</span></div>';
+      card.appendChild(prog);
+    }
+
+    if (!total) {
+      card.appendChild(emptyState("🧳", "Your bag is empty! Add items one at a time above, or start with the beach essentials.", "🏖️ Add beach essentials", function () { addStarter(t); }));
+    } else {
+      var list = el("div", "pack-list");
+      t.packing.forEach(function (p) { list.appendChild(packRow(t, p)); });
+      card.appendChild(list);
+
+      var acts = el("div", "pack-acts");
+      var starterBtn = el("button", "link-btn", "🏖️ Add beach essentials");
+      starterBtn.type = "button";
+      starterBtn.addEventListener("click", function () { addStarter(t); });
+      acts.appendChild(starterBtn);
+      var clearBtn = el("button", "link-btn clear-done", "🧹 Clear packed items");
+      clearBtn.type = "button";
+      clearBtn.style.display = done ? "" : "none";
+      clearBtn.addEventListener("click", function () {
+        t.packing = t.packing.filter(function (x) { return !x.checked; });
+        save(); renderMain(); renderHero();
+      });
+      acts.appendChild(clearBtn);
+      card.appendChild(acts);
+    }
+
+    frag.appendChild(card);
+    return frag;
+  }
+
+  function packRow(t, p) {
+    var row = el("div", "pack-row" + (p.checked ? " checked" : ""));
+    var chk = el("input", "pack-check");
+    chk.type = "checkbox";
+    chk.checked = !!p.checked;
+    chk.addEventListener("change", function () {
+      p.checked = chk.checked;
+      row.classList.toggle("checked", chk.checked);
+      save();
+      updatePackProgress(t);
+    });
+    var txt = el("input", "pack-text");
+    txt.type = "text";
+    txt.value = p.text || "";
+    txt.addEventListener("input", function () { p.text = txt.value; save(); });
+    row.appendChild(chk);
+    row.appendChild(txt);
+    row.appendChild(delBtn(function () { removeFrom(t.packing, p.id); save(); renderMain(); renderHero(); }, "Remove item"));
+    return row;
+  }
+
+  // Add starter items that aren't already on the list (case-insensitive).
+  function addStarter(t) {
+    var have = {};
+    t.packing.forEach(function (x) { have[(x.text || "").trim().toLowerCase()] = true; });
+    var added = 0;
+    PACKING_STARTER.forEach(function (s) {
+      if (!have[s.toLowerCase()]) { t.packing.push({ id: uid(), text: s, checked: false }); added++; }
+    });
+    save(); renderMain(); renderHero();
+    toast(added ? ("Added " + added + " essential" + (added === 1 ? "" : "s") + " 🧳") : "You've already got the essentials! ✅");
+  }
+
+  // Update the progress bar + clear button in place (no re-render → keeps any
+  // in-progress edits and focus intact when a checkbox is toggled).
+  function updatePackProgress(t) {
+    var total = t.packing.length;
+    var done = t.packing.filter(function (x) { return x.checked; }).length;
+    var pct = total ? Math.round((done / total) * 100) : 0;
+    var bar = document.querySelector(".pack-progress .budget-bar");
+    if (bar) { bar.querySelector("i").style.width = pct + "%"; bar.classList.toggle("done", pct === 100); }
+    var legend = document.querySelector(".pack-progress .budget-bar-legend");
+    if (legend && legend.children.length >= 2) {
+      legend.children[0].textContent = done + " of " + total + " packed";
+      legend.children[1].textContent = pct === 100 ? "All set! 🎉" : pct + "%";
+    }
+    var clear = document.querySelector(".pack-acts .clear-done");
+    if (clear) clear.style.display = done ? "" : "none";
+  }
+
+  // =========================================================================
   //  BUDGET
   // =========================================================================
   function viewBudget() {
@@ -597,6 +758,17 @@
       t.budget.push({ id: uid(), cat: "other", label: "", planned: "", actual: "", paid: false });
       save(); renderMain(); renderHero();
     }));
+
+    // Currency picker — drives money formatting across the whole trip.
+    var curCard = el("div", "card cur-card");
+    curCard.appendChild(fld("Currency", t.currency || "CAD", function (v) {
+      t.currency = v; save(); applyCurrencyVars(); renderMain(); renderHero();
+    }, { type: "select", options: Object.keys(CURRENCIES).map(function (k) {
+      var c = CURRENCIES[k];
+      return { value: k, label: c.flag + " " + c.name + " (" + c.code + ")" };
+    }) }));
+    curCard.appendChild(el("p", "cur-note", "💱 Applies to every amount in this trip — flights, hotels, plans and budget."));
+    frag.appendChild(curCard);
 
     // Overall cap + progress bar
     var capCard = el("div", "card budget-cap-card");

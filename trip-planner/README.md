@@ -20,8 +20,18 @@ one for each getaway, or duplicate an existing trip to reuse as a starting point
 | ✈️ **Flights** | Outbound, return and connecting flights — airline, flight #, from/to, times, seat, confirmation, cost |
 | 🏨 **Hotels** | Each stay with check-in / check-out (auto nights), address, confirmation, cost and notes |
 | 🗓️ **Itinerary** | Day-by-day plans grouped by date — activities, 🎟️ ticketed events, 🍽️ reservations, transport and notes |
-| 💰 **Budget** | Overall target + itemized lines by category, planned vs actual, paid checkboxes, and a one-click pull of costs from your bookings |
-| 📌 **Details** | Catch-all notebook — passports, emergency contacts, packing list, wifi codes… |
+| 🧳 **Packing** | A checklist you tick off as you pack, with a progress bar. Add your own items or drop in the beach essentials |
+| 💰 **Budget** | Currency picker, overall target + itemized lines by category, planned vs actual, paid checkboxes, and a one-click pull of costs from your bookings |
+| 📌 **Details** | Catch-all notebook — passports, emergency contacts, wifi codes… |
+
+### Currencies
+
+Each trip has its own currency, chosen on the **Budget** tab. It reformats every
+amount across the whole trip (flights, hotels, plans and budget):
+
+- 🇨🇦 **Canadian Dollar (CAD)** — the default
+- 🇯🇵 **Japanese Yen (JPY)**
+- 🇲🇾 **Malaysian Ringgit (MYR)**
 
 ## How it works
 
