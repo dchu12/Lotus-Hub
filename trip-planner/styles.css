@@ -428,6 +428,63 @@ html[data-theme="dark"] .icon-btn { background: var(--card); }
 }
 .link-btn:hover { border-color: var(--sea); }
 
+/* ---------- Travellers ---------- */
+.trav-card { background: linear-gradient(135deg, color-mix(in srgb, var(--palm) 12%, var(--card)), var(--card)); }
+.trav-head b { font-size: 15px; }
+.trav-head span { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.trav-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.trav-chip {
+  display: inline-flex; align-items: center; gap: 8px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px 4px 4px; box-shadow: var(--shadow-sm);
+}
+.trav-ava {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: var(--tc, var(--sea)); color: #fff; font-size: 12px; font-weight: 800; font-style: normal;
+}
+.trav-name { border: 0; background: transparent; color: var(--ink); font-size: 14px; font-weight: 600; width: 92px; outline: none; padding: 2px 0; }
+.trav-name:focus { border-bottom: 1px solid var(--sea); }
+.trav-x { border: 0; background: transparent; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; width: 22px; height: 22px; border-radius: 50%; flex: none; }
+.trav-x:hover { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+.trav-add { display: flex; gap: 8px; }
+.trav-input { flex: 1; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; background: var(--card-2); color: var(--ink); outline: none; font-family: inherit; }
+.trav-input:focus { border-color: var(--sea); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sea) 18%, transparent); }
+
+/* ---------- Per-item split chips ---------- */
+.bitem { border-bottom: 1px solid var(--line-2); }
+.bitem .brow { border-bottom: 0; }
+.bsplit { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 0 0 10px 2px; }
+.bsplit-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 800; margin-right: 2px; }
+.split-ava {
+  width: 28px; height: 28px; border-radius: 50%; display: inline-grid; place-items: center; flex: none;
+  font-size: 11px; font-weight: 800; cursor: pointer; border: 2px solid var(--tc, var(--sea));
+  background: transparent; color: var(--tc, var(--sea)); transition: transform .08s, opacity .12s;
+  font-style: normal;
+}
+.split-ava:active { transform: scale(.92); }
+.split-ava.on { background: var(--tc, var(--sea)); color: #fff; }
+.split-ava:not(.on) { opacity: .5; }
+
+/* ---------- Split summary ---------- */
+.split-card { background: linear-gradient(135deg, color-mix(in srgb, var(--sea) 10%, var(--card)), var(--card)); }
+.split-head { margin-bottom: 12px; }
+.split-head b { font-size: 16px; }
+.split-head span { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.split-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line-2); }
+.split-row:last-child { border-bottom: 0; }
+.split-row .split-ava { cursor: default; }
+.split-name { flex: 1; font-weight: 700; font-size: 15px; }
+.split-amt { font-weight: 800; font-size: 16px; color: var(--sea-dark); }
+
+/* ---------- Share banner ---------- */
+.share-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mango) 16%, var(--card)), var(--card));
+  border: 1px solid color-mix(in srgb, var(--mango) 40%, var(--line));
+}
+.sb-txt b { font-size: 16px; }
+.sb-txt span { display: block; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
+.sb-acts { display: flex; gap: 8px; align-items: center; }
+
 /* ---------- Details ---------- */
 .details-note textarea { min-height: 240px; font-size: 15px; line-height: 1.6; }
 

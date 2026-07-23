@@ -21,8 +21,28 @@ one for each getaway, or duplicate an existing trip to reuse as a starting point
 | 🏨 **Accommodations** | Each stay — hotel, resort or rental — with check-in / check-out (auto nights), address, confirmation, cost and notes |
 | 🗓️ **Itinerary** | Day-by-day plans grouped by date — activities, 🎟️ ticketed events, 🍽️ reservations, transport and notes |
 | 🧳 **Packing** | A checklist you tick off as you pack, with a progress bar. Add your own items or drop in the beach essentials |
-| 💰 **Budget** | Currency picker, overall target + itemized lines by category, planned vs actual, paid checkboxes, and a one-click pull of costs from your bookings |
+| 💰 **Budget** | Currency picker, travellers + **per-person split**, overall target, itemized lines by category, planned vs actual, paid checkboxes, and a one-click pull of costs from your bookings |
 | 📌 **Details** | Catch-all notebook — passports, emergency contacts, wifi codes… |
+
+### Travellers & splitting
+
+Add everyone on the trip in the **Budget** tab. Each budget line is split evenly
+by default; tap a traveller's avatar on any line to include/exclude them (e.g.
+one person's flight, or an activity only some join). The **Split N ways** card
+shows what each person owes.
+
+### Share a trip
+
+**⚙ menu → 🔗 Share this trip** copies a link with the whole trip packed into it
+(no server, no account). Whoever opens the link is offered a one-tap **Add to my
+planner** — a read-only-until-you-keep-it copy of your trip.
+
+### Install as an app (PWA)
+
+Trip Planner ships a web manifest + service worker, so you can **install it to
+your home screen** and it **works offline** (your data is on-device anyway). On
+mobile, use "Add to Home Screen"; on desktop Chrome/Edge, the install icon in
+the address bar.
 
 ### Currencies
 

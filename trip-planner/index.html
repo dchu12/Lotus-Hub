@@ -7,8 +7,14 @@
   <title>Trip Planner · Plan the perfect getaway</title>
   <meta name="description" content="A fun, beachy vacation planner — track your itinerary, flights, hotels, reservations, ticketed events and budget. Reuse the template for every trip." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%96%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <!-- PWA: installable + offline -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Trip Planner" />
   <!-- ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body>
   <!-- Decorative sky→sea gradient with a lazy wave along the bottom -->
@@ -46,6 +52,7 @@
     <section class="card menu-panel" id="menuPanel" hidden aria-label="Trip tools">
       <div class="menu-grid">
         <button type="button" id="duplicateTrip" class="data-btn">📑 Duplicate as template</button>
+        <button type="button" id="shareTrip" class="data-btn">🔗 Share this trip</button>
         <button type="button" id="saveFile" class="data-btn">💾 Back up all trips</button>
         <label class="data-btn">📂 Restore from file<input type="file" id="loadData" accept="application/json,.json" hidden /></label>
         <button type="button" id="printBtn" class="data-btn">🖨️ Print / Save PDF</button>
@@ -78,6 +85,6 @@
 
   <div id="toast" class="toast" hidden></div>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

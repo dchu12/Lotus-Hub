@@ -44,6 +44,15 @@
     MYR: { sym: "RM", code: "MYR", flag: "🇲🇾", name: "Malaysian Ringgit", pad: "36px", zero: false },
   };
 
+  // Distinct, beachy avatar colours for travellers (cycled by index).
+  var TRAVELER_COLORS = ["#0891b2", "#fb7185", "#10b981", "#fb923c", "#8b5cf6", "#f59e0b", "#06b6d4", "#ec4899"];
+  function initials(name) {
+    var parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "?";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
   // A friendly, beach-flavoured starter packing list (added on request).
   var PACKING_STARTER = [
     "Passport & travel documents", "Wallet, cash & cards", "Phone & charger",
@@ -74,6 +83,7 @@
       coverEmoji: "🏖️",
       currency: "CAD", // one of CURRENCIES keys — drives all money formatting
       budgetCap: "",
+      travelers: [], // {id,name} — used for splitting the budget per person
       flights: [],   // {id,label,airline,flightNo,from,to,depart,arrive,confirmation,seat,cost}
       hotels: [],    // {id,name,checkIn,checkOut,address,confirmation,cost,notes}
       plans: [],     // {id,date,time,type,title,location,confirmation,cost,notes}
@@ -102,7 +112,7 @@
     raw.trips = raw.trips.map(function (t) {
       var base = blankTrip();
       var merged = Object.assign(base, t);
-      ["flights", "hotels", "plans", "budget", "packing"].forEach(function (k) {
+      ["flights", "hotels", "plans", "budget", "packing", "travelers"].forEach(function (k) {
         if (!Array.isArray(merged[k])) merged[k] = [];
       });
       return merged;
@@ -395,6 +405,9 @@
     if (t.packing.length) {
       var packed = t.packing.filter(function (p) { return p.checked; }).length;
       grid.appendChild(ovCard("🧳", packed + "/" + t.packing.length, "Packed"));
+    }
+    if (t.travelers.length) {
+      grid.appendChild(ovCard("👥", t.travelers.length, t.travelers.length === 1 ? "Traveller" : "Travellers"));
     }
     frag.appendChild(grid);
 
@@ -770,6 +783,9 @@
     curCard.appendChild(el("p", "cur-note", "💱 Applies to every amount in this trip — flights, hotels, plans and budget."));
     frag.appendChild(curCard);
 
+    // Travellers — used to split the budget per person
+    frag.appendChild(travelersCard(t));
+
     // Overall cap + progress bar
     var capCard = el("div", "card budget-cap-card");
     capCard.appendChild(fld("Total trip budget", t.budgetCap, function (v) { t.budgetCap = v; updateBudgetBar(t); }, { type: "money", placeholder: "e.g. 3000" }));
@@ -814,6 +830,7 @@
     table.appendChild(head);
 
     t.budget.forEach(function (b) {
+      var bitem = el("div", "bitem");
       var row = el("div", "brow");
       // Category + label
       var catCell = el("div", "cat");
@@ -835,7 +852,7 @@
       row.appendChild(catCell);
 
       // Planned
-      row.appendChild(moneyCell(b.planned, function (v) { b.planned = v; updateBudgetBar(t); updateBudgetTotals(t, table); }));
+      row.appendChild(moneyCell(b.planned, function (v) { b.planned = v; updateBudgetBar(t); updateBudgetTotals(t, table); updateSplitSummary(t); }));
       // Actual
       var actualCell = moneyCell(b.actual, function (v) { b.actual = v; updateBudgetTotals(t, table); });
       actualCell.classList.add("actual-cell");
@@ -851,7 +868,10 @@
       dwrap.appendChild(delBtn(function () { removeFrom(t.budget, b.id); save(); renderMain(); renderHero(); }, "Remove item"));
       row.appendChild(dwrap);
 
-      table.appendChild(row);
+      bitem.appendChild(row);
+      // Per-item "who's splitting this" chips (only with 2+ travellers)
+      if (t.travelers.length >= 2) bitem.appendChild(splitChips(t, b));
+      table.appendChild(bitem);
     });
 
     // Totals row
@@ -860,8 +880,141 @@
     table.appendChild(totals);
     frag.appendChild(table);
 
+    // Per-person split summary
+    if (t.travelers.length) frag.appendChild(splitSummaryCard(t));
+
     setTimeout(function () { updateBudgetBar(t); updateBudgetTotals(t, table); }, 0);
     return frag;
+  }
+
+  // ---- Travellers + splitting ---------------------------------------------
+  function travelersCard(t) {
+    var card = el("div", "card trav-card");
+    var head = el("div", "trav-head");
+    head.innerHTML = '<b>👥 Who\'s coming</b><span>Add everyone on the trip to split the budget per person.</span>';
+    card.appendChild(head);
+
+    var chips = el("div", "trav-chips");
+    t.travelers.forEach(function (p, i) {
+      var chip = el("span", "trav-chip");
+      chip.style.setProperty("--tc", TRAVELER_COLORS[i % TRAVELER_COLORS.length]);
+      chip.innerHTML = '<i class="trav-ava">' + esc(initials(p.name)) + '</i>';
+      var nameIn = el("input", "trav-name");
+      nameIn.type = "text";
+      nameIn.value = p.name || "";
+      nameIn.placeholder = "Name";
+      nameIn.addEventListener("input", function () {
+        p.name = nameIn.value; save();
+        chip.querySelector(".trav-ava").textContent = initials(nameIn.value);
+        updateSplitSummary(t);
+      });
+      chip.appendChild(nameIn);
+      var x = el("button", "trav-x", "×");
+      x.type = "button"; x.title = "Remove";
+      x.addEventListener("click", function () { removeFrom(t.travelers, p.id); save(); renderMain(); renderHero(); });
+      chip.appendChild(x);
+      chips.appendChild(chip);
+    });
+
+    var addWrap = el("div", "trav-add");
+    var input = el("input", "trav-input");
+    input.type = "text";
+    input.placeholder = t.travelers.length ? "Add another…" : "Add a traveller…";
+    var addBtn = el("button", "add-btn", "＋ Add");
+    addBtn.type = "button";
+    function add() {
+      var v = input.value.trim();
+      if (!v) return;
+      t.travelers.push({ id: uid(), name: v });
+      save(); renderMain();
+      setTimeout(function () { var i = document.querySelector(".trav-input"); if (i) i.focus(); }, 0);
+    }
+    addBtn.addEventListener("click", add);
+    input.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); add(); } });
+    addWrap.appendChild(input);
+    addWrap.appendChild(addBtn);
+
+    card.appendChild(chips);
+    card.appendChild(addWrap);
+    return card;
+  }
+
+  // Which travellers share an item: explicit b.who (intersected with current
+  // travellers), or — when unset/empty — everyone.
+  function sharersFor(t, b) {
+    var ids = t.travelers.map(function (p) { return p.id; });
+    var who = (b.who && b.who.length) ? b.who.filter(function (id) { return ids.indexOf(id) >= 0; }) : ids.slice();
+    return who.length ? who : ids.slice();
+  }
+
+  function splitChips(t, b) {
+    var wrap = el("div", "bsplit");
+    wrap.appendChild(el("span", "bsplit-lbl", "Split:"));
+    var active = sharersFor(t, b);
+    t.travelers.forEach(function (p, i) {
+      var on = active.indexOf(p.id) >= 0;
+      var chip = el("button", "split-ava" + (on ? " on" : ""));
+      chip.type = "button";
+      chip.title = p.name || "Traveller";
+      chip.textContent = initials(p.name);
+      chip.style.setProperty("--tc", TRAVELER_COLORS[i % TRAVELER_COLORS.length]);
+      chip.addEventListener("click", function () {
+        // Materialise "everyone" before toggling so the set becomes explicit.
+        if (!b.who || !b.who.length) b.who = t.travelers.map(function (x) { return x.id; });
+        var idx = b.who.indexOf(p.id);
+        if (idx >= 0) b.who.splice(idx, 1); else b.who.push(p.id);
+        if (!b.who.length) b.who = t.travelers.map(function (x) { return x.id; }); // never zero
+        save();
+        var nowOn = b.who.indexOf(p.id) >= 0;
+        chip.classList.toggle("on", nowOn);
+        updateSplitSummary(t);
+      });
+      wrap.appendChild(chip);
+    });
+    return wrap;
+  }
+
+  // Total each traveller owes based on planned amounts and per-item sharing.
+  function splitShares(t) {
+    var totals = {};
+    t.travelers.forEach(function (p) { totals[p.id] = 0; });
+    t.budget.forEach(function (b) {
+      var amt = num(b.planned);
+      if (!amt) return;
+      var who = sharersFor(t, b);
+      if (!who.length) return;
+      var each = amt / who.length;
+      who.forEach(function (id) { totals[id] += each; });
+    });
+    return totals;
+  }
+
+  function splitSummaryCard(t) {
+    var card = el("div", "card split-card");
+    card.id = "splitSummary";
+    renderSplitSummary(t, card);
+    return card;
+  }
+  function renderSplitSummary(t, card) {
+    var totals = splitShares(t);
+    var n = t.travelers.length;
+    var grand = t.budget.reduce(function (s, b) { return s + num(b.planned); }, 0);
+    var rows = t.travelers.map(function (p, i) {
+      var col = TRAVELER_COLORS[i % TRAVELER_COLORS.length];
+      return '<div class="split-row">' +
+        '<span class="split-ava on" style="--tc:' + col + '">' + esc(initials(p.name)) + '</span>' +
+        '<span class="split-name">' + esc(p.name || "Traveller " + (i + 1)) + '</span>' +
+        '<span class="split-amt">' + money(totals[p.id]) + '</span>' +
+      '</div>';
+    }).join("");
+    card.innerHTML =
+      '<div class="split-head"><b>🧮 Split ' + n + ' way' + (n === 1 ? "" : "s") + '</b>' +
+      '<span>' + money(grand) + ' planned · tap the avatars on each item to change who shares it</span></div>' +
+      rows;
+  }
+  function updateSplitSummary(t) {
+    var card = document.getElementById("splitSummary");
+    if (card) renderSplitSummary(t, card);
   }
 
   function moneyCell(value, onInput) {
@@ -1055,6 +1208,83 @@
 
   function menuMsg(m) { var n = $("#menuMsg"); if (n) n.textContent = m; }
 
+  // ---- Share a read-only trip link ----------------------------------------
+  // A whole trip is packed into the URL hash (base64 of UTF-8 JSON), so a link
+  // is fully self-contained — no server, no account. Opening it offers to add
+  // a copy to the recipient's own planner.
+  function encodeTrip(trip) {
+    return btoa(unescape(encodeURIComponent(JSON.stringify(trip))));
+  }
+  function decodeTrip(str) {
+    return JSON.parse(decodeURIComponent(escape(atob(str))));
+  }
+  function shareTrip() {
+    var t = activeTrip();
+    var url = location.origin + location.pathname + "#trip=" + encodeTrip(t);
+    var big = url.length > 14000;
+    function ok() {
+      toast("Share link copied 🔗");
+      menuMsg(big ? "Link copied — heads up, this trip is large so the link is long." : "Link copied! Anyone who opens it can view this trip.");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(ok, function () { window.prompt("Copy this share link:", url); });
+    } else {
+      window.prompt("Copy this share link:", url);
+    }
+  }
+  function clearHash() {
+    try { history.replaceState(null, "", location.pathname + location.search); }
+    catch (e) { location.hash = ""; }
+  }
+  function checkIncomingShare() {
+    var m = (location.hash || "").match(/^#trip=(.+)$/);
+    if (!m) return;
+    var trip = null;
+    try { trip = decodeTrip(m[1]); } catch (e) { trip = null; }
+    if (!trip || typeof trip !== "object") { clearHash(); return; }
+    showShareBanner(trip);
+  }
+  function showShareBanner(trip) {
+    var wrap = document.querySelector(".wrap");
+    var hero = document.getElementById("hero");
+    var b = el("div", "card share-banner");
+    b.innerHTML =
+      '<div class="sb-txt"><b>📩 A trip was shared with you</b>' +
+      '<span>“' + esc(trip.name || "A trip") + '”' + (trip.destination ? " · " + esc(trip.destination) : "") + '</span></div>';
+    var acts = el("div", "sb-acts");
+    var add = el("button", "btn primary", "Add to my planner");
+    add.type = "button";
+    add.addEventListener("click", function () { importSharedTrip(trip); b.remove(); clearHash(); });
+    var no = el("button", "link-btn", "Dismiss");
+    no.type = "button";
+    no.addEventListener("click", function () { b.remove(); clearHash(); });
+    acts.appendChild(add); acts.appendChild(no);
+    b.appendChild(acts);
+    wrap.insertBefore(b, hero);
+  }
+  function importSharedTrip(trip) {
+    var copy = Object.assign(blankTrip(), JSON.parse(JSON.stringify(trip)));
+    copy.id = uid();
+    // New traveller ids + remap table so per-item split assignments survive.
+    var idMap = {};
+    copy.travelers = (copy.travelers || []).map(function (p) { var nid = uid(); idMap[p.id] = nid; p.id = nid; return p; });
+    ["flights", "hotels", "plans", "packing"].forEach(function (k) {
+      copy[k] = (copy[k] || []).map(function (x) { x.id = uid(); return x; });
+    });
+    copy.budget = (copy.budget || []).map(function (bb) {
+      bb.id = uid();
+      if (Array.isArray(bb.who)) bb.who = bb.who.map(function (id) { return idMap[id]; }).filter(Boolean);
+      return bb;
+    });
+    copy.name = trip.name || "Shared trip";
+    state.trips.push(copy);
+    state.activeId = copy.id;
+    saveNow();
+    setView("overview");
+    renderAll();
+    toast("Shared trip added ✈️");
+  }
+
   // ---- Theme ---------------------------------------------------------------
   function applyTheme(mode) {
     document.documentElement.setAttribute("data-theme", mode);
@@ -1102,6 +1332,7 @@
     $("#newTripBtn").addEventListener("click", newTrip);
     $("#menuBtn").addEventListener("click", toggleMenu);
     $("#duplicateTrip").addEventListener("click", duplicateTrip);
+    $("#shareTrip").addEventListener("click", shareTrip);
     $("#deleteTrip").addEventListener("click", deleteTrip);
     $("#saveFile").addEventListener("click", backup);
     $("#printBtn").addEventListener("click", function () { window.print(); });
@@ -1119,6 +1350,16 @@
     });
 
     renderAll();
+
+    // If the page was opened via a share link, offer to import the trip.
+    checkIncomingShare();
+
+    // PWA: register the service worker so the app installs and works offline.
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
   }
 
   if (document.readyState === "loading") {
