@@ -2,6 +2,7 @@
   "name": "Thank You Cards",
   "short_name": "Thank Yous",
   "description": "Kelly & Derek's wedding thank-you card tracker",
+  "id": "/thank-you.html",
   "start_url": "/thank-you.html",
   "scope": "/thank-you.html",
   "display": "standalone",
