@@ -209,6 +209,13 @@ input:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px va
 .longevity.good { background: var(--good-soft); color: var(--good); }
 .longevity:empty { display: none; }
 
+/* what moves the needle most */
+.levers { margin: 14px 0 0; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.levers:empty { display: none; padding: 0; border: 0; }
+.lv-title { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.lv-row { margin: 5px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink); }
+.lv-row b { color: var(--brand); }
+
 /* countdown + coast milestones (in the verdict card) */
 .milestones { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
 .milestones[hidden] { display: none; }
@@ -308,6 +315,10 @@ input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 
 .savebar[hidden] { display: none; }
 .savebar .data-btn { font-size: 12px; padding: 6px 11px; }
 .sb-status { margin: 0; font-size: 12px; font-weight: 600; display: flex; align-items: flex-start; gap: 6px; }
+.sb-backup { margin: 0; font-size: 12px; font-weight: 600; }
+.sb-backup.ok { color: var(--muted); }
+.sb-backup.warn { color: var(--warn); }
+.sb-backup:empty { display: none; }
 .sb-status.ok { color: var(--good); }
 .sb-status.warn { color: var(--warn); }
 .sb-actions { display: flex; flex-wrap: wrap; gap: 8px; }

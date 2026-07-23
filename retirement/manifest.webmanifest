@@ -1,0 +1,14 @@
+{
+  "name": "Derek & Kelly · Retirement",
+  "short_name": "Retirement",
+  "description": "Are we on track to retire? A plain-language retirement tracker.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#0f766e",
+  "icons": [
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}
