@@ -1,30 +1,31 @@
-/* Trip Planner — a fun, beachy vacation planner.
-   Vanilla CSS, no framework. Light + dark. Ocean teal + coral sunset + sand. */
+/* Trip Planner — a fun, city-vibes vacation planner (Tokyo / Fukuoka dusk).
+   Vanilla CSS, no framework. Light + dark. Indigo night + neon sakura + lantern gold. */
 
 :root {
-  /* Ocean & sunset palette */
-  --sea:      #0891b2;   /* ocean teal */
-  --sea-deep: #0e7490;
-  --sea-dark: #155e75;
-  --sky-top:  #7dd3fc;   /* light sky blue */
-  --sky-bot:  #22d3ee;   /* turquoise */
-  --coral:    #fb7185;   /* sunset coral */
-  --coral-d:  #f43f5e;
-  --mango:    #fb923c;   /* warm sunset orange */
-  --palm:     #10b981;   /* palm green */
-  --sand:     #fde68a;   /* sandy gold */
+  /* Tokyo / Fukuoka city-at-dusk palette — indigo night, neon sakura & lantern gold.
+     (Variable names kept from the old ocean theme; only the values changed.) */
+  --sea:      #4f46e5;   /* indigo — primary (tabs, hero, buttons) */
+  --sea-deep: #4338ca;
+  --sea-dark: #3730a3;
+  --sky-top:  #312e81;   /* deep indigo dusk (top of sky) */
+  --sky-bot:  #db2777;   /* sakura-magenta horizon glow */
+  --coral:    #ec4899;   /* neon sakura pink (CTAs) */
+  --coral-d:  #db2777;
+  --mango:    #f59e0b;   /* lantern gold / warm sign glow */
+  --palm:     #06b6d4;   /* neon cyan accent */
+  --sand:     #fcd34d;   /* paper-lantern warm */
 
-  --bg:       #f0fbff;
-  --bg-tint:  #e6f7fb;
+  --bg:       #f5f5fb;
+  --bg-tint:  #ebebf7;
   --card:     #ffffff;
-  --card-2:   #f5fcfe;
-  --ink:      #0f2b33;
-  --ink-2:    #47616a;
-  --muted:    #7c98a1;
-  --line:     #d5eaf0;
-  --line-2:   #e7f3f7;
-  --shadow:   0 10px 30px rgba(8, 145, 178, .12);
-  --shadow-sm:0 3px 10px rgba(8, 145, 178, .10);
+  --card-2:   #f7f7fd;
+  --ink:      #1a1830;
+  --ink-2:    #4b4870;
+  --muted:    #86849f;
+  --line:     #e3e3f0;
+  --line-2:   #eeeef8;
+  --shadow:   0 10px 30px rgba(49, 46, 129, .14);
+  --shadow-sm:0 3px 10px rgba(49, 46, 129, .10);
   --radius:   18px;
   --radius-sm:12px;
   --ok:       #059669;
@@ -33,28 +34,29 @@
 }
 
 html[data-theme="dark"] {
-  --sea:      #22d3ee;
-  --sea-deep: #06b6d4;
-  --sea-dark: #67e8f9;
-  --sky-top:  #0c4a5e;
-  --sky-bot:  #0e7490;
-  --coral:    #fb7185;
-  --coral-d:  #fda4af;
-  --mango:    #fdba74;
-  --palm:     #34d399;
+  /* Tokyo neon night */
+  --sea:      #818cf8;   /* indigo-300 pops on dark */
+  --sea-deep: #6366f1;
+  --sea-dark: #a5b4fc;
+  --sky-top:  #1e1b4b;   /* midnight indigo */
+  --sky-bot:  #831843;   /* deep magenta horizon */
+  --coral:    #f472b6;   /* neon pink */
+  --coral-d:  #f9a8d4;
+  --mango:    #fbbf24;
+  --palm:     #22d3ee;
   --sand:     #fcd34d;
 
-  --bg:       #071a20;
-  --bg-tint:  #0a2129;
-  --card:     #0e2830;
-  --card-2:   #10303a;
-  --ink:      #e6f6fa;
-  --ink-2:    #a8c6cf;
-  --muted:    #6d8a93;
-  --line:     #1c3d47;
-  --line-2:   #16323b;
-  --shadow:   0 12px 34px rgba(0, 0, 0, .45);
-  --shadow-sm:0 3px 12px rgba(0, 0, 0, .35);
+  --bg:       #0b0a1f;
+  --bg-tint:  #12112e;
+  --card:     #16142e;
+  --card-2:   #1b1940;
+  --ink:      #ececff;
+  --ink-2:    #b4b1dc;
+  --muted:    #726f9c;
+  --line:     #2a2852;
+  --line-2:   #201e45;
+  --shadow:   0 12px 34px rgba(0, 0, 0, .5);
+  --shadow-sm:0 3px 12px rgba(0, 0, 0, .4);
   --ok:       #34d399;
   --warn:     #fbbf24;
   --bad:      #fb7185;
@@ -77,32 +79,36 @@ body {
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
-/* ---------- Decorative sky & waves ---------- */
+/* ---------- Decorative dusk sky & city skyline ---------- */
 .sky {
-  position: fixed; inset: 0 0 auto 0; height: 320px; z-index: 0;
-  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bot) 78%, transparent 100%);
+  position: fixed; inset: 0 0 auto 0; height: 340px; z-index: 0;
+  background: linear-gradient(180deg,
+    var(--sky-top) 0%,
+    color-mix(in srgb, var(--sky-top), var(--sky-bot)) 46%,
+    var(--sky-bot) 84%,
+    transparent 100%);
   overflow: hidden; pointer-events: none;
 }
-html[data-theme="dark"] .sky { opacity: .55; }
-.sun {
-  position: absolute; top: 42px; right: 12%; width: 74px; height: 74px; border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, #fff6d8, var(--sand) 60%, var(--mango));
-  box-shadow: 0 0 44px 14px rgba(253, 230, 138, .7);
+.moon {
+  position: absolute; top: 28px; right: 50%; width: 56px; height: 56px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 36%, #fffef4, #fde9c8 55%, #f6d193);
+  box-shadow: 0 0 40px 12px rgba(253, 224, 170, .5);
 }
-.cloud {
-  position: absolute; background: rgba(255,255,255,.85); border-radius: 50px;
-  filter: blur(.3px);
+.star {
+  position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; opacity: .85;
+  box-shadow: 0 0 6px 1px rgba(255, 255, 255, .7);
 }
-.cloud::before, .cloud::after { content: ""; position: absolute; background: inherit; border-radius: 50%; }
-.c1 { top: 60px; left: 8%; width: 90px; height: 26px; }
-.c1::before { width: 42px; height: 42px; top: -20px; left: 14px; }
-.c1::after  { width: 30px; height: 30px; top: -12px; left: 48px; }
-.c2 { top: 110px; left: 60%; width: 70px; height: 20px; opacity: .8; }
-.c2::before { width: 34px; height: 34px; top: -16px; left: 10px; }
-.c2::after  { width: 24px; height: 24px; top: -8px; left: 38px; }
-.waves { position: absolute; bottom: -1px; left: 0; width: 100%; height: 120px; }
-.waves path { fill: var(--bg); }
-.waves .waves-back { fill: var(--bg-tint); opacity: .7; }
+.s1 { top: 54px; left: 15%; } .s2 { top: 98px; left: 33%; }
+.s3 { top: 66px; left: 60%; } .s4 { top: 120px; left: 80%; }
+.s5 { top: 40px; left: 46%; width: 2px; height: 2px; }
+.skyline { position: absolute; bottom: -1px; left: 0; width: 100%; height: 150px; }
+.skyline .fuji { fill: rgba(255, 255, 255, .12); }
+.skyline .fuji-snow { fill: rgba(255, 255, 255, .32); }
+.skyline .sky-back { fill: var(--bg-tint); }
+.skyline .sky-front, .skyline .tower { fill: var(--bg); }
+.skyline .win-gold { fill: var(--mango); opacity: .85; }
+.skyline .win-pink { fill: var(--coral); opacity: .8; }
+.skyline .win-cyan { fill: var(--palm); opacity: .8; }
 
 /* ---------- Layout ---------- */
 .wrap {
@@ -130,15 +136,14 @@ html[data-theme="dark"] .sky { opacity: .55; }
   background: rgba(255,255,255,.85); border-radius: 16px; box-shadow: var(--shadow-sm);
 }
 html[data-theme="dark"] .hd-logo { background: rgba(255,255,255,.12); }
-.hd h1 { margin: 0; font-size: 26px; letter-spacing: -.5px; color: #063842; }
-html[data-theme="dark"] .hd h1 { color: var(--ink); }
-.hd-sub { margin: 0; font-size: 13px; color: #0b4553; font-weight: 600; }
-html[data-theme="dark"] .hd-sub { color: var(--ink-2); }
+/* The header sits over the dark dusk sky in BOTH themes, so keep text light. */
+.hd h1 { margin: 0; font-size: 26px; letter-spacing: -.5px; color: #fff; text-shadow: 0 1px 8px rgba(20, 16, 45, .35); }
+.hd-sub { margin: 0; font-size: 13px; color: rgba(255,255,255,.85); font-weight: 600; }
 .hd-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 .trip-select {
   appearance: none;
-  background: rgba(255,255,255,.92) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%230891b2' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  background: rgba(255,255,255,.92) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234f46e5' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
   border: 1px solid var(--line); border-radius: 12px;
   padding: 10px 34px 10px 14px; font-size: 14px; font-weight: 700; color: var(--sea-dark);
   max-width: 200px; cursor: pointer; box-shadow: var(--shadow-sm);
@@ -184,8 +189,8 @@ html[data-theme="dark"] .icon-btn { background: var(--card); }
   color: #fff; border: 0; box-shadow: var(--shadow); overflow: hidden; position: relative;
 }
 .hero::after {
-  content: "🌴"; position: absolute; right: -6px; bottom: -14px; font-size: 92px; opacity: .18;
-  transform: rotate(-8deg);
+  content: "🗼"; position: absolute; right: 6px; bottom: -10px; font-size: 82px; opacity: .16;
+  transform: rotate(-4deg);
 }
 .hero-top { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
 .hero-emoji {

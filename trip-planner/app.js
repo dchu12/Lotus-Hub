@@ -1,4 +1,4 @@
-/* Trip Planner — a fun, beachy vacation planner.
+/* Trip Planner — a fun, city-vibes vacation planner.
    Track name, dates, flights, hotels, itinerary, ticketed events, reservations
    and an itemized budget for EVERY trip. Add as many trips as you like — each
    one is its own copy of the same reusable template.
@@ -27,14 +27,14 @@
 
   // Itinerary entry types (covers activities, reservations, ticketed events…).
   var PLAN_TYPES = {
-    activity:   ["🏖️", "Activity"],
+    activity:   ["🎡", "Activity"],
     ticket:     ["🎟️", "Ticketed event"],
-    reservation:["🍽️", "Reservation"],
-    transport:  ["🚗", "Transport"],
+    reservation:["🍜", "Reservation"],
+    transport:  ["🚆", "Transport"],
     note:       ["📌", "Note"],
   };
 
-  var COVER_EMOJIS = ["🏖️","🌴","🏝️","⛱️","🌊","☀️","🐚","🍹","✈️","🗺️","⛰️","🏔️","🎿","🏙️","🗽","🎡","🛳️","🏕️","🌋","🦩"];
+  var COVER_EMOJIS = ["🗼","🏙️","🌃","⛩️","🏯","🌸","🎌","🍜","🚅","🏮","🗾","🎋","🎡","🌉","🎑","🛍️","🍣","☕","🎐","✈️"];
 
   // Selectable currencies. CAD is the default. `zero` = no minor units (JPY).
   // `sym` is the display symbol; `pad` reserves left space for it inside inputs.
@@ -44,7 +44,7 @@
     MYR: { sym: "RM", code: "MYR", flag: "🇲🇾", name: "Malaysian Ringgit", pad: "36px", zero: false },
   };
 
-  // Distinct, beachy avatar colours for travellers (cycled by index).
+  // Distinct, neon-city avatar colours for travellers (cycled by index).
   var TRAVELER_COLORS = ["#0891b2", "#fb7185", "#10b981", "#fb923c", "#8b5cf6", "#f59e0b", "#06b6d4", "#ec4899"];
   function initials(name) {
     var parts = String(name || "").trim().split(/\s+/).filter(Boolean);
@@ -53,12 +53,13 @@
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
-  // A friendly, beach-flavoured starter packing list (added on request).
+  // A friendly city-trip starter packing list (added on request).
   var PACKING_STARTER = [
     "Passport & travel documents", "Wallet, cash & cards", "Phone & charger",
-    "Swimsuit", "Sunscreen (SPF 50)", "Sunglasses", "Sun hat", "Flip flops / sandals",
-    "Beach towel", "Reusable water bottle", "Toiletries", "Medications",
-    "Travel adapter", "Light clothing", "Light jacket / cover-up", "Camera",
+    "Portable power bank", "Travel adapter (Type A)", "Pocket wifi / travel SIM",
+    "IC transit card (Suica / PASMO)", "Comfortable walking shoes", "Compact umbrella",
+    "Light layers / jacket", "Toiletries", "Medications", "Reusable tote bag",
+    "Hand towel", "Camera", "Some local cash",
   ];
 
   // ---- State ---------------------------------------------------------------
@@ -80,7 +81,7 @@
       destination: "",
       startDate: "",
       endDate: "",
-      coverEmoji: "🏖️",
+      coverEmoji: "🗼",
       currency: "CAD", // one of CURRENCIES keys — drives all money formatting
       budgetCap: "",
       travelers: [], // {id,name} — used for splitting the budget per person
@@ -95,9 +96,9 @@
 
   function starterTrip() {
     // A friendly first trip so the app isn't empty on first open.
-    var t = blankTrip("My Beach Getaway 🌴");
+    var t = blankTrip("My Tokyo Trip 🗼");
     t.destination = "";
-    t.coverEmoji = "🏖️";
+    t.coverEmoji = "🗼";
     return t;
   }
 
@@ -223,7 +224,7 @@
     state.trips.forEach(function (t) {
       var o = el("option");
       o.value = t.id;
-      o.textContent = (t.coverEmoji || "🏖️") + "  " + (t.name || "Untitled trip");
+      o.textContent = (t.coverEmoji || "🗼") + "  " + (t.name || "Untitled trip");
       if (t.id === state.activeId) o.selected = true;
       sel.appendChild(o);
     });
@@ -237,7 +238,7 @@
 
     hero.innerHTML =
       '<div class="hero-top">' +
-        '<button class="hero-emoji" id="coverEmojiBtn" title="Change icon" type="button">' + esc(t.coverEmoji || "🏖️") + '</button>' +
+        '<button class="hero-emoji" id="coverEmojiBtn" title="Change icon" type="button">' + esc(t.coverEmoji || "🗼") + '</button>' +
         '<div class="hero-fields">' +
           '<input class="hero-name" id="fName" placeholder="Name your trip…" value="' + esc(t.name) + '" />' +
           '<input class="hero-dest" id="fDest" placeholder="📍 Where are you headed?" value="' + esc(t.destination) + '" />' +
@@ -272,7 +273,7 @@
     if (toStart > 1) { txt = toStart + " days to go!"; emo = "🧳"; }
     else if (toStart === 1) { txt = "Tomorrow — almost there!"; emo = "🎉"; }
     else if (toStart === 0) { txt = "It's trip day! Bon voyage!"; emo = "🌅"; }
-    else if (toEnd >= 0) { txt = "You're on your trip — enjoy! 🍹"; emo = "🏖️"; }
+    else if (toEnd >= 0) { txt = "You're exploring the city — enjoy! 🍜"; emo = "🏙️"; }
     else { txt = "Trip complete. What a getaway!"; emo = "📸"; }
     return '<div class="countdown-chip"><span>' + emo + '</span> ' + esc(txt) + '</div>';
   }
@@ -533,7 +534,7 @@
     }));
 
     if (!t.hotels.length) {
-      frag.appendChild(emptyState("🏨", "No stays booked yet. Add a hotel, resort or rental!", "+ Add stay", function () {
+      frag.appendChild(emptyState("🏨", "No stays booked yet. Add a hotel, ryokan or rental!", "+ Add stay", function () {
         t.hotels.push({ id: uid(), name: "", checkIn: t.startDate || "", checkOut: t.endDate || "", address: "", confirmation: "", cost: "", notes: "" });
         save(); renderMain(); renderHero();
       }));
@@ -550,7 +551,7 @@
       item.appendChild(head);
 
       var grid = el("div", "grid");
-      grid.appendChild(fld("Place name", h.name, function (v) { h.name = v; var m = item.querySelector(".item-title-mini"); if (m && m.childNodes[0]) m.childNodes[0].nodeValue = (v || "New stay"); }, { wide: true, placeholder: "e.g. Sunset Beach Resort" }));
+      grid.appendChild(fld("Place name", h.name, function (v) { h.name = v; var m = item.querySelector(".item-title-mini"); if (m && m.childNodes[0]) m.childNodes[0].nodeValue = (v || "New stay"); }, { wide: true, placeholder: "e.g. Shibuya Grand Hotel / ryokan" }));
       grid.appendChild(fld("Check-in", h.checkIn, function (v) { h.checkIn = v; renderMain(); }, { type: "date" }));
       grid.appendChild(fld("Check-out", h.checkOut, function (v) { h.checkOut = v; renderMain(); }, { type: "date" }));
       grid.appendChild(fld("Confirmation #", h.confirmation, function (v) { h.confirmation = v; }, { placeholder: "Booking code" }));
@@ -647,7 +648,7 @@
   function viewPacking() {
     var t = activeTrip();
     var frag = document.createDocumentFragment();
-    frag.appendChild(sectionHead("Packing list", "Tick things off as you pack. Add your own, or drop in the beach essentials to get started.", null, null));
+    frag.appendChild(sectionHead("Packing list", "Tick things off as you pack. Add your own, or drop in the city-trip essentials to get started.", null, null));
 
     var card = el("div", "card");
 
@@ -685,14 +686,14 @@
     }
 
     if (!total) {
-      card.appendChild(emptyState("🧳", "Your bag is empty! Add items one at a time above, or start with the beach essentials.", "🏖️ Add beach essentials", function () { addStarter(t); }));
+      card.appendChild(emptyState("🧳", "Your bag is empty! Add items one at a time above, or start with the city-trip essentials.", "🏮 Add city essentials", function () { addStarter(t); }));
     } else {
       var list = el("div", "pack-list");
       t.packing.forEach(function (p) { list.appendChild(packRow(t, p)); });
       card.appendChild(list);
 
       var acts = el("div", "pack-acts");
-      var starterBtn = el("button", "link-btn", "🏖️ Add beach essentials");
+      var starterBtn = el("button", "link-btn", "🏮 Add city essentials");
       starterBtn.type = "button";
       starterBtn.addEventListener("click", function () { addStarter(t); });
       acts.appendChild(starterBtn);
@@ -1089,7 +1090,7 @@
     var frag = document.createDocumentFragment();
     frag.appendChild(sectionHead("Important details", "Passport numbers, emergency contacts, packing list, currency, wifi codes — your trip's catch-all notebook.", null, null));
     var card = el("div", "card details-note");
-    card.appendChild(fld("Notes", t.notes, function (v) { t.notes = v; }, { wide: true, type: "textarea", placeholder: "🛂 Passport expiry…\n📞 Emergency contact…\n🧴 Packing list…\n💱 Currency & budget notes…\n📶 Rental wifi / codes…" }));
+    card.appendChild(fld("Notes", t.notes, function (v) { t.notes = v; }, { wide: true, type: "textarea", placeholder: "🛂 Passport expiry…\n📞 Emergency contact…\n🚇 IC card / transit notes…\n💱 Currency & budget notes…\n📶 Pocket wifi / SIM codes…" }));
     frag.appendChild(card);
     return frag;
   }
@@ -1289,7 +1290,7 @@
   function applyTheme(mode) {
     document.documentElement.setAttribute("data-theme", mode);
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", mode === "dark" ? "#071a20" : "#0891b2");
+    if (meta) meta.setAttribute("content", mode === "dark" ? "#0b0a1f" : "#4f46e5");
     var btn = $("#themeToggle");
     if (btn) btn.textContent = mode === "dark" ? "☀️ Light mode" : "🌙 Dark mode";
   }
