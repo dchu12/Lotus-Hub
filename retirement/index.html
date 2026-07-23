@@ -6,9 +6,13 @@
   <meta name="theme-color" content="#0f766e" />
   <title>Derek &amp; Kelly · Retirement</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E" />
+  <!-- installable as an app: "Add to Home Screen" on a phone. Deliberately no
+       service worker (offline cache) — stale-cache bugs aren't worth it. -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <!-- ?v= is a cache-buster: bump it whenever styles.css or app.js change,
        so browsers never mix a new page with an old cached script. -->
-  <link rel="stylesheet" href="styles.css?v=20260722b" />
+  <link rel="stylesheet" href="styles.css?v=20260722c" />
 </head>
 <body>
   <div class="wrap">
@@ -41,6 +45,7 @@
     <!-- ---- Settings (gear): saving + appearance ---- -->
     <section class="card savebar" id="settingsPanel" aria-label="Settings" hidden>
       <p class="sb-status" id="saveStatus">—</p>
+      <p class="sb-backup" id="backupNote"></p>
       <div class="sb-actions">
         <button type="button" id="saveFile" class="data-btn primary">💾 Save my plan to a file</button>
         <label class="data-btn">📂 Open a saved file<input type="file" id="loadData" accept="application/json,.json" hidden /></label>
@@ -177,6 +182,7 @@
           <p class="earliest" id="earliest"></p>
           <p class="ms-coast" id="coastLine"></p>
           <p class="longevity" id="longevity"></p>
+          <div class="levers" id="levers"></div>
         </div>
 
         <div class="chart-wrap">
@@ -232,6 +238,6 @@
     </footer>
   </div>
 
-  <script src="app.js?v=20260722b"></script>
+  <script src="app.js?v=20260722c"></script>
 </body>
 </html>

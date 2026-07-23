@@ -18,6 +18,7 @@
   var STORE_KEY = "dk-retire";
   var LEGACY_KEYS = ["dk-retire:v6", "dk-retire:v5", "dk-retire:v4", "dk-retire:v3", "dk-retire:v2", "dk-retire:v1"];
   var THEME_KEY = "dk-retire:theme";
+  var BACKUP_KEY = "dk-retire:lastBackup"; // when "Save my plan to a file" last ran
   var THIS_YEAR = new Date().getFullYear();
 
   // taxWeight = share of a withdrawal that's taxable income in retirement:
@@ -96,7 +97,7 @@
    "spendLbl", "lastsAge", "lastsSub", "confidence", "earliest", "chart", "chartX", "whatifList",
    "milestones", "countdown", "coastLine", "efund",
    "wiPlay", "wiRetire", "wiSpend", "wiRetireVal", "wiSpendVal", "wiResult", "wiReset", "longevity",
-   "sumEarn", "sumSpend", "sumOwn", "sumPlan",
+   "sumEarn", "sumSpend", "sumOwn", "sumPlan", "levers", "backupNote",
    "resetBtn", "copyLink", "saveFile", "loadData", "dataMsg", "saveStatus", "printBtn", "printSummary"].forEach(function (id) {
     el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
   });
@@ -190,8 +191,9 @@
      nominalRate lets scenarios/market-range vary the investment return.
      Returns a per-age balance series covering the whole plan, plus the
      retirement balance and the age (if any) the money runs out. */
-  function simulate(cf, nominalRate, stopSaveAge) {
+  function simulate(cf, nominalRate, stopSaveAge, shock) {
     if (stopSaveAge == null) stopSaveAge = Infinity; // age at which new saving stops (coast); Infinity = save the whole way
+    shock = shock || 0; // fraction of today's portfolio wiped out at the start (crash stress test)
     var s = state.settings;
     var currentAge = num(s.currentAge), retireAge = num(s.retireAge), endAge = num(s.planThroughAge);
     var accumYears = Math.max(0, Math.round(retireAge - currentAge));
@@ -203,6 +205,7 @@
       var t = TYPES[a.type]; if (!t || !t.income) return;
       if (a.type === "cash") cashStart += num(a.balance); else invStart += num(a.balance); // tfsa/nonreg grow like investments
     });
+    invStart *= (1 - shock); // cash is spared in the crash scenario — only markets fall
     var liabs = state.debts.map(function (d) {
       return { bal: num(d.balance), rate: realMonthly(d.apr), payment: num(d.payment), paidOff: num(d.balance) <= 0 };
     });
@@ -401,6 +404,7 @@
       el.earliest.textContent = ""; el.earliest.className = "earliest";
       el.longevity.textContent = ""; el.longevity.className = "longevity";
       el.coastLine.textContent = ""; el.coastLine.className = "ms-coast";
+      el.levers.innerHTML = "";
       el.milestones.hidden = true;
       el.chart.innerHTML = ""; el.chartX.innerHTML = "";
       el.printSummary.innerHTML = '<p class="ps-fine">Enter your ages and plan to see a summary.</p>';
@@ -463,6 +467,7 @@
     // countdown to retirement + "coast" point (when you could stop adding to savings)
     renderMilestones(cf, exp);
     renderLongevity(cf);
+    renderLevers(cf, exp);
 
     // verdict
     if (exp.lastsToEnd) {
@@ -585,6 +590,45 @@
     }
   }
 
+  // What moves the needle most — three concrete moves, quantified from the
+  // real plan with the usual override-and-restore pattern.
+  function renderLevers(cf, exp) {
+    var s = state.settings;
+    var baseMax = maxSpend(exp.retireBal, exp.rDraw);
+    var rows = [];
+
+    // 1) work one more year → how much more you could spend, every year
+    var savedR = s.retireAge;
+    s.retireAge = num(savedR) + 1;
+    var sim1 = simulate(cf, s.rate);
+    var gain1 = maxSpend(sim1.retireBal, sim1.rDraw) - baseMax;
+    s.retireAge = savedR;
+    if (gain1 > 500) rows.push("Work 1 more year → about <b>+" + fmtMoney(gain1) + "/yr</b> you could spend, for life.");
+
+    // 2) save $200 more a month (invested) → more yearly spending
+    var cf2 = {}; Object.keys(cf).forEach(function (k) { cf2[k] = cf[k]; });
+    cf2.investMo = cf.investMo + 200;
+    var sim2 = simulate(cf2, s.rate);
+    var gain2 = maxSpend(sim2.retireBal, sim2.rDraw) - baseMax;
+    if (gain2 > 250) rows.push("Save <b>$200 more/mo</b> → about <b>+" + fmtMoney(gain2) + "/yr</b> to spend in retirement.");
+
+    // 3) trim $5k/yr of retirement spending → retire earlier
+    var earlNow = earliestRetireAge(cf);
+    var savedT = s.targetIncome;
+    s.targetIncome = Math.max(0, num(savedT) - 5000);
+    var earlTrim = earliestRetireAge(cf);
+    s.targetIncome = savedT;
+    if (earlNow != null && earlTrim != null && earlTrim < earlNow) {
+      rows.push("Plan to spend <b>$5,000/yr less</b> → you could retire about <b>" + (earlNow - earlTrim) + " year" + (earlNow - earlTrim === 1 ? "" : "s") + " earlier</b>.");
+    } else if (earlNow == null && earlTrim != null) {
+      rows.push("Plan to spend <b>$5,000/yr less</b> → the plan goes from falling short to <b>working</b> (retiring at " + earlTrim + ").");
+    }
+
+    el.levers.innerHTML = rows.length
+      ? '<p class="lv-title">🔧 What moves the needle most</p>' + rows.map(function (r) { return '<p class="lv-row">' + r + '</p>'; }).join("")
+      : "";
+  }
+
   // Emergency fund: how many months of expenses your cash covers (aim for 3–6).
   function renderEmergencyFund(cf) {
     var cash = 0;
@@ -629,6 +673,7 @@
     { label: "Retire 2 years later", retireDelta: 2 },
     { label: "Spend $10k less a year", spendDelta: -10000 },
     { label: "If markets do poorly", rateDelta: -2 },
+    { label: "If markets crashed 30% tomorrow", shock: 0.3 },
   ];
   function renderWhatif() {
     var s = state.settings;
@@ -643,7 +688,7 @@
       if (!(s.retireAge > s.currentAge && s.planThroughAge > s.retireAge)) {
         out = "—"; cls = "mute"; pill = "n/a";
       } else {
-        var sim = simulate(base, s.rate);
+        var sim = simulate(base, s.rate, null, sc.shock);
         var ok = sim.lastsToEnd;
         out = ok ? "to " + s.planThroughAge + "+" : "to age " + sim.runOutAge;
         cls = ok ? "good" : "warn"; pill = ok ? "Lasts" : "Runs short";
@@ -916,6 +961,8 @@
         var url = URL.createObjectURL(blob), a = document.createElement("a");
         a.href = url; a.download = "my-retirement-plan.json"; document.body.appendChild(a); a.click();
         document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        try { localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (e2) {}
+        renderBackupNote();
         flash("Saved a file called “my-retirement-plan.json”. Keep it — “Open a saved file” loads it back anytime, on any device.");
       } catch (e) {
         // sandboxed previews can block downloads — fall back to the copyable link
@@ -991,6 +1038,22 @@
       // a storage problem must never hide behind the gear — force the panel open
       if (el.settingsPanel) { el.settingsPanel.hidden = false; if (el.gearBtn) el.gearBtn.setAttribute("aria-expanded", "true"); }
     }
+    renderBackupNote();
+  }
+  // gentle reminder to keep a file backup (the one copy the browser can't lose)
+  function renderBackupNote() {
+    if (!el.backupNote) return;
+    var ts = 0;
+    try { ts = parseInt(localStorage.getItem(BACKUP_KEY), 10) || 0; } catch (e) {}
+    if (!ts) {
+      el.backupNote.className = "sb-backup warn";
+      el.backupNote.textContent = "Last file backup: never — one tap below keeps a copy the browser can’t lose.";
+      return;
+    }
+    var days = Math.floor((Date.now() - ts) / 86400000);
+    if (days <= 0) { el.backupNote.className = "sb-backup ok"; el.backupNote.textContent = "Last file backup: today. 👍"; }
+    else if (days < 60) { el.backupNote.className = "sb-backup ok"; el.backupNote.textContent = "Last file backup: " + days + " day" + (days === 1 ? "" : "s") + " ago."; }
+    else { el.backupNote.className = "sb-backup warn"; el.backupNote.textContent = "Last file backup: " + days + " days ago — worth saving a fresh copy below."; }
   }
   function readKey(k) {
     try { var r = JSON.parse(localStorage.getItem(k)); if (r && r.settings && Array.isArray(r.accounts)) return r; } catch (e) {}
