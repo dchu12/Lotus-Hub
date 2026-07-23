@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0891b2" />
+  <title>Trip Planner · Plan the perfect getaway</title>
+  <meta name="description" content="A fun, beachy vacation planner — track your itinerary, flights, hotels, reservations, ticketed events and budget. Reuse the template for every trip." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%96%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <!-- PWA: installable + offline -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Trip Planner" />
+  <!-- ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
+  <link rel="stylesheet" href="styles.css?v=4" />
+</head>
+<body>
+  <!-- Decorative sky→sea gradient with a lazy wave along the bottom -->
+  <div class="sky" aria-hidden="true">
+    <span class="sun"></span>
+    <span class="cloud c1"></span>
+    <span class="cloud c2"></span>
+    <svg class="waves" viewBox="0 0 1440 120" preserveAspectRatio="none">
+      <path d="M0,64 C240,110 480,20 720,58 C960,96 1200,26 1440,64 L1440,120 L0,120 Z"></path>
+      <path class="waves-back" d="M0,80 C260,40 520,110 780,74 C1040,40 1240,96 1440,72 L1440,120 L0,120 Z"></path>
+    </svg>
+  </div>
+
+  <div class="wrap">
+    <header class="hd">
+      <div class="hd-brand">
+        <span class="hd-logo" aria-hidden="true">🏖️</span>
+        <div>
+          <h1>Trip Planner</h1>
+          <p class="hd-sub">Plan the perfect getaway 🌴</p>
+        </div>
+      </div>
+
+      <div class="hd-actions">
+        <div class="trip-switch">
+          <label class="sr-only" for="tripSelect">Choose a trip</label>
+          <select id="tripSelect" class="trip-select" aria-label="Choose a trip"></select>
+        </div>
+        <button id="newTripBtn" class="btn primary" type="button">✈️ New trip</button>
+        <button id="menuBtn" class="icon-btn" type="button" aria-label="Menu" aria-expanded="false" title="More">⚙️</button>
+      </div>
+    </header>
+
+    <!-- Slide-down utility menu (save / load / theme / duplicate / delete) -->
+    <section class="card menu-panel" id="menuPanel" hidden aria-label="Trip tools">
+      <div class="menu-grid">
+        <button type="button" id="duplicateTrip" class="data-btn">📑 Duplicate as template</button>
+        <button type="button" id="shareTrip" class="data-btn">🔗 Share this trip</button>
+        <button type="button" id="saveFile" class="data-btn">💾 Back up all trips</button>
+        <label class="data-btn">📂 Restore from file<input type="file" id="loadData" accept="application/json,.json" hidden /></label>
+        <button type="button" id="printBtn" class="data-btn">🖨️ Print / Save PDF</button>
+        <button type="button" id="themeToggle" class="data-btn">🌙 Dark mode</button>
+        <button type="button" id="deleteTrip" class="data-btn danger">🗑️ Delete this trip</button>
+      </div>
+      <p class="menu-msg" id="menuMsg" role="status"></p>
+    </section>
+
+    <!-- Trip hero: name, destination, dates, countdown -->
+    <section class="hero card" id="hero" aria-label="Trip summary"></section>
+
+    <!-- Tab navigation -->
+    <nav class="tabs" id="tabs" aria-label="Sections">
+      <button class="tab active" data-view="overview" type="button"><span>🧭</span> Overview</button>
+      <button class="tab" data-view="flights" type="button"><span>✈️</span> Flights</button>
+      <button class="tab" data-view="hotels" type="button"><span>🏨</span> Accommodations</button>
+      <button class="tab" data-view="itinerary" type="button"><span>🗓️</span> Itinerary</button>
+      <button class="tab" data-view="packing" type="button"><span>🧳</span> Packing</button>
+      <button class="tab" data-view="budget" type="button"><span>💰</span> Budget</button>
+      <button class="tab" data-view="details" type="button"><span>📌</span> Details</button>
+    </nav>
+
+    <main id="main"><!-- rendered by app.js --></main>
+
+    <footer class="ft">
+      <p>Everything saves automatically on this device 🐚 Use <b>Back up all trips</b> to keep a copy or move to another device.</p>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js?v=4"></script>
+</body>
+</html>
