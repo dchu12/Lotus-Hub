@@ -384,7 +384,7 @@
     var grid = el("div", "ov-grid");
     grid.appendChild(ovCard("💰", money(totalBudget), plannedBudget ? "Planned budget" : "Booked so far"));
     grid.appendChild(ovCard("✈️", t.flights.length, t.flights.length === 1 ? "Flight" : "Flights"));
-    grid.appendChild(ovCard("🏨", t.hotels.length, t.hotels.length === 1 ? "Hotel stay" : "Hotel stays"));
+    grid.appendChild(ovCard("🏨", t.hotels.length, t.hotels.length === 1 ? "Stay" : "Stays"));
     grid.appendChild(ovCard("🎟️", t.plans.filter(function (p) { return p.type === "ticket" || p.type === "reservation"; }).length, "Bookings"));
     if (cap) {
       var pct = cap ? Math.min(100, Math.round((totalBudget / cap) * 100)) : 0;
@@ -411,7 +411,7 @@
     t.hotels.forEach(function (h) {
       var nights = h.checkIn && h.checkOut ? daysBetween(h.checkIn, h.checkOut) : 0;
       var sub = (h.checkIn ? fmtDate(h.checkIn) : "—") + " → " + (h.checkOut ? fmtDate(h.checkOut) : "—") + (nights ? " · " + nights + (nights === 1 ? " night" : " nights") : "");
-      frag.appendChild(miniRow("🏨", h.name || "Hotel", sub, "", h.cost ? money(h.cost) : ""));
+      frag.appendChild(miniRow("🏨", h.name || "Accommodation", sub, "", h.cost ? money(h.cost) : ""));
     });
 
     if (!t.flights.length && !t.hotels.length && !t.plans.length) {
@@ -514,7 +514,7 @@
   function viewHotels() {
     var t = activeTrip();
     var frag = document.createDocumentFragment();
-    frag.appendChild(sectionHead("Hotels & stays", "Where you're resting your head each night — check-in and check-out dates, address and confirmation.", "+ Add stay", function () {
+    frag.appendChild(sectionHead("Accommodations", "Where you're resting your head each night — hotels, resorts, rentals or a friend's couch. Check-in / check-out, address and confirmation.", "+ Add stay", function () {
       t.hotels.push({ id: uid(), name: "", checkIn: t.startDate || "", checkOut: t.endDate || "", address: "", confirmation: "", cost: "", notes: "" });
       save(); renderMain(); renderHero();
     }));
@@ -537,7 +537,7 @@
       item.appendChild(head);
 
       var grid = el("div", "grid");
-      grid.appendChild(fld("Hotel / place name", h.name, function (v) { h.name = v; var m = item.querySelector(".item-title-mini"); if (m && m.childNodes[0]) m.childNodes[0].nodeValue = (v || "New stay"); }, { wide: true, placeholder: "e.g. Sunset Beach Resort" }));
+      grid.appendChild(fld("Place name", h.name, function (v) { h.name = v; var m = item.querySelector(".item-title-mini"); if (m && m.childNodes[0]) m.childNodes[0].nodeValue = (v || "New stay"); }, { wide: true, placeholder: "e.g. Sunset Beach Resort" }));
       grid.appendChild(fld("Check-in", h.checkIn, function (v) { h.checkIn = v; renderMain(); }, { type: "date" }));
       grid.appendChild(fld("Check-out", h.checkOut, function (v) { h.checkOut = v; renderMain(); }, { type: "date" }));
       grid.appendChild(fld("Confirmation #", h.confirmation, function (v) { h.confirmation = v; }, { placeholder: "Booking code" }));
@@ -787,7 +787,7 @@
       sc.innerHTML =
         '<div class="s-line">💡 From your bookings: ' +
         '<span>✈️ Flights <b>' + money(committed.flights) + '</b></span>' +
-        '<span>🏨 Hotels <b>' + money(committed.hotels) + '</b></span>' +
+        '<span>🏨 Stays <b>' + money(committed.hotels) + '</b></span>' +
         '<span>🎟️ Plans <b>' + money(committed.plans) + '</b></span>' +
         '</div>';
       var pull = el("button", "add-btn", "＋ Add these to budget");

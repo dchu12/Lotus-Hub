@@ -18,7 +18,7 @@ one for each getaway, or duplicate an existing trip to reuse as a starting point
 |-----|---------------|
 | 🧭 **Overview** | Trip name, destination, dates, live countdown, day/night counts, budget snapshot, and your flights & hotels at a glance |
 | ✈️ **Flights** | Outbound, return and connecting flights — airline, flight #, from/to, times, seat, confirmation, cost |
-| 🏨 **Hotels** | Each stay with check-in / check-out (auto nights), address, confirmation, cost and notes |
+| 🏨 **Accommodations** | Each stay — hotel, resort or rental — with check-in / check-out (auto nights), address, confirmation, cost and notes |
 | 🗓️ **Itinerary** | Day-by-day plans grouped by date — activities, 🎟️ ticketed events, 🍽️ reservations, transport and notes |
 | 🧳 **Packing** | A checklist you tick off as you pack, with a progress bar. Add your own items or drop in the beach essentials |
 | 💰 **Budget** | Currency picker, overall target + itemized lines by category, planned vs actual, paid checkboxes, and a one-click pull of costs from your bookings |
