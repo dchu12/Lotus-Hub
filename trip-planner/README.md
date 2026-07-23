@@ -1,6 +1,6 @@
-# 🏖️ Trip Planner
+# 🗼 Trip Planner
 
-A fun, beachy **vacation planner**. Name your trip, set the dates, and track
+A fun, **city-vibes vacation planner** (Tokyo / Fukuoka dusk theme). Name your trip, set the dates, and track
 everything in one place: flights (to & from, with flight numbers, seats and
 confirmation codes), hotels for each night, a day-by-day itinerary with
 ticketed events and reservations, and an itemized budget.
@@ -20,7 +20,7 @@ one for each getaway, or duplicate an existing trip to reuse as a starting point
 | ✈️ **Flights** | Outbound, return and connecting flights — airline, flight #, from/to, times, seat, confirmation, cost |
 | 🏨 **Accommodations** | Each stay — hotel, resort or rental — with check-in / check-out (auto nights), address, confirmation, cost and notes |
 | 🗓️ **Itinerary** | Day-by-day plans grouped by date — activities, 🎟️ ticketed events, 🍽️ reservations, transport and notes |
-| 🧳 **Packing** | A checklist you tick off as you pack, with a progress bar. Add your own items or drop in the beach essentials |
+| 🧳 **Packing** | A checklist you tick off as you pack, with a progress bar. Add your own items or drop in the city-trip essentials |
 | 💰 **Budget** | Currency picker, travellers + **per-person split**, overall target, itemized lines by category, planned vs actual, paid checkboxes, and a one-click pull of costs from your bookings |
 | 📌 **Details** | Catch-all notebook — passports, emergency contacts, wifi codes… |
 
@@ -59,7 +59,7 @@ amount across the whole trip (flights, hotels, plans and budget):
 - **Auto-saves** to your browser's `localStorage` on this device.
 - **Back up all trips** exports a JSON file; **Restore from file** brings it back
   (or moves everything to another device).
-- **Print / Save PDF** and a light/dark **beach theme** are built in.
+- **Print / Save PDF** and a light/dark **Tokyo/Fukuoka city theme** are built in.
 
 ## Run it
 
@@ -72,8 +72,8 @@ python3 -m http.server 8000
 
 | File | Purpose |
 |------|---------|
-| `index.html` | App shell — header, tabs, decorative sky/waves |
-| `styles.css` | Ocean + sunset theme (light & dark) |
+| `index.html` | App shell — header, tabs, decorative dusk skyline |
+| `styles.css` | Indigo-dusk + neon theme (light & dark) |
 | `app.js` | All app logic — state, rendering, trips, budget |
 
 It's fully self-contained and shares no data or backend with anything else in

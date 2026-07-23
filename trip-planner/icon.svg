@@ -1,41 +1,80 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#7dd3fc"/>
-      <stop offset="0.55" stop-color="#22d3ee"/>
-      <stop offset="0.62" stop-color="#0891b2"/>
-      <stop offset="1" stop-color="#0e7490"/>
+    <linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2e1065"/>
+      <stop offset="0.42" stop-color="#6d28d9"/>
+      <stop offset="0.78" stop-color="#db2777"/>
+      <stop offset="1" stop-color="#fb7185"/>
     </linearGradient>
-    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#fff7d6"/>
-      <stop offset="0.6" stop-color="#fde68a"/>
-      <stop offset="1" stop-color="#fb923c"/>
+    <radialGradient id="moon" cx="0.4" cy="0.38" r="0.6">
+      <stop offset="0" stop-color="#fffef4"/>
+      <stop offset="0.6" stop-color="#fde9c8"/>
+      <stop offset="1" stop-color="#f6d193"/>
     </radialGradient>
+    <linearGradient id="tower" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fb7185"/>
+      <stop offset="1" stop-color="#e11d48"/>
+    </linearGradient>
     <clipPath id="round"><rect x="0" y="0" width="512" height="512" rx="112"/></clipPath>
   </defs>
 
   <g clip-path="url(#round)">
-    <!-- sky + sea -->
-    <rect x="0" y="0" width="512" height="512" fill="url(#sky)"/>
-    <!-- sun -->
-    <circle cx="356" cy="150" r="66" fill="url(#sun)"/>
-    <!-- distant water shimmer lines -->
-    <g stroke="#e0fbff" stroke-width="7" stroke-linecap="round" opacity="0.5">
-      <line x1="150" y1="330" x2="230" y2="330"/>
-      <line x1="300" y1="356" x2="392" y2="356"/>
-      <line x1="120" y1="384" x2="196" y2="384"/>
+    <!-- dusk sky -->
+    <rect x="0" y="0" width="512" height="512" fill="url(#dusk)"/>
+    <!-- moon -->
+    <circle cx="372" cy="126" r="44" fill="url(#moon)"/>
+    <!-- stars -->
+    <g fill="#ffffff">
+      <circle cx="96" cy="96" r="3.5" opacity="0.9"/>
+      <circle cx="188" cy="150" r="2.5" opacity="0.8"/>
+      <circle cx="286" cy="80" r="3" opacity="0.85"/>
+      <circle cx="150" cy="60" r="2" opacity="0.7"/>
     </g>
-    <!-- sand -->
-    <path d="M0,430 C120,398 200,452 300,438 C380,427 452,462 512,442 L512,512 L0,512 Z" fill="#fde68a"/>
-    <path d="M0,452 C120,428 220,470 320,458 C400,449 460,476 512,462 L512,512 L0,512 Z" fill="#fcd34d" opacity="0.85"/>
+    <!-- Mt Fuji, faint -->
+    <path d="M40,400 L168,232 L296,400 Z" fill="#ffffff" opacity="0.12"/>
+    <path d="M140,268 L168,232 L196,268 L182,260 L168,274 L154,260 Z" fill="#ffffff" opacity="0.3"/>
 
-    <!-- beach umbrella -->
-    <g transform="translate(196 250)">
-      <rect x="-6" y="0" width="12" height="196" rx="6" fill="#3f2d1e"/>
-      <path d="M0,-14 C-104,-14 -150,44 -150,44 L150,44 C150,44 104,-14 0,-14 Z" fill="#f43f5e"/>
-      <path d="M0,-14 C-52,-14 -84,44 -84,44 L-16,44 C-16,10 -8,-6 0,-14 Z" fill="#fff" opacity="0.92"/>
-      <path d="M52,44 C52,10 40,-8 20,-13 C70,-8 100,20 108,44 Z" fill="#fff" opacity="0.92"/>
-      <circle cx="0" cy="-16" r="10" fill="#fb923c"/>
+    <!-- city skyline (dark silhouettes) -->
+    <g fill="#171235">
+      <rect x="0" y="404" width="512" height="108"/>
+      <rect x="18" y="322" width="66" height="190"/>
+      <rect x="92" y="286" width="56" height="226"/>
+      <rect x="156" y="350" width="48" height="162"/>
+      <rect x="300" y="300" width="58" height="212"/>
+      <rect x="366" y="340" width="44" height="172"/>
+      <rect x="420" y="262" width="66" height="250"/>
+    </g>
+
+    <!-- communications tower (Tokyo / Fukuoka Tower) -->
+    <path d="M226,512 L246,302 L241,280 L256,150 L271,280 L266,302 L286,512 Z" fill="url(#tower)"/>
+    <rect x="236" y="312" width="40" height="11" fill="url(#tower)"/>
+    <rect x="244" y="272" width="24" height="7" fill="url(#tower)"/>
+
+    <!-- lit windows -->
+    <g>
+      <g fill="#fcd34d">
+        <rect x="106" y="300" width="9" height="11"/>
+        <rect x="124" y="300" width="9" height="11"/>
+        <rect x="106" y="326" width="9" height="11"/>
+        <rect x="106" y="352" width="9" height="11"/>
+        <rect x="432" y="288" width="9" height="11"/>
+        <rect x="454" y="288" width="9" height="11"/>
+        <rect x="432" y="314" width="9" height="11"/>
+        <rect x="454" y="340" width="9" height="11"/>
+        <rect x="312" y="330" width="9" height="11"/>
+        <rect x="332" y="356" width="9" height="11"/>
+      </g>
+      <g fill="#f472b6">
+        <rect x="124" y="326" width="9" height="11"/>
+        <rect x="454" y="314" width="9" height="11"/>
+        <rect x="332" y="330" width="9" height="11"/>
+      </g>
+      <!-- tower beacon lights -->
+      <g fill="#fde68a">
+        <rect x="252" y="340" width="8" height="10"/>
+        <rect x="252" y="382" width="8" height="10"/>
+        <rect x="252" y="424" width="8" height="10"/>
+      </g>
     </g>
   </g>
 </svg>

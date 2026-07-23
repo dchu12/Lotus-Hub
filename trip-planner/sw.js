@@ -2,13 +2,13 @@
    Strategy: network-first for same-origin GETs (so new deploys show when
    you're online), falling back to the cache when the network is unavailable.
    All data lives in localStorage, so the SW only caches the app shell. */
-var CACHE = "trip-planner-v5";
+var CACHE = "trip-planner-v6";
 var CACHE_PREFIX = "trip-planner-"; // only ever manage caches under this prefix
 var ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=4",
-  "./app.js?v=4",
+  "./styles.css?v=5",
+  "./app.js?v=5",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
