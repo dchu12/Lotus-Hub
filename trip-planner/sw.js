@@ -2,7 +2,8 @@
    Strategy: network-first for same-origin GETs (so new deploys show when
    you're online), falling back to the cache when the network is unavailable.
    All data lives in localStorage, so the SW only caches the app shell. */
-var CACHE = "trip-planner-v4";
+var CACHE = "trip-planner-v5";
+var CACHE_PREFIX = "trip-planner-"; // only ever manage caches under this prefix
 var ASSETS = [
   "./",
   "./index.html",
@@ -23,7 +24,12 @@ self.addEventListener("install", function (e) {
 self.addEventListener("activate", function (e) {
   e.waitUntil(
     caches.keys().then(function (keys) {
-      return Promise.all(keys.map(function (k) { if (k !== CACHE) return caches.delete(k); }));
+      // Delete only OUR OWN superseded caches. This app shares the origin with
+      // other apps (e.g. the pickleball app at "/"), so we must never touch a
+      // cache that isn't ours — doing so would wipe their offline data.
+      return Promise.all(keys.map(function (k) {
+        if (k !== CACHE && k.indexOf(CACHE_PREFIX) === 0) return caches.delete(k);
+      }));
     }).then(function () { return self.clients.claim(); })
   );
 });

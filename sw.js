@@ -1,7 +1,8 @@
 /* sw.js — service worker for Lotus Hub (installable PWA).
  * Network-first with HTTP-cache bypass so the newest deploy always loads on open;
  * falls back to the runtime cache only when offline. */
-var CACHE = "lotus-hub-v52";
+var CACHE = "lotus-hub-v53";
+var CACHE_PREFIX = "lotus-hub-"; // only ever manage caches under this prefix
 var SHELL = [
   "./",
   "./index.html",
@@ -26,7 +27,12 @@ self.addEventListener("activate", function (e) {
     caches
       .keys()
       .then(function (keys) {
-        return Promise.all(keys.map(function (k) { return k === CACHE ? null : caches.delete(k); }));
+        // Delete only OUR OWN superseded caches. This app shares the origin
+        // with other apps (e.g. the Trip Planner at "/trip-planner/"), so we
+        // must never delete a cache that isn't ours.
+        return Promise.all(keys.map(function (k) {
+          return (k !== CACHE && k.indexOf(CACHE_PREFIX) === 0) ? caches.delete(k) : null;
+        }));
       })
       .then(function () { return self.clients.claim(); })
   );
