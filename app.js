@@ -216,6 +216,12 @@
       "auth/popup-closed-by-user": "Sign-in was cancelled.",
       "auth/popup-blocked": "Your browser blocked the sign-in popup — allow popups and try again.",
       "auth/network-request-failed": "Network problem — check your connection and try again.",
+      // Provider toggled off in the Firebase console — show players a calm
+      // fallback instead of the raw developer-facing "enable it in the console".
+      "auth/operation-not-allowed": "That sign-in option is unavailable right now — please sign in with your email and password.",
+      "auth/operation-not-supported-in-this-environment": "That sign-in option isn't supported here — please use your email and password.",
+      "auth/unauthorized-domain": "Sign-in isn't enabled for this web address yet — please try again shortly.",
+      "auth/account-exists-with-different-credential": "You already have an account with this email — sign in with your email and password instead.",
     };
     return map[code] || (err && err.message) || "Something went wrong. Please try again.";
   }
