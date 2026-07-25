@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c01f2c" />
+  <title>Coach Console · Lotus Pickleball Academy</title>
+  <meta name="description" content="Run your coaching: schedule lessons, track students and their DUPR goals, keep a drill library, and see who still owes you — all offline on your device." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E" />
+  <!-- PWA: installable + offline -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Coach Console" />
+  <!-- ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
+  <link rel="stylesheet" href="styles.css?v=1" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="hd">
+      <div class="hd-brand">
+        <a class="hub-back" href="../hub/" title="All Lotus apps" aria-label="Back to Lotus Hub">🪷</a>
+        <span class="hd-logo" aria-hidden="true">🎯</span>
+        <div>
+          <h1>Coach Console</h1>
+          <p class="hd-sub">Lotus Pickleball Academy</p>
+        </div>
+      </div>
+      <div class="hd-actions">
+        <button id="addBtn" class="btn primary" type="button">＋ Add</button>
+        <button id="gearBtn" class="icon-btn" type="button" aria-label="Settings" aria-expanded="false" title="Settings">⚙️</button>
+      </div>
+    </header>
+
+    <!-- Slide-down settings / data panel -->
+    <section class="card menu-panel" id="menuPanel" hidden aria-label="Settings & data">
+      <div class="field-row">
+        <label class="field">
+          <span>Your name</span>
+          <input type="text" id="setCoach" placeholder="Coach name" />
+        </label>
+        <label class="field narrow">
+          <span>Currency</span>
+          <input type="text" id="setCurrency" maxlength="3" placeholder="$" />
+        </label>
+        <label class="field narrow">
+          <span>Default lesson price</span>
+          <input type="number" id="setPrice" min="0" step="5" placeholder="60" inputmode="decimal" />
+        </label>
+      </div>
+      <div class="menu-grid">
+        <button type="button" id="saveFile" class="data-btn">💾 Back up everything</button>
+        <label class="data-btn">📂 Restore from file<input type="file" id="loadData" accept="application/json,.json" hidden /></label>
+        <button type="button" id="printBtn" class="data-btn">🖨️ Print / Save PDF</button>
+        <button type="button" id="themeToggle" class="data-btn">🌙 Dark mode</button>
+        <button type="button" id="seedBtn" class="data-btn">🌱 Load sample data</button>
+        <button type="button" id="wipeBtn" class="data-btn danger">🗑️ Erase all data</button>
+      </div>
+      <p class="menu-msg" id="menuMsg" role="status"></p>
+    </section>
+
+    <!-- Dashboard: next lesson, this week, outstanding -->
+    <section class="dash" id="dash" aria-label="At a glance"></section>
+
+    <!-- Tab navigation -->
+    <nav class="tabs" id="tabs" aria-label="Sections">
+      <button class="tab active" data-view="schedule" type="button"><span>📅</span> Schedule</button>
+      <button class="tab" data-view="students" type="button"><span>🧑‍🎓</span> Students</button>
+      <button class="tab" data-view="drills" type="button"><span>🎯</span> Drills</button>
+      <button class="tab" data-view="money" type="button"><span>💵</span> Money</button>
+    </nav>
+
+    <main id="main"><!-- rendered by app.js --></main>
+
+    <footer class="ft">
+      <p>Everything saves automatically on this device. Use <b>Back up everything</b> to keep a copy or move to another device.</p>
+    </footer>
+  </div>
+
+  <!-- Form drawer (add / edit lessons, students, drills) -->
+  <div class="drawer-root" id="drawerRoot" hidden>
+    <div class="drawer-scrim" data-close="1"></div>
+    <div class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+      <div class="drawer-hd">
+        <h2 id="drawerTitle">Add</h2>
+        <button class="icon-btn" type="button" data-close="1" aria-label="Close">✕</button>
+      </div>
+      <form id="drawerForm" class="drawer-body"><!-- fields injected by app.js --></form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js?v=1"></script>
+</body>
+</html>

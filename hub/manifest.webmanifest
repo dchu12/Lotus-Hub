@@ -1,0 +1,15 @@
+{
+  "name": "Lotus Hub · All your apps",
+  "short_name": "Lotus Hub",
+  "description": "One home for all the Lotus apps — pickleball, coach console, retirement and trip planning.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f5f4",
+  "theme_color": "#c01f2c",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

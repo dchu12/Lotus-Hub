@@ -9,6 +9,23 @@ multi-user data. No framework — vanilla JS, same simple style as a static site
 > This is a fresh project with its **own separate Firebase project** — it does not
 > share any backend, data, or config with any other app.
 
+## The hub launcher
+
+Open [`/hub/`](./hub/) for a launcher home screen that links to the pickleball
+app and its Coach Console:
+
+| App | Path | What it does |
+|-----|------|--------------|
+| 🪷 **Launcher** | [`/hub/`](./hub/) | Home screen linking to the apps below |
+| 🏓 **Pickleball** | `/` (this app) | Open play, live roster & rankings |
+| 🎯 **Coach Console** | [`/coach/`](./coach/) | Schedule lessons, track students & DUPR goals, drill library, who-owes-you |
+
+The Coach Console stores its data locally on the device (no server); the
+pickleball app uses Firebase.
+
+> The `retirement/` and `trip-planner/` folders are separate, standalone apps
+> and are intentionally **not** part of this launcher.
+
 ## Status
 
 | Area | State |
