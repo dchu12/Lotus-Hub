@@ -9,8 +9,6 @@
   var APPS = [
     { emoji: "🏓", name: "Pickleball", tag: "Open play, roster & live rankings", href: "../", accent: "#c01f2c" },
     { emoji: "🎯", name: "Coach Console", tag: "Lessons, students, drills & who owes you", href: "../coach/", accent: "#0f9d58" },
-    { emoji: "📈", name: "Retirement", tag: "Are we on track to retire?", href: "../retirement/", accent: "#0f766e" },
-    { emoji: "🗼", name: "Trip Planner", tag: "Plan your next city adventure", href: "../trip-planner/", accent: "#4f46e5" },
   ];
 
   function esc(s) {

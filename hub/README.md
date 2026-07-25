@@ -12,8 +12,9 @@ visit `/hub/`.
 |-----|------|
 | 🏓 Pickleball (open play, roster, rankings) | `/` |
 | 🎯 Coach Console (lessons, students, drills) | `/coach/` |
-| 📈 Retirement | `/retirement/` |
-| 🗼 Trip Planner | `/trip-planner/` |
+
+> The `retirement/` and `trip-planner/` apps are standalone and intentionally
+> not listed here.
 
 ## Adding an app
 
