@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c01f2c" />
+  <title>Lotus Hub · All your apps</title>
+  <meta name="description" content="One home for all the Lotus apps — pickleball open play, the coach console, retirement planning and trip planning." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AA%B7%3C/text%3E%3C/svg%3E" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Lotus Hub" />
+  <link rel="stylesheet" href="styles.css?v=1" />
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="wrap">
+    <header class="hd">
+      <div class="hd-brand">
+        <span class="lotus" aria-hidden="true">🪷</span>
+        <div>
+          <h1>Lotus Hub</h1>
+          <p class="hd-sub" id="greeting">Everything in one place</p>
+        </div>
+      </div>
+      <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode" title="Toggle theme">🌙</button>
+    </header>
+
+    <main>
+      <div class="apps" id="apps"><!-- rendered by app.js --></div>
+    </main>
+
+    <footer class="ft">
+      <p>Add to your home screen to launch every Lotus app from one icon.</p>
+    </footer>
+  </div>
+  <script src="app.js?v=1"></script>
+</body>
+</html>

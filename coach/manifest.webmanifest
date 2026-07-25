@@ -1,0 +1,15 @@
+{
+  "name": "Coach Console · Lotus Pickleball Academy",
+  "short_name": "Coach",
+  "description": "Schedule lessons, track students and their DUPR goals, keep a drill library, and see who still owes you.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f5f4",
+  "theme_color": "#c01f2c",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

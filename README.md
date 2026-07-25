@@ -9,6 +9,23 @@ multi-user data. No framework — vanilla JS, same simple style as a static site
 > This is a fresh project with its **own separate Firebase project** — it does not
 > share any backend, data, or config with any other app.
 
+## Apps in this hub
+
+Lotus Hub is a small family of standalone, installable apps that share one origin.
+Open [`/hub/`](./hub/) for a launcher that links to them all:
+
+| App | Path | What it does |
+|-----|------|--------------|
+| 🪷 **Launcher** | [`/hub/`](./hub/) | Home screen linking to every app below |
+| 🏓 **Pickleball** | `/` (this app) | Open play, live roster & rankings |
+| 🎯 **Coach Console** | [`/coach/`](./coach/) | Schedule lessons, track students & DUPR goals, drill library, who-owes-you |
+| 📈 **Retirement** | [`/retirement/`](./retirement/) | Plain-language "are we on track?" tracker |
+| 🗼 **Trip Planner** | [`/trip-planner/`](./trip-planner/) | Itinerary, flights, hotels, packing & budget |
+
+Each 🪷 button in an app's header returns to the launcher. The Coach Console,
+Retirement and Trip Planner apps store their data locally on the device
+(no server); only the pickleball app uses Firebase.
+
 ## Status
 
 | Area | State |

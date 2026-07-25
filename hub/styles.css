@@ -1,0 +1,82 @@
+/* Lotus Hub launcher — Lotus crimson + gold. Light + dark. Self-contained. */
+
+:root {
+  --brand:      #c01f2c;
+  --brand-hover:#a5182a;
+  --accent:     #f5b301;
+  --bg:         #f6f5f4;
+  --card:       #ffffff;
+  --ink:        #201c1c;
+  --ink-2:      #4a4443;
+  --muted:      #8a8380;
+  --line:       #e7e3e1;
+  --shadow:     0 10px 30px rgba(120, 30, 40, .12);
+  --shadow-sm:  0 3px 10px rgba(120, 30, 40, .10);
+}
+html[data-theme="dark"] {
+  --brand:      #f0637a;
+  --brand-hover:#f78ba0;
+  --accent:     #fbbf24;
+  --bg:         #171213;
+  --card:       #211a1b;
+  --ink:        #f4ecec;
+  --ink-2:      #cbbfbf;
+  --muted:      #8c807f;
+  --line:       #372c2d;
+  --shadow:     0 12px 34px rgba(0, 0, 0, .5);
+  --shadow-sm:  0 3px 12px rgba(0, 0, 0, .4);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; color: var(--ink); background: var(--bg);
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5; -webkit-text-size-adjust: 100%;
+}
+.glow {
+  position: fixed; inset: 0 0 auto 0; height: 320px; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(600px 300px at 20% -20%, rgba(192,31,44,.28), transparent 70%),
+    radial-gradient(500px 260px at 90% -10%, rgba(245,179,1,.22), transparent 70%);
+}
+.wrap { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 34px 18px 60px; }
+
+.hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 28px; }
+.hd-brand { display: flex; align-items: center; gap: 14px; }
+.lotus {
+  display: grid; place-items: center; width: 56px; height: 56px; flex: none; font-size: 30px;
+  border-radius: 18px; background: linear-gradient(140deg, var(--brand), var(--brand-hover));
+  box-shadow: 0 8px 22px rgba(192, 31, 44, .38);
+}
+.hd h1 { margin: 0; font-size: 1.7rem; letter-spacing: -.02em; line-height: 1; }
+.hd-sub { margin: 4px 0 0; color: var(--muted); font-size: .9rem; }
+.icon-btn {
+  appearance: none; width: 44px; height: 44px; flex: none; display: grid; place-items: center;
+  border: 1px solid var(--line); background: var(--card); border-radius: 13px; font-size: 20px;
+  cursor: pointer; transition: .15s; box-shadow: var(--shadow-sm);
+}
+.icon-btn:hover { border-color: var(--brand); transform: translateY(-1px); }
+
+.apps { display: grid; gap: 12px; }
+.app {
+  display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit;
+  background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 18px 18px;
+  box-shadow: var(--shadow-sm); transition: .16s; position: relative; overflow: hidden;
+}
+.app::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--accent);
+}
+.app:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--accent), transparent 55%); }
+.app-ico {
+  display: grid; place-items: center; width: 54px; height: 54px; flex: none; font-size: 28px;
+  border-radius: 15px; background: color-mix(in srgb, var(--accent), transparent 86%);
+}
+.app-txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.app-name { font-weight: 800; font-size: 1.12rem; letter-spacing: -.01em; }
+.app-tag { color: var(--muted); font-size: .88rem; }
+.app-go { font-size: 1.4rem; color: var(--muted); flex: none; transition: .16s; }
+.app:hover .app-go { color: var(--accent); transform: translateX(3px); }
+
+.ft { text-align: center; color: var(--muted); font-size: .82rem; margin-top: 30px; }
+
+@media (min-width: 620px) { .apps { grid-template-columns: 1fr 1fr; } }
