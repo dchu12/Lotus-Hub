@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Trip Planner" />
   <!-- ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
 </head>
 <body>
   <!-- Decorative dusk sky with a Tokyo/Fukuoka city skyline along the bottom -->
@@ -100,15 +100,36 @@
     <!-- Trip hero: name, destination, dates, countdown -->
     <section class="hero card" id="hero" aria-label="Trip summary"></section>
 
-    <!-- Tab navigation -->
+    <!-- Tab navigation (top pill bar on desktop, fixed bottom nav on mobile) -->
     <nav class="tabs" id="tabs" aria-label="Sections">
-      <button class="tab active" data-view="overview" type="button"><span>🧭</span> Overview</button>
-      <button class="tab" data-view="flights" type="button"><span>✈️</span> Flights</button>
-      <button class="tab" data-view="hotels" type="button"><span>🏨</span> Accommodations</button>
-      <button class="tab" data-view="itinerary" type="button"><span>🗓️</span> Itinerary</button>
-      <button class="tab" data-view="packing" type="button"><span>🧳</span> Packing</button>
-      <button class="tab" data-view="budget" type="button"><span>💰</span> Budget</button>
-      <button class="tab" data-view="details" type="button"><span>📌</span> Details</button>
+      <button class="tab active" data-view="overview" type="button" aria-label="Overview">
+        <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="15.6 8.4 13.2 13.2 8.4 15.6 10.8 10.8"/></svg>
+        <span class="tab-lbl">Overview</span>
+      </button>
+      <button class="tab" data-view="flights" type="button" aria-label="Flights">
+        <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+        <span class="tab-lbl">Flights</span>
+      </button>
+      <button class="tab" data-view="hotels" type="button" aria-label="Accommodations">
+        <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-5h18v5"/><path d="M3 13V7h11a4 4 0 0 1 4 4v2"/><path d="M3 18v2"/><path d="M21 18v2"/></svg>
+        <span class="tab-lbl">Stays</span>
+      </button>
+      <button class="tab" data-view="itinerary" type="button" aria-label="Itinerary">
+        <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/></svg>
+        <span class="tab-lbl">Itinerary</span>
+      </button>
+      <button class="tab" data-view="packing" type="button" aria-label="Packing">
+        <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M9 7v13"/><path d="M15 7v13"/></svg>
+        <span class="tab-lbl">Packing</span>
+      </button>
+      <button class="tab" data-view="budget" type="button" aria-label="Budget">
+        <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v3"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M21 11h-4a2 2 0 0 0 0 4h4v-4z"/></svg>
+        <span class="tab-lbl">Budget</span>
+      </button>
+      <button class="tab" data-view="details" type="button" aria-label="Details">
+        <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>
+        <span class="tab-lbl">Details</span>
+      </button>
     </nav>
 
     <main id="main"><!-- rendered by app.js --></main>
@@ -120,6 +141,6 @@
 
   <div id="toast" class="toast" hidden></div>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

@@ -231,38 +231,82 @@
   }
 
   function renderHero() {
+    closeEmojiPicker();
     var t = activeTrip();
     var hero = $("#hero");
     var nights = t.startDate && t.endDate ? Math.max(0, daysBetween(t.startDate, t.endDate)) : 0;
     var days = nights ? nights + 1 : (t.startDate ? 1 : 0);
 
     hero.innerHTML =
-      '<div class="hero-top">' +
-        '<button class="hero-emoji" id="coverEmojiBtn" title="Change icon" type="button">' + esc(t.coverEmoji || "🗼") + '</button>' +
-        '<div class="hero-fields">' +
-          '<input class="hero-name" id="fName" placeholder="Name your trip…" value="' + esc(t.name) + '" />' +
-          '<input class="hero-dest" id="fDest" placeholder="📍 Where are you headed?" value="' + esc(t.destination) + '" />' +
-          '<div class="hero-dates">' +
-            '<div class="hero-date"><label>Leaving</label><input type="date" id="fStart" value="' + esc(t.startDate) + '" /></div>' +
-            '<div class="hero-date"><label>Coming home</label><input type="date" id="fEnd" value="' + esc(t.endDate) + '" /></div>' +
+      '<div class="hero-main">' +
+        '<div class="hero-top">' +
+          '<button class="hero-emoji" id="coverEmojiBtn" title="Change icon" type="button" aria-label="Change trip icon">' + esc(t.coverEmoji || "🗼") + '</button>' +
+          '<div class="hero-fields">' +
+            '<input class="hero-name" id="fName" placeholder="Name your trip…" value="' + esc(t.name) + '" />' +
+            '<input class="hero-dest" id="fDest" placeholder="📍 Where are you headed?" value="' + esc(t.destination) + '" />' +
           '</div>' +
         '</div>' +
+        '<div class="hero-dates">' +
+          '<div class="hero-date"><label>Leaving</label><input type="date" id="fStart" value="' + esc(t.startDate) + '" /></div>' +
+          '<div class="hero-date"><label>Coming home</label><input type="date" id="fEnd" value="' + esc(t.endDate) + '" /></div>' +
+        '</div>' +
       '</div>' +
-      '<div class="hero-stats">' +
-        '<div class="hero-stat"><b>' + (days || "—") + '</b><span>' + (days === 1 ? "day" : "days") + '</span></div>' +
-        '<div class="hero-stat"><b>' + (nights || "—") + '</b><span>' + (nights === 1 ? "night" : "nights") + '</span></div>' +
-        '<div class="hero-stat"><b>' + t.flights.length + '</b><span>flights</span></div>' +
-        '<div class="hero-stat"><b>' + t.plans.length + '</b><span>plans</span></div>' +
-      '</div>' +
-      countdownHtml(t);
+      '<div class="hero-glance">' +
+        countdownHtml(t) +
+        '<div class="glance-stats">' +
+          glanceStat(days || "—", days === 1 ? "day" : "days") +
+          glanceStat(nights || "—", nights === 1 ? "night" : "nights") +
+          glanceStat(t.flights.length, t.flights.length === 1 ? "flight" : "flights") +
+          glanceStat(t.plans.length, t.plans.length === 1 ? "plan" : "plans") +
+        '</div>' +
+        nextUpHtml(t) +
+      '</div>';
 
-    // Emoji picker
-    $("#coverEmojiBtn", hero).addEventListener("click", cycleEmoji);
-    // Field bindings
+    $("#coverEmojiBtn", hero).addEventListener("click", function (e) { e.stopPropagation(); toggleEmojiPicker(); });
     bindField($("#fName", hero), function (v) { t.name = v; renderTripSelect(); });
     bindField($("#fDest", hero), function (v) { t.destination = v; });
-    bindField($("#fStart", hero), function (v) { t.startDate = v; renderHero(); if (view !== "overview") return; renderMain(); });
+    bindField($("#fStart", hero), function (v) { t.startDate = v; renderHero(); if (view === "overview") renderMain(); });
     bindField($("#fEnd", hero), function (v) { t.endDate = v; renderHero(); if (view === "itinerary" || view === "overview") renderMain(); });
+  }
+
+  function glanceStat(big, label) {
+    return '<div class="glance-stat"><b>' + esc(String(big)) + '</b><span>' + esc(label) + '</span></div>';
+  }
+
+  // Build a local Date from "yyyy-mm-dd" or "yyyy-mm-ddThh:mm".
+  function parseDateTime(s) {
+    if (!s) return null;
+    var parts = String(s).split("T");
+    var d = parseDate(parts[0]);
+    if (!d) return null;
+    if (parts[1]) { var hm = parts[1].split(":"); d.setHours(+hm[0] || 0, +hm[1] || 0, 0, 0); }
+    return d;
+  }
+  function fmtWhen(d) { return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+
+  // "Next up" — the soonest upcoming flight / plan / check-in.
+  function nextUpHtml(t) {
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var cands = [];
+    t.flights.forEach(function (f) {
+      var d = parseDateTime(f.depart);
+      if (d) cands.push({ when: d, ico: f.label === "Return" ? "🛬" : "🛫", label: (f.from || "?") + " → " + (f.to || "?") });
+    });
+    t.plans.forEach(function (p) {
+      var d = parseDateTime(p.date + (p.time ? "T" + p.time : ""));
+      if (d) cands.push({ when: d, ico: (PLAN_TYPES[p.type] || PLAN_TYPES.activity)[0], label: p.title || (PLAN_TYPES[p.type] || PLAN_TYPES.activity)[1] });
+    });
+    t.hotels.forEach(function (h) {
+      var d = parseDateTime(h.checkIn);
+      if (d) cands.push({ when: d, ico: "🏨", label: "Check in · " + (h.name || "stay") });
+    });
+    if (!cands.length) return "";
+    cands.sort(function (a, b) { return a.when - b.when; });
+    var future = cands.filter(function (c) { return c.when >= today; });
+    var pick = future[0] || cands[0];
+    return '<div class="glance-next"><span class="nx-ico">' + pick.ico + '</span>' +
+      '<span class="nx-main"><b>Next up</b> · ' + esc(pick.label) + '</span>' +
+      '<span class="nx-when">' + esc(fmtWhen(pick.when)) + '</span></div>';
   }
 
   function countdownHtml(t) {
@@ -278,12 +322,38 @@
     return '<div class="countdown-chip"><span>' + emo + '</span> ' + esc(txt) + '</div>';
   }
 
-  function cycleEmoji() {
+  // ---- Cover-emoji picker (popover grid) ----------------------------------
+  var emojiPop = null;
+  function toggleEmojiPicker() { emojiPop ? closeEmojiPicker() : openEmojiPicker(); }
+  function openEmojiPicker() {
+    var hero = $("#hero"); if (!hero) return;
     var t = activeTrip();
-    var i = COVER_EMOJIS.indexOf(t.coverEmoji);
-    t.coverEmoji = COVER_EMOJIS[(i + 1) % COVER_EMOJIS.length];
-    save();
-    $("#coverEmojiBtn").textContent = t.coverEmoji;
+    var pop = el("div", "emoji-pop");
+    COVER_EMOJIS.forEach(function (e) {
+      var b = el("button", "emoji-opt" + (e === t.coverEmoji ? " on" : ""), esc(e));
+      b.type = "button";
+      b.addEventListener("click", function (ev) { ev.stopPropagation(); setCover(e); closeEmojiPicker(); });
+      pop.appendChild(b);
+    });
+    hero.appendChild(pop);
+    emojiPop = pop;
+    setTimeout(function () {
+      document.addEventListener("click", onDocClickEmoji);
+      document.addEventListener("keydown", onKeyEmoji);
+    }, 0);
+  }
+  function onDocClickEmoji(e) { if (emojiPop && !emojiPop.contains(e.target)) closeEmojiPicker(); }
+  function onKeyEmoji(e) { if (e.key === "Escape") closeEmojiPicker(); }
+  function closeEmojiPicker() {
+    if (!emojiPop) return;
+    emojiPop.remove(); emojiPop = null;
+    document.removeEventListener("click", onDocClickEmoji);
+    document.removeEventListener("keydown", onKeyEmoji);
+  }
+  function setCover(e) {
+    var t = activeTrip();
+    t.coverEmoji = e; save();
+    var b = $("#coverEmojiBtn"); if (b) b.textContent = e;
     renderTripSelect();
   }
 
@@ -386,53 +456,77 @@
     var t = activeTrip();
     var frag = document.createDocumentFragment();
 
-    var committed = sumCosts(t);
-    var plannedBudget = t.budget.reduce(function (s, b) { return s + num(b.planned); }, 0);
-    var cap = num(t.budgetCap);
-    var totalBudget = plannedBudget || committed.total;
+    // Setup checklist — shown until the essentials are in.
+    var steps = [
+      { done: !!(t.startDate && t.endDate), label: "Set your travel dates", view: null },
+      { done: t.flights.length > 0, label: "Add your flights", view: "flights" },
+      { done: t.hotels.length > 0, label: "Add where you're staying", view: "hotels" },
+      { done: t.plans.length > 0, label: "Plan your days", view: "itinerary" },
+      { done: (num(t.budgetCap) > 0 || t.budget.length > 0), label: "Set a budget", view: "budget" },
+    ];
+    var doneCount = steps.filter(function (s) { return s.done; }).length;
+    if (doneCount < steps.length) frag.appendChild(checklistCard(steps, doneCount));
 
-    // Stat cards
-    var grid = el("div", "ov-grid");
-    grid.appendChild(ovCard("💰", money(totalBudget), plannedBudget ? "Planned budget" : "Booked so far"));
-    grid.appendChild(ovCard("✈️", t.flights.length, t.flights.length === 1 ? "Flight" : "Flights"));
-    grid.appendChild(ovCard("🏨", t.hotels.length, t.hotels.length === 1 ? "Stay" : "Stays"));
-    grid.appendChild(ovCard("🎟️", t.plans.filter(function (p) { return p.type === "ticket" || p.type === "reservation"; }).length, "Bookings"));
-    if (cap) {
-      var pct = cap ? Math.min(100, Math.round((totalBudget / cap) * 100)) : 0;
-      var c = ovCard("🎯", pct + "%", "of " + money(cap) + " budget");
-      c.classList.add("accent");
-      grid.appendChild(c);
-    }
-    if (t.packing.length) {
-      var packed = t.packing.filter(function (p) { return p.checked; }).length;
-      grid.appendChild(ovCard("🧳", packed + "/" + t.packing.length, "Packed"));
-    }
-    if (t.travelers.length) {
-      grid.appendChild(ovCard("👥", t.travelers.length, t.travelers.length === 1 ? "Traveller" : "Travellers"));
-    }
-    frag.appendChild(grid);
+    // Budget snapshot
+    if (num(t.budgetCap) > 0 || t.budget.length) frag.appendChild(budgetSnapshotCard(t));
 
-    // Trip at a glance — flights + hotels quick list
-    if (t.flights.length || t.hotels.length || t.plans.length) {
-      frag.appendChild(el("div", "ov-summary-title", "🧳 Your trip at a glance"));
-    }
-
-    t.flights.forEach(function (f) {
-      var route = (f.from || "?") + " → " + (f.to || "?");
-      var sub = [f.airline, f.flightNo].filter(Boolean).join(" · ") || "Flight details";
-      frag.appendChild(miniRow(f.label === "Return" ? "🛬" : "🛫", route, sub, f.depart ? fmtDateTime(f.depart) : "", f.cost ? money(f.cost) : ""));
-    });
-    t.hotels.forEach(function (h) {
-      var nights = h.checkIn && h.checkOut ? daysBetween(h.checkIn, h.checkOut) : 0;
-      var sub = (h.checkIn ? fmtDate(h.checkIn) : "—") + " → " + (h.checkOut ? fmtDate(h.checkOut) : "—") + (nights ? " · " + nights + (nights === 1 ? " night" : " nights") : "");
-      frag.appendChild(miniRow("🏨", h.name || "Accommodation", sub, "", h.cost ? money(h.cost) : ""));
-    });
-
-    if (!t.flights.length && !t.hotels.length && !t.plans.length) {
-      frag.appendChild(emptyState("🗺️", "This trip is a blank canvas! Add your flights, hotels and plans to see them here.", "✈️ Start with flights", function () { setView("flights"); }));
+    // Trip at a glance — flights + stays
+    if (t.flights.length || t.hotels.length) {
+      frag.appendChild(el("div", "ov-summary-title", "Trip at a glance"));
+      t.flights.forEach(function (f) {
+        var route = (f.from || "?") + " → " + (f.to || "?");
+        var sub = [f.airline, f.flightNo].filter(Boolean).join(" · ") || "Flight details";
+        frag.appendChild(miniRow(f.label === "Return" ? "🛬" : "🛫", route, sub, f.depart ? fmtDateTime(f.depart) : "", f.cost ? money(f.cost) : ""));
+      });
+      t.hotels.forEach(function (h) {
+        var nn = h.checkIn && h.checkOut ? daysBetween(h.checkIn, h.checkOut) : 0;
+        var sub = (h.checkIn ? fmtDate(h.checkIn) : "—") + " → " + (h.checkOut ? fmtDate(h.checkOut) : "—") + (nn ? " · " + nn + (nn === 1 ? " night" : " nights") : "");
+        frag.appendChild(miniRow("🏨", h.name || "Accommodation", sub, "", h.cost ? money(h.cost) : ""));
+      });
     }
 
     return frag;
+  }
+
+  function checklistCard(steps, doneCount) {
+    var card = el("div", "card checklist-card");
+    var pct = Math.round((doneCount / steps.length) * 100);
+    var head = el("div", "cl-head");
+    head.innerHTML = "<b>🎒 Get trip-ready</b><span>" + doneCount + " of " + steps.length + " done</span>";
+    card.appendChild(head);
+    var bar = el("div", "cl-bar"); bar.innerHTML = '<i style="width:' + pct + '%"></i>';
+    card.appendChild(bar);
+    steps.forEach(function (s) {
+      var row = el("button", "cl-row" + (s.done ? " done" : ""));
+      row.type = "button";
+      row.innerHTML = '<span class="cl-check">✓</span><span class="cl-label">' + esc(s.label) + '</span>' +
+        (s.done ? "" : '<span class="cl-go">' + (s.view ? "Add →" : "Above ↑") + "</span>");
+      if (!s.done) {
+        row.addEventListener("click", function () {
+          if (s.view) setView(s.view);
+          else { window.scrollTo({ top: 0, behavior: "smooth" }); var st = $("#fStart"); if (st) st.focus(); }
+        });
+      }
+      card.appendChild(row);
+    });
+    return card;
+  }
+
+  function budgetSnapshotCard(t) {
+    var card = el("div", "card");
+    card.style.cursor = "pointer";
+    var planned = t.budget.reduce(function (s, b) { return s + num(b.planned); }, 0) || sumCosts(t).total;
+    var cap = num(t.budgetCap);
+    var over = cap && planned > cap;
+    var pct = cap ? Math.min(100, (planned / cap) * 100) : (planned ? 100 : 0);
+    card.innerHTML =
+      '<div class="cl-head"><b>💰 Budget</b><span>' +
+      (cap ? (over ? money(planned - cap) + " over" : money(cap - planned) + " left") : money(planned) + " planned") +
+      "</span></div>" +
+      '<div class="budget-bar' + (over ? " over" : "") + '"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="budget-bar-legend"><span>' + money(planned) + " planned</span><span>" + (cap ? "of " + money(cap) : "") + "</span></div>";
+    card.addEventListener("click", function () { setView("budget"); });
+    return card;
   }
 
   function ovCard(ico, big, label) {
@@ -1103,10 +1197,17 @@
 
   function setView(v) {
     view = v;
+    closeEmojiPicker();
+    renderHero(); // keep the hero's live glance (counts / next-up) current
     Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (b) {
-      b.classList.toggle("active", b.dataset.view === v);
+      var on = b.dataset.view === v;
+      b.classList.toggle("active", on);
+      if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
     renderMain();
+    // Retrigger the view-in animation on tab switch.
+    var main = $("#main");
+    if (main) { main.classList.remove("fade-in"); void main.offsetWidth; main.classList.add("fade-in"); }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
