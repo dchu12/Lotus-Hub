@@ -62,6 +62,33 @@
     "Hand towel", "Camera", "Some local cash",
   ];
 
+  // Document kinds for the Details tab uploads.
+  var DOC_KINDS = {
+    passport:  ["🛂", "Passport"],
+    visa:      ["📄", "Visa"],
+    id:        ["🪪", "ID card"],
+    insurance: ["🛡️", "Insurance"],
+    ticket:    ["🎫", "Ticket / pass"],
+    booking:   ["🏨", "Booking"],
+    photo:     ["🖼️", "Photo"],
+    other:     ["📎", "Other"],
+  };
+  function guessKind(file) {
+    var n = (file.name || "").toLowerCase();
+    if (n.indexOf("passport") > -1) return "passport";
+    if (n.indexOf("visa") > -1) return "visa";
+    if (n.indexOf("insur") > -1) return "insurance";
+    if (n.indexOf("ticket") > -1 || n.indexOf("boarding") > -1) return "ticket";
+    if ((file.type || "").indexOf("image") === 0) return "photo";
+    return "other";
+  }
+  function fmtBytes(n) {
+    n = +n || 0;
+    if (n < 1024) return n + " B";
+    if (n < 1024 * 1024) return (n / 1024).toFixed(0) + " KB";
+    return (n / 1048576).toFixed(1) + " MB";
+  }
+
   // ---- State ---------------------------------------------------------------
   var state = load();
   var saveTimer = null;
@@ -90,6 +117,7 @@
       plans: [],     // {id,date,time,type,title,location,confirmation,cost,notes}
       budget: [],    // {id,cat,label,planned,actual,paid,src}
       packing: [],   // {id,text,checked}
+      docs: [],      // {id,name,type,size,kind} — file blob lives in IndexedDB under id
       notes: "",
     };
   }
@@ -113,7 +141,7 @@
     raw.trips = raw.trips.map(function (t) {
       var base = blankTrip();
       var merged = Object.assign(base, t);
-      ["flights", "hotels", "plans", "budget", "packing", "travelers"].forEach(function (k) {
+      ["flights", "hotels", "plans", "budget", "packing", "travelers", "docs"].forEach(function (k) {
         if (!Array.isArray(merged[k])) merged[k] = [];
       });
       return merged;
@@ -137,6 +165,67 @@
 
   function activeTrip() {
     return state.trips.find(function (t) { return t.id === state.activeId; }) || state.trips[0];
+  }
+
+  // ---- File storage (IndexedDB) --------------------------------------------
+  // Document/photo blobs are kept in IndexedDB (large capacity), NOT in
+  // localStorage. The trip only stores lightweight metadata that references the
+  // blob by id. Falls back gracefully if IndexedDB is unavailable.
+  var IDB_NAME = "trip-planner-files", IDB_STORE = "files";
+  function idbOpen() {
+    return new Promise(function (res, rej) {
+      if (!("indexedDB" in window)) { rej(new Error("no-idb")); return; }
+      var r = indexedDB.open(IDB_NAME, 1);
+      r.onupgradeneeded = function () { if (!r.result.objectStoreNames.contains(IDB_STORE)) r.result.createObjectStore(IDB_STORE); };
+      r.onsuccess = function () { res(r.result); };
+      r.onerror = function () { rej(r.error); };
+    });
+  }
+  function idbPut(key, blob) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction(IDB_STORE, "readwrite");
+        tx.objectStore(IDB_STORE).put(blob, key);
+        tx.oncomplete = function () { res(); };
+        tx.onerror = function () { rej(tx.error); };
+      });
+    });
+  }
+  function idbGet(key) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction(IDB_STORE, "readonly");
+        var rq = tx.objectStore(IDB_STORE).get(key);
+        rq.onsuccess = function () { res(rq.result || null); };
+        rq.onerror = function () { rej(rq.error); };
+      });
+    });
+  }
+  function idbDelete(key) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (res) {
+        var tx = db.transaction(IDB_STORE, "readwrite");
+        tx.objectStore(IDB_STORE).delete(key);
+        tx.oncomplete = function () { res(); };
+        tx.onerror = function () { res(); };
+      });
+    }).catch(function () {});
+  }
+  function blobToDataURL(blob) {
+    return new Promise(function (res, rej) {
+      var fr = new FileReader();
+      fr.onload = function () { res(fr.result); };
+      fr.onerror = function () { rej(fr.error); };
+      fr.readAsDataURL(blob);
+    });
+  }
+  function dataURLToBlob(dataURL) {
+    var parts = String(dataURL).split(",");
+    var mime = (parts[0].match(/:(.*?);/) || [])[1] || "application/octet-stream";
+    var bin = atob(parts[1]);
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
   }
 
   // ---- Helpers -------------------------------------------------------------
@@ -1181,12 +1270,140 @@
   // =========================================================================
   function viewDetails() {
     var t = activeTrip();
+    revokeDocUrls();
     var frag = document.createDocumentFragment();
-    frag.appendChild(sectionHead("Important details", "Passport numbers, emergency contacts, packing list, currency, wifi codes — your trip's catch-all notebook.", null, null));
+
+    // ---- Documents & photos ----
+    frag.appendChild(sectionHead("Documents & photos", "Upload passports, visas, insurance, tickets and travel photos. Files stay on this device (and are included when you back up).", null, null));
+
+    var docCard = el("div", "card");
+    var up = el("label", "doc-upload");
+    up.innerHTML = '<span class="doc-up-ico">⬆️</span><span><b>Add a document or photo</b><small>Passport, visa, insurance, tickets, images or PDFs</small></span>';
+    var input = el("input");
+    input.type = "file";
+    input.accept = "image/*,application/pdf,.pdf,.png,.jpg,.jpeg,.heic,.webp";
+    input.multiple = true;
+    input.hidden = true;
+    input.addEventListener("change", function (e) {
+      var files = Array.prototype.slice.call(e.target.files || []);
+      e.target.value = "";
+      addDocs(t, files);
+    });
+    up.appendChild(input);
+    docCard.appendChild(up);
+
+    if (!t.docs.length) {
+      docCard.appendChild(el("p", "doc-empty", "No documents yet. Keep your passport, visa and tickets here so they're handy on the go. 🛂"));
+    } else {
+      var grid = el("div", "doc-grid");
+      t.docs.forEach(function (d) { grid.appendChild(docCardItem(t, d)); });
+      docCard.appendChild(grid);
+    }
+    frag.appendChild(docCard);
+
+    // ---- Notes ----
+    frag.appendChild(sectionHead("Notes", "Emergency contacts, confirmation numbers, wifi codes — your trip's catch-all notebook.", null, null));
     var card = el("div", "card details-note");
     card.appendChild(fld("Notes", t.notes, function (v) { t.notes = v; }, { wide: true, type: "textarea", placeholder: "🛂 Passport expiry…\n📞 Emergency contact…\n🚇 IC card / transit notes…\n💱 Currency & budget notes…\n📶 Pocket wifi / SIM codes…" }));
     frag.appendChild(card);
     return frag;
+  }
+
+  // Object URLs created for doc previews — revoked when the view re-renders.
+  var docUrls = [];
+  function revokeDocUrls() { docUrls.forEach(function (u) { try { URL.revokeObjectURL(u); } catch (e) {} }); docUrls = []; }
+  function docUrl(blob) { var u = URL.createObjectURL(blob); docUrls.push(u); return u; }
+
+  function addDocs(t, files) {
+    if (!files.length) return;
+    var chain = Promise.resolve();
+    var added = 0, failed = 0;
+    files.forEach(function (f) {
+      chain = chain.then(function () {
+        var id = uid();
+        return idbPut(id, f).then(function () {
+          t.docs.push({ id: id, name: f.name || "document", type: f.type || "", size: f.size || 0, kind: guessKind(f) });
+          added++;
+        }).catch(function () { failed++; });
+      });
+    });
+    chain.then(function () {
+      saveNow();
+      if (view === "details") renderMain();
+      renderHero();
+      if (added) toast("Added " + added + " file" + (added === 1 ? "" : "s") + " 📎");
+      if (failed) toast("Couldn't save " + failed + " file" + (failed === 1 ? "" : "s") + " — storage may be full.");
+    });
+  }
+
+  function docCardItem(t, d) {
+    var item = el("div", "doc-item");
+    var isImg = (d.type || "").indexOf("image") === 0;
+    var kind = DOC_KINDS[d.kind] || DOC_KINDS.other;
+
+    var thumb = el("div", "doc-thumb");
+    if (isImg) {
+      thumb.classList.add("img");
+      idbGet(d.id).then(function (blob) {
+        if (blob) { var img = el("img"); img.alt = ""; img.src = docUrl(blob); thumb.innerHTML = ""; thumb.appendChild(img); }
+        else thumb.textContent = "🖼️";
+      }).catch(function () { thumb.textContent = "🖼️"; });
+      thumb.textContent = "🖼️";
+    } else {
+      thumb.textContent = (d.type || "").indexOf("pdf") > -1 ? "📄" : kind[0];
+    }
+    thumb.addEventListener("click", function () { openDoc(d); });
+    item.appendChild(thumb);
+
+    var body = el("div", "doc-body");
+    var nameRow = el("div", "doc-name");
+    nameRow.textContent = d.name || "document";
+    nameRow.title = d.name || "";
+    body.appendChild(nameRow);
+
+    var meta = el("div", "doc-meta");
+    var sel = el("select", "doc-kind");
+    Object.keys(DOC_KINDS).forEach(function (k) {
+      var o = el("option"); o.value = k; o.textContent = DOC_KINDS[k][0] + " " + DOC_KINDS[k][1];
+      if (k === d.kind) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", function () { d.kind = sel.value; save(); });
+    meta.appendChild(sel);
+    meta.appendChild(el("span", "doc-size", fmtBytes(d.size)));
+    body.appendChild(meta);
+
+    var actions = el("div", "doc-actions");
+    var viewBtn = el("button", "link-btn", "View");
+    viewBtn.type = "button";
+    viewBtn.addEventListener("click", function () { openDoc(d); });
+    var delB = delBtn(function () { removeDoc(t, d); }, "Remove document");
+    actions.appendChild(viewBtn);
+    actions.appendChild(delB);
+    body.appendChild(actions);
+
+    item.appendChild(body);
+    return item;
+  }
+
+  function openDoc(d) {
+    idbGet(d.id).then(function (blob) {
+      if (!blob) { toast("File not found on this device."); return; }
+      var url = URL.createObjectURL(blob);
+      var w = window.open(url, "_blank");
+      // Revoke a bit later so the new tab has time to load it.
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      if (!w) toast("Allow pop-ups to view the file.");
+    }).catch(function () { toast("Couldn't open the file."); });
+  }
+
+  function removeDoc(t, d) {
+    if (!confirm("Remove \"" + (d.name || "this file") + "\"?")) return;
+    removeFrom(t.docs, d.id);
+    saveNow();
+    idbDelete(d.id);
+    if (view === "details") renderMain();
+    renderHero();
   }
 
   // ---- Utilities -----------------------------------------------------------
@@ -1238,28 +1455,40 @@
     copy.id = uid();
     copy.name = (t.name || "Trip") + " (copy)";
     // Fresh ids for all nested items so edits don't collide.
-    ["flights", "hotels", "plans", "budget"].forEach(function (k) {
-      copy[k] = copy[k].map(function (x) { x.id = uid(); return x; });
+    ["flights", "hotels", "plans", "budget", "packing", "travelers"].forEach(function (k) {
+      copy[k] = (copy[k] || []).map(function (x) { x.id = uid(); return x; });
     });
-    state.trips.push(copy);
-    state.activeId = copy.id;
-    saveNow();
-    closeMenu();
-    setView("overview");
-    renderAll();
-    toast("Duplicated! Reuse it as your template 📑");
+    // Copy each document's blob to a fresh id so the two trips don't share files.
+    var docTasks = [];
+    copy.docs = (copy.docs || []).map(function (d) {
+      var oldId = d.id, newId = uid();
+      d.id = newId;
+      docTasks.push(idbGet(oldId).then(function (blob) { if (blob) return idbPut(newId, blob); }).catch(function () {}));
+      return d;
+    });
+    Promise.all(docTasks).then(function () {
+      state.trips.push(copy);
+      state.activeId = copy.id;
+      saveNow();
+      closeMenu();
+      setView("overview");
+      renderAll();
+      toast("Duplicated! Reuse it as your template 📑");
+    });
   }
 
   function deleteTrip() {
+    var t = activeTrip();
     if (state.trips.length <= 1) {
       // Never leave the app empty — reset the single trip instead.
       if (!confirm("This is your only trip. Clear it and start fresh?")) return;
+      (t.docs || []).forEach(function (d) { idbDelete(d.id); });
       var fresh = blankTrip("New Trip");
       state.trips = [fresh];
       state.activeId = fresh.id;
     } else {
-      var t = activeTrip();
       if (!confirm("Delete \"" + (t.name || "this trip") + "\"? This can't be undone.")) return;
+      (t.docs || []).forEach(function (d) { idbDelete(d.id); });
       removeFrom(state.trips, t.id);
       state.activeId = state.trips[0].id;
     }
@@ -1271,39 +1500,63 @@
   }
 
   // ---- Backup / restore ----------------------------------------------------
+  // Backup format v2: { __tripPlanner, version, state, files } where `files`
+  // maps each doc id to a data URL, so uploaded documents travel with the JSON.
+  // Restore still accepts the old v1 format (bare state, no files).
   function backup() {
-    var data = JSON.stringify(state, null, 2);
-    var blob = new Blob([data], { type: "application/json" });
-    var url = URL.createObjectURL(blob);
-    var a = el("a");
-    a.href = url;
-    a.download = "trip-planner-backup.json";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    menuMsg("Backup downloaded 💾");
+    menuMsg("Preparing backup…");
+    var ids = [];
+    state.trips.forEach(function (t) { (t.docs || []).forEach(function (d) { ids.push(d.id); }); });
+    var files = {};
+    var chain = Promise.resolve();
+    ids.forEach(function (id) {
+      chain = chain.then(function () {
+        return idbGet(id).then(function (blob) {
+          if (blob) return blobToDataURL(blob).then(function (u) { files[id] = u; });
+        }).catch(function () {});
+      });
+    });
+    chain.then(function () {
+      var payload = { __tripPlanner: true, version: 2, state: state, files: files };
+      var blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = el("a");
+      a.href = url; a.download = "trip-planner-backup.json";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      var n = Object.keys(files).length;
+      menuMsg("Backup downloaded 💾" + (n ? " · " + n + " file" + (n === 1 ? "" : "s") + " included" : ""));
+    });
   }
 
   function restore(file) {
     var reader = new FileReader();
     reader.onload = function () {
+      var incoming, files = null;
       try {
         var data = JSON.parse(reader.result);
-        if (!data || !Array.isArray(data.trips) || !data.trips.length) throw new Error("bad");
-        state = data;
-        // Re-merge for safety.
-        state = (function () {
-          localStorage.setItem(STORE_KEY, JSON.stringify(data));
-          return load();
-        })();
+        if (data && Array.isArray(data.trips)) { incoming = data; }                              // v1
+        else if (data && data.state && Array.isArray(data.state.trips)) { incoming = data.state; files = data.files || {}; } // v2
+        else throw new Error("bad");
+        if (!incoming.trips.length) throw new Error("bad");
+      } catch (e) {
+        menuMsg("Hmm, that file didn't look like a Trip Planner backup.");
+        return;
+      }
+      // Write any bundled files into IndexedDB first, then swap in the state.
+      var ids = files ? Object.keys(files) : [];
+      var chain = Promise.resolve();
+      ids.forEach(function (id) {
+        chain = chain.then(function () { try { return idbPut(id, dataURLToBlob(files[id])).catch(function () {}); } catch (e) {} });
+      });
+      chain.then(function () {
+        localStorage.setItem(STORE_KEY, JSON.stringify(incoming));
+        state = load();
         closeMenu();
         setView("overview");
         renderAll();
         toast("Restored " + state.trips.length + " trip" + (state.trips.length === 1 ? "" : "s") + " 🎉");
-      } catch (e) {
-        menuMsg("Hmm, that file didn't look like a Trip Planner backup.");
-      }
+      });
     };
     reader.readAsText(file);
   }
@@ -1322,11 +1575,15 @@
   }
   function shareTrip() {
     var t = activeTrip();
-    var url = location.origin + location.pathname + "#trip=" + encodeTrip(t);
+    // Documents/photos are files on this device — they can't ride in a URL.
+    var shareable = Object.assign({}, t, { docs: [] });
+    var url = location.origin + location.pathname + "#trip=" + encodeTrip(shareable);
     var big = url.length > 14000;
+    var hadDocs = (t.docs || []).length > 0;
     function ok() {
       toast("Share link copied 🔗");
-      menuMsg(big ? "Link copied — heads up, this trip is large so the link is long." : "Link copied! Anyone who opens it can view this trip.");
+      menuMsg((big ? "Link copied — heads up, this trip is large so the link is long." : "Link copied! Anyone who opens it can view this trip.") +
+        (hadDocs ? " (Uploaded documents aren't included in share links.)" : ""));
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(ok, function () { window.prompt("Copy this share link:", url); });
@@ -1378,6 +1635,7 @@
       if (Array.isArray(bb.who)) bb.who = bb.who.map(function (id) { return idMap[id]; }).filter(Boolean);
       return bb;
     });
+    copy.docs = []; // shared links never carry file blobs
     copy.name = trip.name || "Shared trip";
     state.trips.push(copy);
     state.activeId = copy.id;

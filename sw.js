@@ -1,7 +1,7 @@
 /* sw.js — service worker for Lotus Hub (installable PWA).
  * Network-first with HTTP-cache bypass so the newest deploy always loads on open;
  * falls back to the runtime cache only when offline. */
-var CACHE = "lotus-hub-v57";
+var CACHE = "lotus-hub-v58";
 var CACHE_PREFIX = "lotus-hub-"; // only ever manage caches under this prefix
 var SHELL = [
   "./",
@@ -42,6 +42,9 @@ self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
   var url = req.url;
+  // Leave the Trip Planner completely alone — it's a separate app with its own
+  // service worker (scope /trip-planner/). Never cache or serve its requests.
+  if (url.indexOf("/trip-planner/") > -1) return;
   // Never intercept Firebase / Google traffic — always straight to network.
   if (url.indexOf("firebase") > -1 || url.indexOf("googleapis") > -1 || url.indexOf("gstatic") > -1) {
     return;
