@@ -86,13 +86,15 @@
     }
     .progress-top {
       display: flex;
-      align-items: baseline;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
     }
-    .progress-top .big { font-size: 20px; font-weight: 700; }
-    .progress-top .pct { font-size: 20px; font-weight: 700; color: var(--brand); }
+    .progress-top .big { font-size: 26px; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; }
+    .progress-top .big .hl-label { font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+    .progress-top .sub-stat { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+    .progress-top .pct { font-size: 24px; font-weight: 800; color: var(--brand); align-self: flex-start; }
     .bar {
       height: 12px;
       background: var(--s-not-bg);
@@ -123,14 +125,20 @@
     }
     .mini-stats b { color: var(--ink); }
 
-    /* toolbar */
+    /* toolbar — pinned to the top so search + filters are always reachable */
+    .toolbars {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--bg); margin: 14px 0 12px;
+      padding: 8px 0; border-bottom: 1px solid var(--line);
+    }
     .toolbar {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       align-items: center;
-      margin: 16px 0 12px;
+      margin: 0 0 8px;
     }
+    .toolbar:last-child { margin-bottom: 0; }
     .toolbar .grow { flex: 1 1 200px; }
     input[type="search"], select, input[type="text"], textarea {
       font: inherit;
@@ -198,12 +206,19 @@
       background: var(--card); border: 1px solid var(--line);
       border-radius: var(--radius); box-shadow: var(--shadow-sm);
       padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+      transition: box-shadow 0.16s ease, opacity 0.16s ease, transform 0.16s ease;
     }
-    .fam-card.done-row { background: #fbfdfb; border-color: var(--s-done-bg); }
+    @media (hover: hover) { .fam-card:hover { box-shadow: var(--shadow); } }
+    /* finished cards recede so attention lands on what's left */
+    .fam-card.done-row {
+      background: #fbfdfb; border-left: 3px solid var(--s-done); opacity: 0.62;
+    }
+    .fam-card.done-row:focus-within, .fam-card.done-row:hover { opacity: 1; }
     .fc-head { display: flex; align-items: flex-start; gap: 10px; }
     .fc-names { flex: 1 1 auto; min-width: 0; }
     .fc-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .fc-controls select, .fc-controls .chk, .fc-controls .mailed-na { width: auto; }
+    .fc-controls select, .fc-controls .chk, .fc-controls .mailed-na { width: auto; min-height: 38px; }
+    .fc-controls select { padding-top: 7px; padding-bottom: 7px; }
     details.fc-details { border-top: 1px solid var(--line); padding-top: 8px; }
     details.fc-details > summary {
       cursor: pointer; list-style: none; font-size: 12.5px; font-weight: 600;
@@ -428,7 +443,10 @@
     <div id="appmain">
     <section class="progress-card">
       <div class="progress-top">
-        <div class="big"><span id="p-done">0</span> of <span id="p-total">0</span> cards sent</div>
+        <div class="headline">
+          <div class="big" id="p-headline">— still to send</div>
+          <div class="sub-stat"><span id="p-done">0</span> of <span id="p-total">0</span> cards sent</div>
+        </div>
         <div class="pct" id="p-pct">0%</div>
       </div>
       <div class="bar" aria-hidden="true">
@@ -451,6 +469,7 @@
       </div>
     </section>
 
+    <div class="toolbars">
     <div class="toolbar">
       <div class="grow"><input type="search" id="search" placeholder="🔍 Search name, address, or note…" /></div>
       <button class="btn btn-primary" id="add-family">＋ Add family</button>
@@ -481,6 +500,7 @@
       </div>
       <button type="button" class="btn gift-filter" id="gift-filter">💰 Gifts</button>
     </div>
+    </div><!-- /.toolbars -->
 
     <div id="rows" class="cards"></div>
     <div class="empty" id="empty" hidden>No families match your filters.</div>
@@ -890,6 +910,9 @@
       });
       document.getElementById("p-done").textContent = done;
       document.getElementById("p-total").textContent = total;
+      var togo = total - done;
+      document.getElementById("p-headline").innerHTML = total === 0 ? "No families yet"
+        : (togo > 0 ? (togo + ' <span class="hl-label">still to send</span>') : "🎉 All cards sent!");
       var pct = total ? Math.round((done / total) * 100) : 0;
       document.getElementById("p-pct").textContent = pct + "%";
       document.getElementById("p-bar-done").style.width = pct + "%";
