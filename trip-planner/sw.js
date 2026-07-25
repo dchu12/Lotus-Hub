@@ -2,13 +2,13 @@
    Strategy: network-first for same-origin GETs (so new deploys show when
    you're online), falling back to the cache when the network is unavailable.
    All data lives in localStorage, so the SW only caches the app shell. */
-var CACHE = "trip-planner-v7";
+var CACHE = "trip-planner-v8";
 var CACHE_PREFIX = "trip-planner-"; // only ever manage caches under this prefix
 var ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=6",
-  "./app.js?v=6",
+  "./styles.css?v=7",
+  "./app.js?v=7",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -39,6 +39,8 @@ self.addEventListener("fetch", function (e) {
   if (req.method !== "GET") return;
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // don't touch cross-origin
+  // Only ever handle our own app's requests — never the root Lotus Hub app.
+  if (url.pathname.indexOf("/trip-planner/") !== 0) return;
 
   e.respondWith(
     fetch(req).then(function (res) {
