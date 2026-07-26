@@ -767,7 +767,7 @@ a.drawer-item { text-decoration: none; color: var(--ink); }
 }
 .hero-title span { display: inline; color: var(--brand); }
 .hero-sub { color: var(--muted); font-size: 1rem; line-height: 1.5; margin: 0 auto 22px; max-width: 34ch; }
-.hero-cta { display: flex; flex-direction: column; gap: 10px; }
+.hero-cta { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 
 .landing-section { margin-top: 34px; }
 .landing-h {
