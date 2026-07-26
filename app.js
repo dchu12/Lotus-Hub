@@ -244,11 +244,10 @@
             '<button class="btn-ghost full" id="lp-signin" type="button">Login Now</button>' +
           "</div>" +
           '<img class="hero-banner" src="landing-hero.jpg" alt="Lotus Pickleball Academy — pickleball on the Toronto waterfront at sunset" width="1200" height="800" />' +
-          '<p class="hero-sub">The opportunities are endless at Lotus Pickleball Academy — a ' +
-          "community based out in Toronto, Canada built on spreading positive vibes and lifting " +
-          "others up through the game of pickleball.</p>" +
-          '<p class="hero-sub">Learn how to play pickleball. Join an open play session or a ' +
-          "DUPR-verified match. Join us today!</p>" +
+          '<p class="hero-sub">Lotus Pickleball Academy is a Toronto community for players of every ' +
+          "level — from your very first dink to DUPR-verified competitive matches. Learn the game " +
+          "with real coaching, jump into open play, and meet people who'll cheer you on.</p>" +
+          '<p class="hero-sub">Come find your next game. See you on the court.</p>' +
         "</div>" +
 
         '<div class="dupr-banner">' +
