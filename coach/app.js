@@ -733,7 +733,7 @@
   }
 
   // ---- Boot ----------------------------------------------------------------
-  (function boot() {
+  function boot() {
     var saved = null;
     try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
     if (!saved) saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -742,7 +742,15 @@
     render();
     window.addEventListener("pagehide", saveNow);
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("#drawerRoot").hidden) closeDrawer(); });
-  })();
+  }
+
+  // If the access lock (lock.js) is present, hold the app until the owner is
+  // signed in; otherwise boot immediately.
+  if (window.__LOTUS_LOCK_ACTIVE && !window.__LOTUS_UNLOCKED) {
+    window.addEventListener("lotus-unlocked", boot, { once: true });
+  } else {
+    boot();
+  }
 
   // Register service worker for offline / installability.
   if ("serviceWorker" in navigator) {

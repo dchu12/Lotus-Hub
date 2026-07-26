@@ -1,15 +1,17 @@
 /* Lotus Hub launcher service worker — installable + offline.
    Network-first for same-origin GETs, cache fallback when offline.
    Only manages caches under its own prefix so it never touches the other apps. */
-var CACHE = "lotus-hub-v1";
+var CACHE = "lotus-hub-v2";
 var CACHE_PREFIX = "lotus-hub-";
 var ASSETS = [
   "./",
   "./index.html",
   "./styles.css?v=1",
-  "./app.js?v=1",
+  "./app.js?v=2",
   "./manifest.webmanifest",
   "./icon.svg",
+  "/firebase-config.js",
+  "/lock.js?v=1",
 ];
 
 self.addEventListener("install", function (e) {

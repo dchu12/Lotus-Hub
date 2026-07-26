@@ -36,6 +36,11 @@
       <p>Add to your home screen to launch every Lotus app from one icon.</p>
     </footer>
   </div>
-  <script src="app.js?v=1"></script>
+  <!-- Access lock: the launcher is private to the owner account. -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+  <script src="/lock.js?v=1"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

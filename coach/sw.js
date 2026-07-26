@@ -2,15 +2,17 @@
    Strategy: network-first for same-origin GETs (so new deploys show when
    you're online), falling back to the cache when the network is unavailable.
    All data lives in localStorage, so the SW only caches the app shell. */
-var CACHE = "lotus-coach-v1";
+var CACHE = "lotus-coach-v2";
 var CACHE_PREFIX = "lotus-coach-"; // only ever manage caches under this prefix
 var ASSETS = [
   "./",
   "./index.html",
   "./styles.css?v=1",
-  "./app.js?v=1",
+  "./app.js?v=2",
   "./manifest.webmanifest",
   "./icon.svg",
+  "/firebase-config.js",
+  "/lock.js?v=1",
 ];
 
 self.addEventListener("install", function (e) {
