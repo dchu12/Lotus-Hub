@@ -267,6 +267,12 @@
     var mode = "signin";
     var form = card.querySelector("#auth-form");
     var submit = card.querySelector("#auth-submit");
+    var agreeBox = card.querySelector("#agree");
+    if (agreeBox) {
+      agreeBox.addEventListener("change", function () {
+        if (agreeBox.checked) card.classList.remove("consent-required");
+      });
+    }
     card.querySelector("#toggle-mode").addEventListener("click", function () {
       mode = mode === "signin" ? "signup" : "signin";
       submit.textContent = mode === "signin" ? "Sign in" : "Create account";
@@ -279,6 +285,7 @@
       if (mode === "signup") {
         var agree = card.querySelector("#agree");
         if (!agree || !agree.checked) {
+          card.classList.add("consent-required");
           return toast("Please agree to the Terms & Privacy Policy to create an account.");
         }
       }
@@ -297,6 +304,11 @@
       });
     });
     card.querySelector("#google-btn").addEventListener("click", function () {
+      var agreeG = card.querySelector("#agree");
+      if (!agreeG || !agreeG.checked) {
+        card.classList.add("consent-required");
+        return toast("Please agree to the Terms & Privacy Policy to continue.");
+      }
       LH.signInWithGoogle()
         .then(function () { track("login", { method: "google" }); })
         .catch(function (err) { toast(authErrorMessage(err)); });
@@ -307,6 +319,56 @@
       LH.resetPassword(email)
         .then(function () { toast("Password reset link sent — check your email."); })
         .catch(function (err) { toast(authErrorMessage(err)); });
+    });
+  }
+
+  // ---- email verification gate -----------------------------------------
+  // Shown to email/password users until they click the link we emailed them.
+  function renderVerifyEmail(user) {
+    tabs.hidden = true;
+    main.innerHTML = "";
+    var email = (user && user.email) || "your email";
+    var card = el(
+      '<section class="card auth-card stack">' +
+        "<h2>Check your inbox 📧</h2>" +
+        '<p class="muted">To keep Lotus Hub real players only, confirm your email. ' +
+        "We sent a verification link to <strong>" + esc(email) + "</strong>.</p>" +
+        '<p class="muted">Open that email, tap the link, then come back and hit the button below.</p>' +
+        '<button class="btn-primary" id="ve-continue" type="button">I\'ve verified — continue</button>' +
+        '<button class="btn-ghost full" id="ve-resend" type="button">Resend the email</button>' +
+        '<button class="link-inline" id="ve-signout" type="button">Use a different account</button>' +
+        "</section>"
+    );
+    main.appendChild(card);
+
+    var cont = card.querySelector("#ve-continue");
+    cont.addEventListener("click", function () {
+      cont.disabled = true;
+      LH.reloadUser()
+        .then(function (u) {
+          if (u && u.emailVerified) {
+            track("email_verified");
+            state.user = u;
+            subscribeData();
+            renderSignedIn();
+          } else {
+            toast("Not verified yet — click the link in your email, then try again.");
+            cont.disabled = false;
+          }
+        })
+        .catch(function () {
+          toast("Couldn't check just now — try again in a moment.");
+          cont.disabled = false;
+        });
+    });
+    card.querySelector("#ve-resend").addEventListener("click", function () {
+      LH.sendVerification()
+        .then(function () { toast("Sent! Check " + email + " (and your spam folder)."); })
+        .catch(function (err) { toast(authErrorMessage(err)); });
+    });
+    card.querySelector("#ve-signout").addEventListener("click", function () {
+      function reload() { window.location.reload(); }
+      LH.signOut().then(reload, reload);
     });
   }
 
@@ -1944,12 +2006,12 @@
       } else {
         cardEl.innerHTML =
           "<h2>Your rating 📊</h2>" +
-          '<p class="muted">Self-report your DUPR for now — you can connect and verify it later. Optional.</p>' +
-          '<div class="field"><label>DUPR rating</label>' +
-          '<input id="ob-dupr" type="number" step="0.001" min="2" max="8.5" placeholder="e.g. 3.500" value="' + esc(draft.duprManual) + '" /></div>' +
+          '<p class="muted">Official <strong>DUPR sync is coming soon</strong> — you\'ll be able to ' +
+          "connect your DUPR account and show a verified rating right here. Your skill level from the " +
+          "last step already helps match you to the right games.</p>" +
+          '<div class="dupr-soon">🔗 Connect DUPR · Coming soon</div>' +
           '<div class="row-btns"><button class="btn-ghost" id="ob-back" type="button">Back</button>' +
-          '<button class="btn-primary" id="ob-finish" type="button">Finish</button></div>' +
-          '<button class="link-inline ob-skip" type="button">Skip for now</button>';
+          '<button class="btn-primary" id="ob-finish" type="button">Finish</button></div>';
       }
 
       var nextBtn = cardEl.querySelector("#ob-next");
@@ -2421,6 +2483,14 @@
     LH.onAuth(function (user) {
       state.user = user;
       if (user) {
+        // Email/password accounts must confirm their address first. Google
+        // accounts arrive already verified, so they sail straight through.
+        if (!user.emailVerified) {
+          state.profile = null;
+          if (state.unsub.profile) state.unsub.profile();
+          renderVerifyEmail(user);
+          return;
+        }
         subscribeData();
         renderSignedIn();
       } else {

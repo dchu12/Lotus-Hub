@@ -680,10 +680,12 @@ button { font: inherit; cursor: pointer; }
   border-radius: 11px; padding: 12px; font-weight: 700; font-size: 0.9rem;
 }
 
-/* signup consent row + auth legal footer */
-.auth-card .consent-row { display: none; }
-.auth-card.is-signup .consent-row { display: flex; align-items: flex-start; gap: 9px; margin: 2px 0 10px; font-size: 0.86rem; color: var(--ink); cursor: pointer; }
+/* consent row (shown for sign-up and Google) + auth legal footer */
+.auth-card .consent-row { display: flex; align-items: flex-start; gap: 9px; margin: 2px 0 10px; font-size: 0.86rem; color: var(--ink); cursor: pointer; }
 .consent-row input { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; accent-color: var(--brand); }
+/* highlight the consent row when it's blocking sign-in */
+.auth-card.consent-required .consent-row { color: var(--brand); font-weight: 600; }
+.auth-card.consent-required .consent-row input { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
 .consent-row a { color: var(--brand); font-weight: 700; }
 .auth-legal { text-align: center; font-size: 0.78rem; color: var(--muted); margin-top: 14px; }
 .auth-legal a { color: var(--brand); font-weight: 600; text-decoration: none; }

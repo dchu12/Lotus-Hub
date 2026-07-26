@@ -79,8 +79,28 @@
     return auth
       .createUserWithEmailAndPassword(String(email).trim(), password)
       .then(function (cred) {
+        // Fire off the verification email right away (best-effort — never let a
+        // mail hiccup fail the sign-up itself).
+        if (cred.user && !cred.user.emailVerified) {
+          try { cred.user.sendEmailVerification(); } catch (e) {}
+        }
         return ensureUserDoc(cred.user, displayName);
       });
+  }
+
+  // Re-send the verification email to the currently signed-in user.
+  function sendVerification() {
+    var u = auth && auth.currentUser;
+    if (!u) return Promise.reject(new Error("Sign in first."));
+    return u.sendEmailVerification();
+  }
+
+  // Refresh the auth user from the server (so emailVerified flips to true once
+  // they've clicked the link) and hand back the updated user.
+  function reloadUser() {
+    var u = auth && auth.currentUser;
+    if (!u) return Promise.resolve(null);
+    return u.reload().then(function () { return auth.currentUser; });
   }
 
   function signIn(email, password) {
@@ -660,6 +680,8 @@
     signInWithGoogle: signInWithGoogle,
     signOut: signOut,
     resetPassword: resetPassword,
+    sendVerification: sendVerification,
+    reloadUser: reloadUser,
     logEvent: logEvent,
     notificationsSupported: notificationsSupported,
     notificationPermission: notificationPermission,
