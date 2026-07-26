@@ -256,7 +256,7 @@
           "with a certified pickleball coach. The opportunities are endless at Lotus — a community " +
           "built on lifting each other up and spreading good vibes, on and off the court.</p>" +
           '<div class="hero-cta">' +
-            '<button class="btn-primary" id="lp-start" type="button">Join Lotus for free now</button>' +
+            '<button class="btn-primary" id="lp-start" type="button">Join Lotus for Free</button>' +
             '<button class="btn-ghost full" id="lp-signin" type="button">Login Now</button>' +
           "</div>" +
         "</div>" +
