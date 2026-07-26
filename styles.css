@@ -312,6 +312,9 @@ button { font: inherit; cursor: pointer; }
 
 .auth-card .only-signup { display: none; }
 .auth-card.is-signup .only-signup { display: inline; }
+/* Name field only appears when creating an account, not when signing in. */
+.auth-card .name-field { display: none; }
+.auth-card.is-signup .name-field { display: flex; }
 
 /* ---- setup banner ---- */
 .banner {

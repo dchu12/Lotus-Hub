@@ -317,12 +317,12 @@
     var card = el(
       '<section class="card auth-card">' +
         (configured ? '<button class="link-back" id="auth-back" type="button">‹ Back</button>' : "") +
-        '<h2>Find your next game 🏓</h2>' +
+        '<h2>Find your next pickleball game?</h2>' +
         '<p class="muted">Join open-play pickleball sessions near you, see who\'s coming, ' +
         "and (soon) sync your results to your DUPR rating.</p>" +
         (configured
           ? '<form id="auth-form">' +
-            '<div class="field"><label>Name <span class="only-signup">(sign up)</span></label>' +
+            '<div class="field name-field"><label>Name</label>' +
             '<input id="f-name" type="text" placeholder="Your name" autocomplete="name" /></div>' +
             '<div class="field"><label>Email</label>' +
             '<input id="f-email" type="email" placeholder="you@example.com" autocomplete="email" required /></div>' +
