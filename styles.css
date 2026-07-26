@@ -737,3 +737,73 @@ a.drawer-item { text-decoration: none; color: var(--ink); }
 .ib-text { flex: 1; font-size: 0.88rem; font-weight: 600; }
 .ib-install { flex: 0 0 auto; border: 0; background: var(--brand); color: #fff; font-weight: 700; font-size: 0.85rem; padding: 8px 14px; border-radius: 999px; cursor: pointer; }
 .ib-close { flex: 0 0 auto; border: 0; background: none; color: rgba(255,255,255,0.7); font-size: 1rem; cursor: pointer; padding: 4px 6px; }
+
+/* ---- landing / welcome page (signed-out front door) ---- */
+.landing { padding: 8px 0 24px; animation: lp-fade 0.4s ease both; }
+@keyframes lp-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.landing-hero {
+  text-align: center; padding: 34px 22px 30px; border-radius: 22px;
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--brand-soft) 0%, rgba(251,234,234,0) 60%),
+    linear-gradient(180deg, #fff 0%, var(--bg) 100%);
+  border: 1px solid var(--line); box-shadow: var(--shadow);
+}
+.hero-logo { display: block; margin: 0 auto 14px; filter: drop-shadow(0 4px 10px rgba(192,31,44,0.18)); }
+.hero-title {
+  font-size: 2.15rem; line-height: 1.05; font-weight: 800; letter-spacing: -0.02em;
+  color: var(--ink); margin: 0 0 12px;
+}
+.hero-title span { display: inline; color: var(--brand); }
+.hero-sub { color: var(--muted); font-size: 1rem; line-height: 1.5; margin: 0 auto 22px; max-width: 34ch; }
+.hero-cta { display: flex; flex-direction: column; gap: 10px; }
+
+.landing-section { margin-top: 34px; }
+.landing-h {
+  font-size: 1.28rem; font-weight: 800; letter-spacing: -0.01em; color: var(--ink);
+  text-align: center; margin: 0 0 18px;
+}
+
+.pillars { display: flex; flex-direction: column; gap: 12px; }
+.pillar {
+  display: flex; flex-direction: column; gap: 6px; text-align: left;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 18px 16px; box-shadow: var(--shadow-sm);
+}
+.pillar-ico {
+  width: 46px; height: 46px; display: grid; place-items: center; font-size: 1.5rem;
+  background: var(--brand-soft); border-radius: 13px; margin-bottom: 4px;
+}
+.pillar h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+.pillar p { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.45; }
+.pillar-soon {
+  margin-top: 14px; text-align: center; color: var(--accent-ink); background: var(--accent-soft);
+  border: 1px dashed #e2c98f; border-radius: 12px; padding: 12px; font-weight: 700; font-size: 0.9rem;
+}
+
+.steps { display: flex; flex-direction: column; gap: 14px; }
+.step { display: flex; align-items: flex-start; gap: 14px; }
+.step-num {
+  flex: 0 0 auto; width: 34px; height: 34px; display: grid; place-items: center;
+  background: var(--brand); color: #fff; font-weight: 800; border-radius: 50%; font-size: 1rem;
+}
+.step h3 { margin: 2px 0 3px; font-size: 1rem; font-weight: 700; color: var(--ink); }
+.step p { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.45; }
+
+.landing-cred { text-align: center; margin-top: 36px; padding: 0 12px; }
+.cred-logo { display: block; margin: 0 auto 8px; opacity: 0.9; }
+.landing-cred p { margin: 0 0 6px; color: var(--ink); font-weight: 600; }
+.cred-ig { color: var(--brand); font-weight: 700; text-decoration: none; font-size: 0.94rem; }
+.cred-ig:hover { text-decoration: underline; }
+
+.landing-foot {
+  text-align: center; margin-top: 34px; padding: 28px 22px;
+  background: var(--brand-soft); border: 1px solid #f3d6d6; border-radius: 22px;
+}
+.landing-foot .btn-primary { margin-top: 4px; }
+.foot-note { margin: 14px 0 0; color: var(--muted); font-size: 0.85rem; }
+.foot-legal { margin: 6px 0 0; font-size: 0.82rem; }
+.foot-legal a { color: var(--brand); font-weight: 600; text-decoration: none; }
+
+/* back link inside the auth card (returns to the landing page) */
+.auth-card .link-back { margin: 0 0 4px; }

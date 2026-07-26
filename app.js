@@ -226,12 +226,95 @@
     return map[code] || (err && err.message) || "Something went wrong. Please try again.";
   }
 
-  function renderSignedOut() {
+  // ---- landing / welcome page ------------------------------------------
+  // The front door for signed-out visitors: what Lotus Hub is, then a clear
+  // path into sign-up or sign-in. Signed-in users never see this.
+  function renderLanding() {
+    tabs.hidden = true;
+    main.innerHTML = "";
+    // If Firebase can't load, there's nothing to sign into — show the auth
+    // card's connect/setup messaging instead of a landing dead-end.
+    if (!LH.available) { renderSignedOut(); return; }
+
+    var pillars = [
+      ["🏓", "Play", "Join open-play sessions near you and see exactly who's coming before you show up."],
+      ["🎯", "Learn", "Level up with coaching and practice built around Lotus Pickleball Academy."],
+      ["👥", "Connect", "Find players at your level, build your circle, and never hunt for a fourth again."],
+    ];
+    var steps = [
+      ["1", "Create your profile", "Add your name, skill level, and flag — takes 30 seconds."],
+      ["2", "Find a session", "Browse upcoming open play and tap to join. See the roster live."],
+      ["3", "Show up & play", "Meet your games, log scores, and watch your record grow."],
+    ];
+
+    var landing = el(
+      '<section class="landing">' +
+        '<div class="landing-hero">' +
+          '<img class="hero-logo" src="logo.png" alt="Lotus Hub" width="76" height="76" />' +
+          '<h1 class="hero-title">Play. <span>Learn.</span> Connect.</h1>' +
+          '<p class="hero-sub">Open-play pickleball with <strong>Lotus Pickleball Academy</strong> — ' +
+          "find games, meet players, and track your progress, all in one place.</p>" +
+          '<div class="hero-cta">' +
+            '<button class="btn-primary" id="lp-start" type="button">Get started — it\'s free</button>' +
+            '<button class="btn-ghost full" id="lp-signin" type="button">I already have an account</button>' +
+          "</div>" +
+        "</div>" +
+
+        '<div class="landing-section">' +
+          '<h2 class="landing-h">Everything your game needs</h2>' +
+          '<div class="pillars">' +
+            pillars.map(function (p) {
+              return '<article class="pillar"><div class="pillar-ico">' + p[0] + "</div>" +
+                "<h3>" + p[1] + "</h3><p>" + p[2] + "</p></article>";
+            }).join("") +
+          "</div>" +
+          '<div class="pillar-soon">📊 Verified <strong>DUPR sync</strong> · coming soon</div>' +
+        "</div>" +
+
+        '<div class="landing-section">' +
+          '<h2 class="landing-h">How it works</h2>' +
+          '<div class="steps">' +
+            steps.map(function (s) {
+              return '<div class="step"><span class="step-num">' + s[0] + "</span>" +
+                "<div><h3>" + s[1] + "</h3><p>" + s[2] + "</p></div></div>";
+            }).join("") +
+          "</div>" +
+        "</div>" +
+
+        '<div class="landing-cred">' +
+          '<img class="cred-logo" src="logo.png" alt="" width="40" height="40" />' +
+          "<p>Built by <strong>Lotus Pickleball Academy</strong></p>" +
+          '<a class="cred-ig" href="https://www.instagram.com/lotuspickleballacademy_?igsh=MXV2NjEyNng5bXY0bA==" target="_blank" rel="noopener noreferrer">Follow us on Instagram →</a>' +
+        "</div>" +
+
+        '<div class="landing-foot">' +
+          '<h2 class="landing-h">Ready to play?</h2>' +
+          '<button class="btn-primary" id="lp-start2" type="button">Create your free account</button>' +
+          '<p class="foot-note">Free forever · Add it to your home screen for one-tap access</p>' +
+          '<p class="foot-legal"><a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy &amp; Terms</a></p>' +
+        "</div>" +
+      "</section>"
+    );
+    main.appendChild(landing);
+    main.scrollTop = 0;
+    try { window.scrollTo(0, 0); } catch (e) {}
+    track("landing_view");
+
+    function toSignup() { track("landing_get_started"); renderSignedOut("signup"); }
+    landing.querySelector("#lp-start").addEventListener("click", toSignup);
+    landing.querySelector("#lp-start2").addEventListener("click", toSignup);
+    landing.querySelector("#lp-signin").addEventListener("click", function () {
+      renderSignedOut("signin");
+    });
+  }
+
+  function renderSignedOut(startMode) {
     tabs.hidden = true;
     var configured = LH.available;
     main.innerHTML = "";
     var card = el(
       '<section class="card auth-card">' +
+        (configured ? '<button class="link-back" id="auth-back" type="button">‹ Back</button>' : "") +
         '<h2>Find your next game 🏓</h2>' +
         '<p class="muted">Join open-play pickleball sessions near you, see who\'s coming, ' +
         "and (soon) sync your results to your DUPR rating.</p>" +
@@ -264,22 +347,29 @@
       return;
     }
 
-    var mode = "signin";
+    var mode = startMode === "signup" ? "signup" : "signin";
     var form = card.querySelector("#auth-form");
     var submit = card.querySelector("#auth-submit");
+    var toggleBtn = card.querySelector("#toggle-mode");
     var agreeBox = card.querySelector("#agree");
     if (agreeBox) {
       agreeBox.addEventListener("change", function () {
         if (agreeBox.checked) card.classList.remove("consent-required");
       });
     }
-    card.querySelector("#toggle-mode").addEventListener("click", function () {
-      mode = mode === "signin" ? "signup" : "signin";
+    var backBtn = card.querySelector("#auth-back");
+    if (backBtn) backBtn.addEventListener("click", function () { renderLanding(); });
+    function applyMode() {
       submit.textContent = mode === "signin" ? "Sign in" : "Create account";
-      this.textContent =
+      toggleBtn.textContent =
         mode === "signin" ? "New here? Create an account" : "Have an account? Sign in";
       card.classList.toggle("is-signup", mode === "signup");
+    }
+    toggleBtn.addEventListener("click", function () {
+      mode = mode === "signin" ? "signup" : "signin";
+      applyMode();
     });
+    applyMode();
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (mode === "signup") {
@@ -2496,7 +2586,7 @@
       } else {
         state.profile = null;
         if (state.unsub.profile) state.unsub.profile();
-        renderSignedOut();
+        renderLanding();
       }
     });
     // Show a toast if a push arrives while the app is open (foreground).
