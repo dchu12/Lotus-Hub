@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#4f46e5" />
+  <title>Fix cached apps · Lotus Hub</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(160deg, #312e81, #6d28d9 55%, #db2777);
+      color: #fff; padding: 24px; text-align: center;
+    }
+    .card {
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
+      border-radius: 20px; padding: 28px 22px; max-width: 460px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35); backdrop-filter: blur(6px);
+    }
+    h1 { margin: 0 0 6px; font-size: 22px; }
+    .emoji { font-size: 38px; }
+    p { margin: 10px 0; font-size: 15px; line-height: 1.5; color: rgba(255,255,255,.92); }
+    .safe { font-size: 13px; color: rgba(255,255,255,.8); background: rgba(255,255,255,.12);
+            border-radius: 12px; padding: 10px 12px; margin-top: 14px; }
+    .status { font-weight: 700; margin-top: 16px; min-height: 1.4em; }
+    .links { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+    a.btn {
+      display: block; text-decoration: none; font-weight: 800; font-size: 15px;
+      padding: 13px 16px; border-radius: 14px; color: #fff;
+    }
+    a.trips { background: #ec4899; }
+    a.pickle { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); }
+    .spin { display: inline-block; width: 16px; height: 16px; border: 3px solid rgba(255,255,255,.4);
+            border-top-color: #fff; border-radius: 50%; animation: r .8s linear infinite; vertical-align: -3px; }
+    @keyframes r { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="emoji">🧹</div>
+    <h1>Refreshing your apps</h1>
+    <p>Clearing out the old cached app versions that were sending the Trip Planner to the wrong place.</p>
+    <div class="safe">🔒 Your saved <b>trips</b> and uploaded <b>photos/documents</b> are <b>not</b> touched — this only clears the outdated app cache.</div>
+    <div class="status" id="status"><span class="spin"></span> Working…</div>
+    <div class="links" id="links" hidden>
+      <a class="btn trips" href="/trip-planner/">🗼 Open Trip Planner</a>
+      <a class="btn pickle" href="/">🪷 Open Lotus Hub (pickleball)</a>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var status = document.getElementById("status");
+      var links = document.getElementById("links");
+      function done(msg) {
+        status.textContent = msg;
+        links.hidden = false;
+      }
+      var tasks = [];
+      // 1) Unregister every service worker on this site (does NOT delete data).
+      if ("serviceWorker" in navigator && navigator.serviceWorker.getRegistrations) {
+        tasks.push(
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all(regs.map(function (r) { return r.unregister(); }));
+          }).catch(function () {})
+        );
+      }
+      // 2) Delete all Cache Storage entries (the app shell cache — NOT your data).
+      if (window.caches && caches.keys) {
+        tasks.push(
+          caches.keys().then(function (keys) {
+            return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+          }).catch(function () {})
+        );
+      }
+      Promise.all(tasks).then(function () {
+        done("✅ Done! Tap below to open the app — your trips will be right where you left them.");
+      }).catch(function () {
+        done("Cleared. Tap below to open the app.");
+      });
+      // Safety net: show the links even if something hangs.
+      setTimeout(function () { if (links.hidden) done("Cleared. Tap below to open the app."); }, 4000);
+    })();
+  </script>
+</body>
+</html>
