@@ -749,6 +749,10 @@ a.drawer-item { text-decoration: none; color: var(--ink); }
     linear-gradient(180deg, #fff 0%, var(--bg) 100%);
   border: 1px solid var(--line); box-shadow: var(--shadow);
 }
+.hero-kicker {
+  margin: 0 0 14px; color: var(--brand); font-weight: 700; font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
 .hero-logo { display: block; margin: 0 auto 14px; filter: drop-shadow(0 4px 10px rgba(192,31,44,0.18)); }
 .hero-title {
   font-size: 2.15rem; line-height: 1.05; font-weight: 800; letter-spacing: -0.02em;

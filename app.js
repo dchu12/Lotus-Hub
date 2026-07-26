@@ -250,13 +250,15 @@
     var landing = el(
       '<section class="landing">' +
         '<div class="landing-hero">' +
+          '<p class="hero-kicker">Welcome to Lotus Pickleball Academy</p>' +
           '<img class="hero-logo" src="logo.png" alt="Lotus Hub" width="76" height="76" />' +
           '<h1 class="hero-title">Play. <span>Learn.</span> Connect.</h1>' +
-          '<p class="hero-sub">Open-play pickleball with <strong>Lotus Pickleball Academy</strong> — ' +
-          "find games, meet players, and track your progress, all in one place.</p>" +
+          '<p class="hero-sub">Join an open play session or a DUPR-verified match, or learn the game ' +
+          "with a certified pickleball coach. The opportunities are endless at Lotus — a community " +
+          "built on lifting each other up and spreading good vibes, on and off the court.</p>" +
           '<div class="hero-cta">' +
-            '<button class="btn-primary" id="lp-start" type="button">Get started — it\'s free</button>' +
-            '<button class="btn-ghost full" id="lp-signin" type="button">I already have an account</button>' +
+            '<button class="btn-primary" id="lp-start" type="button">Join Lotus for free now</button>' +
+            '<button class="btn-ghost full" id="lp-signin" type="button">Login Now</button>' +
           "</div>" +
         "</div>" +
 
