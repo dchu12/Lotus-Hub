@@ -45,14 +45,21 @@
     setTheme(dark ? "light" : "dark");
   });
 
-  (function boot() {
+  function boot() {
     var saved = null;
     try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
     if (!saved) saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     setTheme(saved);
     greet();
     render();
-  })();
+  }
+
+  // Held by the access lock (lock.js) until the owner signs in.
+  if (window.__LOTUS_LOCK_ACTIVE && !window.__LOTUS_UNLOCKED) {
+    window.addEventListener("lotus-unlocked", boot, { once: true });
+  } else {
+    boot();
+  }
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
