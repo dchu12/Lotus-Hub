@@ -247,7 +247,7 @@
           '<p class="hero-sub">Lotus Pickleball Academy is a Toronto community for players of every ' +
           "level — from your very first dink to DUPR-verified competitive matches. Learn the game " +
           "with real coaching, jump into open play, and meet people who'll cheer you on.</p>" +
-          '<p class="hero-sub">Come find your next game. See you on the court.</p>' +
+          '<p class="hero-sub">Come find your next game.<br>See you out on the courts!</p>' +
         "</div>" +
 
         '<div class="dupr-banner">' +
