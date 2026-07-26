@@ -250,7 +250,6 @@
     var landing = el(
       '<section class="landing">' +
         '<div class="landing-hero">' +
-          '<p class="hero-kicker">Welcome to Lotus Pickleball Academy</p>' +
           '<img class="hero-banner" src="landing-hero.jpg" alt="Lotus Pickleball Academy — pickleball on the Toronto waterfront at sunset" width="1200" height="800" />' +
           '<p class="hero-sub">Join an open play session or a DUPR-verified match, or learn the game ' +
           "with a certified pickleball coach. The opportunities are endless at Lotus — a community " +
