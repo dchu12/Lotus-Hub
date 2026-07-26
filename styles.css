@@ -769,6 +769,21 @@ a.drawer-item { text-decoration: none; color: var(--ink); }
 .hero-sub { color: var(--muted); font-size: 1rem; line-height: 1.5; margin: 0 auto 22px; max-width: 34ch; }
 .hero-cta { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 
+/* DUPR "coming soon" announcement banner under the hero */
+.dupr-banner {
+  display: flex; align-items: center; gap: 12px; margin-top: 18px;
+  padding: 15px 18px; border-radius: 16px;
+  background: linear-gradient(180deg, var(--accent-soft) 0%, #fdf6e3 100%);
+  border: 1px solid #ecd79a; box-shadow: var(--shadow-sm);
+}
+.dupr-banner-tag {
+  flex: 0 0 auto; background: var(--accent); color: #6b4200; font-weight: 800;
+  font-size: 0.72rem; letter-spacing: 0.02em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px;
+}
+.dupr-banner-text { color: var(--accent-ink); font-weight: 600; font-size: 0.95rem; }
+.dupr-banner-text strong { font-weight: 800; }
+
 .landing-section { margin-top: 34px; }
 .landing-h {
   font-size: 1.28rem; font-weight: 800; letter-spacing: -0.01em; color: var(--ink);

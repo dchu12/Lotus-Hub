@@ -236,17 +236,6 @@
     // card's connect/setup messaging instead of a landing dead-end.
     if (!LH.available) { renderSignedOut(); return; }
 
-    var pillars = [
-      ["🏓", "Play", "Join open-play sessions near you and see exactly who's coming before you show up."],
-      ["🎯", "Learn", "Level up with coaching and practice built around Lotus Pickleball Academy."],
-      ["👥", "Connect", "Find players at your level, build your circle, and never hunt for a fourth again."],
-    ];
-    var steps = [
-      ["1", "Create your profile", "Add your name, skill level, and flag — takes 30 seconds."],
-      ["2", "Find a session", "Browse upcoming open play and tap to join. See the roster live."],
-      ["3", "Show up & play", "Meet your games, log scores, and watch your record grow."],
-    ];
-
     var landing = el(
       '<section class="landing">' +
         '<div class="landing-hero">' +
@@ -262,38 +251,9 @@
           "DUPR-verified match. Join us today!</p>" +
         "</div>" +
 
-        '<div class="landing-section">' +
-          '<h2 class="landing-h">Everything your game needs</h2>' +
-          '<div class="pillars">' +
-            pillars.map(function (p) {
-              return '<article class="pillar"><div class="pillar-ico">' + p[0] + "</div>" +
-                "<h3>" + p[1] + "</h3><p>" + p[2] + "</p></article>";
-            }).join("") +
-          "</div>" +
-          '<div class="pillar-soon">📊 Verified <strong>DUPR sync</strong> · coming soon</div>' +
-        "</div>" +
-
-        '<div class="landing-section">' +
-          '<h2 class="landing-h">How it works</h2>' +
-          '<div class="steps">' +
-            steps.map(function (s) {
-              return '<div class="step"><span class="step-num">' + s[0] + "</span>" +
-                "<div><h3>" + s[1] + "</h3><p>" + s[2] + "</p></div></div>";
-            }).join("") +
-          "</div>" +
-        "</div>" +
-
-        '<div class="landing-cred">' +
-          '<img class="cred-logo" src="logo.png" alt="" width="40" height="40" />' +
-          "<p>Built by <strong>Lotus Pickleball Academy</strong></p>" +
-          '<a class="cred-ig" href="https://www.instagram.com/lotuspickleballacademy_?igsh=MXV2NjEyNng5bXY0bA==" target="_blank" rel="noopener noreferrer">Follow us on Instagram →</a>' +
-        "</div>" +
-
-        '<div class="landing-foot">' +
-          '<h2 class="landing-h">Ready to play?</h2>' +
-          '<button class="btn-primary" id="lp-start2" type="button">Create your free account</button>' +
-          '<p class="foot-note">Free forever · Add it to your home screen for one-tap access</p>' +
-          '<p class="foot-legal"><a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy &amp; Terms</a></p>' +
+        '<div class="dupr-banner">' +
+          '<span class="dupr-banner-tag">📊 New</span>' +
+          '<span class="dupr-banner-text"><strong>DUPR Integration</strong> — coming soon</span>' +
         "</div>" +
       "</section>"
     );
@@ -304,7 +264,6 @@
 
     function toSignup() { track("landing_get_started"); renderSignedOut("signup"); }
     landing.querySelector("#lp-start").addEventListener("click", toSignup);
-    landing.querySelector("#lp-start2").addEventListener("click", toSignup);
     landing.querySelector("#lp-signin").addEventListener("click", function () {
       renderSignedOut("signin");
     });
