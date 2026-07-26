@@ -18,7 +18,7 @@
   // The ONLY accounts allowed to open this page (lowercase Google/Gmail addresses).
   // Add a second address on its own line to share access.
   var ALLOWED = [
-    "kokwithchu@gmail.com",
+    "lotuspickleballacademy@gmail.com",
   ];
 
   // Remembers a prior successful sign-in on THIS device so the owner can still
