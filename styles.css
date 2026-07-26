@@ -750,8 +750,12 @@ a.drawer-item { text-decoration: none; color: var(--ink); }
   border: 1px solid var(--line); box-shadow: var(--shadow);
 }
 .hero-kicker {
-  margin: 0 0 14px; color: var(--brand); font-weight: 700; font-size: 0.95rem;
+  margin: 0 0 16px; color: var(--brand); font-weight: 700; font-size: 0.95rem;
   letter-spacing: 0.01em;
+}
+.hero-banner {
+  display: block; width: 100%; height: auto; aspect-ratio: 3 / 2;
+  object-fit: cover; border-radius: 16px; margin: 0 0 20px; box-shadow: var(--shadow);
 }
 .hero-logo { display: block; margin: 0 auto 14px; filter: drop-shadow(0 4px 10px rgba(192,31,44,0.18)); }
 .hero-title {
