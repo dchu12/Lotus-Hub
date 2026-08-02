@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#e8562a"/>
+  <g fill="#ffffff">
+    <!-- three QR finder patterns -->
+    <path d="M104 104h96v96h-96z" fill="none" stroke="#ffffff" stroke-width="22"/>
+    <rect x="140" y="140" width="24" height="24"/>
+    <path d="M312 104h96v96h-96z" fill="none" stroke="#ffffff" stroke-width="22"/>
+    <rect x="348" y="140" width="24" height="24"/>
+    <path d="M104 312h96v96h-96z" fill="none" stroke="#ffffff" stroke-width="22"/>
+    <rect x="140" y="348" width="24" height="24"/>
+    <!-- scattered data modules -->
+    <rect x="312" y="312" width="30" height="30"/>
+    <rect x="366" y="312" width="30" height="30"/>
+    <rect x="312" y="366" width="30" height="30"/>
+    <rect x="378" y="378" width="30" height="30"/>
+  </g>
+</svg>
