@@ -49,5 +49,23 @@ service cloud.firestore {
     match /trackers/{trackerId} {
       allow read, write: if true;
     }
+
+    // TapMenu — multi-tenant QR menu / link pages for local businesses.
+    // Anyone (a customer scanning the QR) can READ a menu; only the signed-in
+    // owner can create and edit their own. The doc id is the public slug used
+    // in the QR URL (/menu/?m=<slug>).
+    match /menus/{slug} {
+      allow read: if true;
+      // On create, the caller must stamp themselves as the owner.
+      allow create: if signedIn()
+                    && request.resource.data.ownerUid == request.auth.uid;
+      // Only the current owner may edit or delete, and they cannot hand the
+      // doc to someone else (ownerUid stays pinned to them).
+      allow update: if signedIn()
+                    && resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if signedIn()
+                    && resource.data.ownerUid == request.auth.uid;
+    }
   }
 }

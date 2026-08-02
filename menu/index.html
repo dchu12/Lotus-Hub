@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#e8562a" />
+  <title>TapMenu · One QR code for your menu &amp; links</title>
+  <meta name="description" content="Give your café, shop or stall a single QR code and link that shows your menu, prices, hours and socials — and edit it yourself anytime. No reprinting." />
+  <link rel="icon" href="icon.svg" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TapMenu" />
+  <!-- ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
+  <link rel="stylesheet" href="styles.css?v=1" />
+</head>
+<body>
+  <div id="app"><!-- rendered by app.js: public menu OR owner dashboard --></div>
+
+  <div class="drawer-root" id="drawerRoot" hidden>
+    <div class="drawer-scrim" data-close="1"></div>
+    <div class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+      <div class="drawer-hd">
+        <h2 id="drawerTitle">Edit</h2>
+        <button class="icon-btn" type="button" data-close="1" aria-label="Close">✕</button>
+      </div>
+      <form id="drawerForm" class="drawer-body"><!-- fields injected by app.js --></form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <!-- Firebase (compat) — Auth + Firestore. Shared project config lives at the
+       repo root so every Lotus app points at the same Firebase project. -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <!-- QR generator (public-domain, Kazuhiko Arase). Only needed on the owner
+       dashboard; the public menu page works without it. -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <script src="/firebase-config.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
