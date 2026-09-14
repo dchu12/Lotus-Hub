@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Leaderboard" />
   <!-- ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -28,6 +28,7 @@
         </div>
       </div>
       <div class="hd-actions">
+        <button id="shareLinkBtn" class="icon-btn" type="button" aria-label="Copy player view link" title="Copy player view link (read-only)">🔗</button>
         <button id="editBoardBtn" class="icon-btn" type="button" aria-label="Edit challenge name & dates" title="Edit challenge details">✏️</button>
         <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode" title="Toggle theme">🌙</button>
       </div>
@@ -111,7 +112,7 @@
               <th class="num">⭐</th>
               <th class="num">Community</th>
               <th class="num total">Lotus Score</th>
-              <th class="actions"></th>
+              <th class="actions" id="actionsHeader"></th>
             </tr>
           </thead>
           <tbody id="boardBody"></tbody>
@@ -132,6 +133,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js?v=1"></script>
   <script src="/firebase.js?v=1"></script>
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>
