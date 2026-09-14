@@ -10,6 +10,7 @@
     { emoji: "🏓", name: "Pickleball", tag: "Open play, roster & live rankings", href: "../", accent: "#c01f2c" },
     { emoji: "🎯", name: "Coach Console", tag: "Lessons, students, drills & who owes you", href: "../coach/", accent: "#0f9d58" },
     { emoji: "🍽️", name: "TapMenu", tag: "QR menus & link pages for local businesses", href: "../menu/", accent: "#e8562a" },
+    { emoji: "🏆", name: "Leaderboard", tag: "Lotus Challenge scores — DUPR + community points", href: "../leaderboard/", accent: "#f5b301" },
   ];
 
   function esc(s) {

@@ -19,9 +19,11 @@ app and its Coach Console:
 | 🪷 **Launcher** | [`/hub/`](./hub/) | Home screen linking to the apps below |
 | 🏓 **Pickleball** | `/` (this app) | Open play, live roster & rankings |
 | 🎯 **Coach Console** | [`/coach/`](./coach/) | Schedule lessons, track students & DUPR goals, drill library, who-owes-you |
+| 🍽️ **TapMenu** | [`/menu/`](./menu/) | QR menus & link pages for local businesses |
+| 🏆 **Leaderboard** | [`/leaderboard/`](./leaderboard/) | Lotus Challenge leaderboard — DUPR improvement + community points |
 
 The Coach Console stores its data locally on the device (no server); the
-pickleball app uses Firebase.
+pickleball app, TapMenu, and the Leaderboard use Firebase.
 
 > The `retirement/` and `trip-planner/` folders are separate, standalone apps
 > and are intentionally **not** part of this launcher.

@@ -361,6 +361,44 @@
     );
   }
 
+  // ---- Leaderboards (shared boards, e.g. the monthly Lotus Challenge) ---
+  // A board is one Firestore doc under /leaderboards/{id} holding
+  // `{ title, subtitle, entries: [...] }`. Same "open by request" access as
+  // trackers above: no sign-in, anyone with the link can view/edit — keep it
+  // private by not sharing the URL.
+  function leaderboardDoc(id) {
+    return db.collection("leaderboards").doc(id || "default");
+  }
+
+  // Realtime subscription. cb(data, error): data is the doc's contents (or
+  // null if it doesn't exist yet / on error).
+  function watchLeaderboard(id, cb) {
+    if (!ready) return function () {};
+    return leaderboardDoc(id).onSnapshot(
+      function (snap) {
+        cb(snap.exists ? snap.data() : null, null);
+      },
+      function (err) {
+        cb(null, err);
+      }
+    );
+  }
+
+  // Overwrite the board wholesale — simplest correct approach for a small,
+  // rarely-conflicting list edited by one organizer at a time.
+  function saveLeaderboard(id, data) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    var u = auth.currentUser;
+    return leaderboardDoc(id).set(
+      Object.assign({}, data, {
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: u ? u.uid : "open",
+        updatedByEmail: u ? (u.email || null) : null,
+      }),
+      { merge: true }
+    );
+  }
+
   window.LH = {
     get available() {
       return hasSDK && configured;
@@ -393,5 +431,7 @@
     myRsvpStatus: myRsvpStatus,
     watchTracker: watchTracker,
     saveTracker: saveTracker,
+    watchLeaderboard: watchLeaderboard,
+    saveLeaderboard: saveLeaderboard,
   };
 })();
