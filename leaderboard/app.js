@@ -20,8 +20,14 @@
 
   var POINTS = { ranked: 1, social: 1, drill: 3, sensei: 5 };
   var THEME_KEY = "lotus-leaderboard:theme";
-  var boardId = new URLSearchParams(location.search).get("board") || "default";
+  var params = new URLSearchParams(location.search);
+  var boardId = params.get("board") || "default";
   var LOCAL_KEY = "lotus-leaderboard:" + boardId;
+  // Cosmetic split, not a security boundary: the board itself is open-write
+  // to anyone with the link (see firestore.rules), same as the wedding
+  // tracker. ?mode=view just hides the editing controls so players get a
+  // clean, read-only board to look at.
+  var readOnly = params.get("mode") === "view";
 
   var board = {
     title: "October Lotus Challenge",
@@ -177,6 +183,7 @@
       "boardTitle", "boardSubtitle", "editBoardBtn", "editPanel", "titleInput",
       "subtitleInput", "saveBoardBtn", "cancelBoardBtn", "leaderCard",
       "boardEmpty", "boardTable", "boardBody", "playerCount",
+      "shareLinkBtn", "actionsHeader",
     ].forEach(function (id) { els[id] = document.getElementById(id); });
   }
 
@@ -343,6 +350,12 @@
         var sub = e.mode === "range" && (e.startDupr || e.endDupr)
           ? '<span class="player-sub">' + num(e.startDupr).toFixed(2) + " → " + num(e.endDupr).toFixed(2) + " DUPR</span>"
           : "";
+        var actionsCell = readOnly
+          ? ""
+          : '<td class="actions"><span class="row-actions">' +
+            '<button type="button" class="btn small ghost" data-edit="' + esc(e.id) + '">Edit</button>' +
+            '<button type="button" class="btn small danger" data-del="' + esc(e.id) + '">Delete</button>' +
+            "</span></td>";
         return (
           '<tr class="' + (i === 0 ? "leader-row" : "") + '">' +
           '<td class="rank">' + (i + 1) + "</td>" +
@@ -355,14 +368,37 @@
           "<td>" + int(e.sensei) + "</td>" +
           "<td>" + e._c.community + "</td>" +
           '<td class="total">' + e._c.total + "</td>" +
-          '<td class="actions"><span class="row-actions">' +
-          '<button type="button" class="btn small ghost" data-edit="' + esc(e.id) + '">Edit</button>' +
-          '<button type="button" class="btn small danger" data-del="' + esc(e.id) + '">Delete</button>' +
-          "</span></td>" +
+          actionsCell +
           "</tr>"
         );
       })
       .join("");
+  }
+
+  // ---- read-only "player view" ---------------------------------------------
+  function applyReadOnly() {
+    if (!readOnly) return;
+    document.body.classList.add("read-only");
+    document.querySelector(".form-card").hidden = true;
+    els.editBoardBtn.hidden = true;
+    els.shareLinkBtn.hidden = true;
+    els.actionsHeader.hidden = true;
+  }
+
+  function playerViewUrl() {
+    var u = new URL(location.href);
+    u.searchParams.set("mode", "view");
+    return u.toString();
+  }
+
+  function copyPlayerLink() {
+    var url = playerViewUrl();
+    var done = function () { toast("Player view link copied 🔗"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(function () { window.prompt("Copy this link:", url); });
+    } else {
+      window.prompt("Copy this link:", url);
+    }
   }
 
   // ---- wire up ------------------------------------------------------------
@@ -387,6 +423,7 @@
     els.editBoardBtn.addEventListener("click", function () {
       els.editPanel.hidden ? openEditPanel() : (els.editPanel.hidden = true);
     });
+    els.shareLinkBtn.addEventListener("click", copyPlayerLink);
     els.saveBoardBtn.addEventListener("click", saveBoardMeta);
     els.cancelBoardBtn.addEventListener("click", function () { els.editPanel.hidden = true; });
 
@@ -401,6 +438,7 @@
   function boot() {
     cacheEls();
     bootTheme();
+    applyReadOnly();
     bind();
     resetForm();
     render();
