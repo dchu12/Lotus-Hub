@@ -50,6 +50,14 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Leaderboards — shared boards for things like the monthly Lotus
+    // Challenge. Same "open by request" model as trackers above: no
+    // sign-in, anyone with the link can view/edit. Keep it private by not
+    // sharing the URL.
+    match /leaderboards/{boardId} {
+      allow read, write: if true;
+    }
+
     // TapMenu — multi-tenant QR menu / link pages for local businesses.
     // Anyone (a customer scanning the QR) can READ a menu; only the signed-in
     // owner can create and edit their own. The doc id is the public slug used
