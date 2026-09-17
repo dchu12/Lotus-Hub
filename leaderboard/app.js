@@ -7,18 +7,18 @@
  * isn't reachable yet (e.g. the rules haven't been published), so the tool
  * still works standalone.
  *
- * Lotus Score = DUPR improvement points + Lotus community points, per the
- * October Lotus Challenge flyer:
- *   +0.01 DUPR improvement = +1 point
+ * Lotus Score = DUPR improvement points + Lotus community points:
+ *   +0.01 DUPR improvement = +1 point (calculated automatically from the
+ *     Start/End DUPR a player enters — no manual override)
  *   Ranked Play   +1 / session
- *   Social Play   +1 / session
- *   Drill Training +3 / session
+ *   Social Play   +3 / session
+ *   Drill Training +2 / session
  *   Sensei Training +5 / session
  */
 (function () {
   "use strict";
 
-  var POINTS = { ranked: 1, social: 1, drill: 3, sensei: 5 };
+  var POINTS = { ranked: 1, social: 3, drill: 2, sensei: 5 };
   var THEME_KEY = "lotus-leaderboard:theme";
   var params = new URLSearchParams(location.search);
   var boardId = params.get("board") || "default";
@@ -53,10 +53,6 @@
   }
   function uid() {
     return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
-  function fmtSigned(n) {
-    n = num(n);
-    return (n > 0 ? "+" : "") + n.toFixed(2);
   }
   function computed(e) {
     var duprPoints = Math.round(num(e.duprImprovement) * 100);
@@ -176,8 +172,7 @@
   var els = {};
   function cacheEls() {
     [
-      "nameInput", "duprModeToggle", "duprDirectRow", "duprRangeRow",
-      "duprImprovementInput", "startDuprInput", "endDuprInput",
+      "nameInput", "startDuprInput", "endDuprInput",
       "rankedInput", "socialInput", "drillInput", "senseiInput",
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "editBoardBtn", "editPanel", "titleInput",
@@ -187,11 +182,10 @@
     ].forEach(function (id) { els[id] = document.getElementById(id); });
   }
 
+  // DUPR improvement is always calculated automatically from Start/End DUPR —
+  // no manual override.
   function currentImprovement() {
-    if (els.duprModeToggle.checked) {
-      return num(els.endDuprInput.value) - num(els.startDuprInput.value);
-    }
-    return num(els.duprImprovementInput.value);
+    return num(els.endDuprInput.value) - num(els.startDuprInput.value);
   }
 
   function updatePreview() {
@@ -202,22 +196,13 @@
     };
     var c = computed(draft);
     els.scorePreview.innerHTML =
-      "DUPR points: <b>" + c.duprPoints + "</b> &nbsp;+&nbsp; Community points: <b>" + c.community +
+      "Skill points: <b>" + c.duprPoints + "</b> &nbsp;+&nbsp; Community points: <b>" + c.community +
       "</b> &nbsp;=&nbsp; Lotus Score: <b>" + c.total + "</b>";
-  }
-
-  function toggleDuprMode() {
-    var useRange = els.duprModeToggle.checked;
-    els.duprDirectRow.hidden = useRange;
-    els.duprRangeRow.hidden = !useRange;
-    updatePreview();
   }
 
   function resetForm() {
     editingId = null;
     els.nameInput.value = "";
-    els.duprModeToggle.checked = false;
-    els.duprImprovementInput.value = "";
     els.startDuprInput.value = "";
     els.endDuprInput.value = "";
     els.rankedInput.value = 0;
@@ -229,19 +214,21 @@
     els.formHeading.textContent = "Add a player";
     els.formMsg.textContent = "";
     els.formMsg.className = "form-msg";
-    toggleDuprMode();
+    updatePreview();
   }
 
   function fillFormForEdit(e) {
     editingId = e.id;
     els.nameInput.value = e.name;
-    var useRange = e.mode === "range";
-    els.duprModeToggle.checked = useRange;
-    if (useRange) {
+    // Legacy entries saved before DUPR became auto-calculated may only have
+    // a manually-typed duprImprovement with no start/end on file — fall back
+    // to Start 0 / End <improvement> so the value carries over unchanged.
+    if (e.mode === "range") {
       els.startDuprInput.value = e.startDupr != null ? e.startDupr : "";
       els.endDuprInput.value = e.endDupr != null ? e.endDupr : "";
     } else {
-      els.duprImprovementInput.value = e.duprImprovement;
+      els.startDuprInput.value = 0;
+      els.endDuprInput.value = e.duprImprovement != null ? e.duprImprovement : "";
     }
     els.rankedInput.value = e.ranked || 0;
     els.socialInput.value = e.social || 0;
@@ -251,7 +238,7 @@
     els.cancelEditBtn.hidden = false;
     els.formHeading.textContent = "Edit player";
     els.formMsg.textContent = "";
-    toggleDuprMode();
+    updatePreview();
     window.scrollTo({ top: els.nameInput.closest(".form-card").offsetTop - 12, behavior: "smooth" });
     els.nameInput.focus();
   }
@@ -264,13 +251,12 @@
       els.nameInput.focus();
       return;
     }
-    var useRange = els.duprModeToggle.checked;
     var entry = {
       id: editingId || uid(),
       name: name,
-      mode: useRange ? "range" : "direct",
-      startDupr: useRange ? num(els.startDuprInput.value) : null,
-      endDupr: useRange ? num(els.endDuprInput.value) : null,
+      mode: "range",
+      startDupr: num(els.startDuprInput.value),
+      endDupr: num(els.endDuprInput.value),
       duprImprovement: currentImprovement(),
       ranked: int(els.rankedInput.value),
       social: int(els.socialInput.value),
@@ -345,27 +331,21 @@
     els.boardEmpty.hidden = !!list.length;
     els.boardTable.hidden = !list.length;
 
+    var MEDALS = ["gold", "silver", "bronze"];
     els.boardBody.innerHTML = list
       .map(function (e, i) {
-        var sub = e.mode === "range" && (e.startDupr || e.endDupr)
-          ? '<span class="player-sub">' + num(e.startDupr).toFixed(2) + " → " + num(e.endDupr).toFixed(2) + " DUPR</span>"
-          : "";
         var actionsCell = readOnly
           ? ""
           : '<td class="actions"><span class="row-actions">' +
             '<button type="button" class="btn small ghost" data-edit="' + esc(e.id) + '">Edit</button>' +
             '<button type="button" class="btn small danger" data-del="' + esc(e.id) + '">Delete</button>' +
             "</span></td>";
+        var rankBadge = '<span class="rank-badge' + (MEDALS[i] ? " " + MEDALS[i] : "") + '">' + (i + 1) + "</span>";
         return (
           '<tr class="' + (i === 0 ? "leader-row" : "") + '">' +
-          '<td class="rank">' + (i + 1) + "</td>" +
-          '<td class="name"><span class="player-name">' + esc(e.name) + "</span>" + sub + "</td>" +
-          "<td>" + fmtSigned(e.duprImprovement) + "</td>" +
+          '<td class="rank">' + rankBadge + "</td>" +
+          '<td class="name"><span class="player-name">' + esc(e.name) + "</span></td>" +
           "<td>" + e._c.duprPoints + "</td>" +
-          "<td>" + int(e.ranked) + "</td>" +
-          "<td>" + int(e.social) + "</td>" +
-          "<td>" + int(e.drill) + "</td>" +
-          "<td>" + int(e.sensei) + "</td>" +
           "<td>" + e._c.community + "</td>" +
           '<td class="total">' + e._c.total + "</td>" +
           actionsCell +
@@ -408,9 +388,8 @@
       setTheme(dark ? "light" : "dark");
     });
 
-    els.duprModeToggle.addEventListener("change", toggleDuprMode);
     [
-      "duprImprovementInput", "startDuprInput", "endDuprInput",
+      "startDuprInput", "endDuprInput",
       "rankedInput", "socialInput", "drillInput", "senseiInput",
     ].forEach(function (id) { els[id].addEventListener("input", updatePreview); });
 

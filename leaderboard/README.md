@@ -1,20 +1,22 @@
 # 🏆 Lotus Leaderboard
 
 A live leaderboard for the **Lotus Pickleball Academy** monthly challenge —
-add players, enter their DUPR improvement and Lotus community points, and it
-tallies each player's **Lotus Score** automatically, per the challenge flyer:
+add players, enter their Start/End DUPR and Lotus community points, and it
+tallies each player's **Lotus Score** automatically:
 
-- **+0.01 DUPR improvement = +1 point** (enter the improvement directly, or
-  flip "Use start / end DUPR instead" and type both ratings — the app does
-  the subtraction).
+- **DUPR improvement is calculated automatically** — enter a player's Start
+  DUPR and End DUPR and the app subtracts them for you (no manual override).
+  Every **+0.01 DUPR improvement = +1 point**.
 - **Lotus community points**, earned per session attended:
   - 🏓 Ranked Play — **+1**
-  - 👥 Social Play — **+1**
-  - 🚧 Drill Training — **+3**
+  - 👥 Social Play — **+3**
+  - 🚧 Drill Training — **+2**
   - ⭐ Sensei Training — **+5**
-- **Lotus Score = DUPR points + community points.**
+- **Lotus Score = Skill Points + Community Points.**
 
-The board sorts by score automatically and calls out the current leader with 🏆.
+The table itself stays minimal — Rank, Player, Skill Points, Community Points,
+Lotus Score — sorts automatically, and calls out the current leader with 🏆
+(plus gold/silver/bronze medal badges for the top 3).
 
 ## How it's shared
 
