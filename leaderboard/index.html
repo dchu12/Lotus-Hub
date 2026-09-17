@@ -16,7 +16,7 @@
   <!-- Bold display font for the scoreboard banner, matching the flyer. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap" />
   <!-- ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -64,6 +64,7 @@
       <div class="form-row" id="duprRangeRow">
         <label>Start DUPR<input type="number" step="0.01" id="startDuprInput" placeholder="3.20" /></label>
         <label>End DUPR<input type="number" step="0.01" id="endDuprInput" placeholder="3.35" /></label>
+        <label>DUPR Improvement<input type="text" id="duprImprovementDisplay" value="+0.00" readonly aria-readonly="true" title="Calculated automatically: End DUPR − Start DUPR" /></label>
       </div>
 
       <h3 class="section-lbl">Lotus community points</h3>
@@ -71,7 +72,6 @@
         <label>🏓 Ranked Play<span class="pt-tag">+1 ea</span><input type="number" min="0" step="1" id="rankedInput" value="0" /></label>
         <label>👥 Social Play<span class="pt-tag">+3 ea</span><input type="number" min="0" step="1" id="socialInput" value="0" /></label>
         <label>🚧 Drill Training<span class="pt-tag">+2 ea</span><input type="number" min="0" step="1" id="drillInput" value="0" /></label>
-        <label>⭐ Sensei Training<span class="pt-tag">+5 ea</span><input type="number" min="0" step="1" id="senseiInput" value="0" /></label>
       </div>
 
       <p class="preview" id="scorePreview"></p>
@@ -120,6 +120,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js?v=1"></script>
   <script src="/firebase.js?v=1"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

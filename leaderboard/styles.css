@@ -120,6 +120,10 @@ body {
   background: var(--field); color: var(--ink); width: 100%;
 }
 .form-row input:focus { outline: 2px solid color-mix(in srgb, var(--brand), transparent 40%); outline-offset: 1px; }
+.form-row input[readonly] {
+  background: var(--line); color: var(--muted); font-weight: 700; cursor: not-allowed;
+}
+.form-row input[readonly]:focus { outline: none; }
 .form-row.counts label { min-width: 120px; }
 .pt-tag {
   position: absolute; top: 0; right: 0; font-size: .7rem; font-weight: 700; color: var(--accent);
