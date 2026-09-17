@@ -9,16 +9,16 @@
  *
  * Lotus Score = DUPR improvement points + Lotus community points:
  *   +0.01 DUPR improvement = +1 point (calculated automatically from the
- *     Start/End DUPR a player enters — no manual override)
+ *     Start/End DUPR a player enters — no manual override; shown read-only
+ *     in its own field so it's clear it's not editable)
  *   Ranked Play   +1 / session
  *   Social Play   +3 / session
  *   Drill Training +2 / session
- *   Sensei Training +5 / session
  */
 (function () {
   "use strict";
 
-  var POINTS = { ranked: 1, social: 3, drill: 2, sensei: 5 };
+  var POINTS = { ranked: 1, social: 3, drill: 2 };
   var THEME_KEY = "lotus-leaderboard:theme";
   var params = new URLSearchParams(location.search);
   var boardId = params.get("board") || "default";
@@ -54,13 +54,16 @@
   function uid() {
     return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
+  function fmtSigned(n) {
+    n = num(n);
+    return (n > 0 ? "+" : "") + n.toFixed(2);
+  }
   function computed(e) {
     var duprPoints = Math.round(num(e.duprImprovement) * 100);
     var community =
       int(e.ranked) * POINTS.ranked +
       int(e.social) * POINTS.social +
-      int(e.drill) * POINTS.drill +
-      int(e.sensei) * POINTS.sensei;
+      int(e.drill) * POINTS.drill;
     return { duprPoints: duprPoints, community: community, total: duprPoints + community };
   }
   function sortedEntries() {
@@ -172,8 +175,8 @@
   var els = {};
   function cacheEls() {
     [
-      "nameInput", "startDuprInput", "endDuprInput",
-      "rankedInput", "socialInput", "drillInput", "senseiInput",
+      "nameInput", "startDuprInput", "endDuprInput", "duprImprovementDisplay",
+      "rankedInput", "socialInput", "drillInput",
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "editBoardBtn", "editPanel", "titleInput",
       "subtitleInput", "saveBoardBtn", "cancelBoardBtn", "leaderCard",
@@ -189,10 +192,12 @@
   }
 
   function updatePreview() {
+    var improvement = currentImprovement();
+    els.duprImprovementDisplay.value = fmtSigned(improvement);
     var draft = {
-      duprImprovement: currentImprovement(),
+      duprImprovement: improvement,
       ranked: els.rankedInput.value, social: els.socialInput.value,
-      drill: els.drillInput.value, sensei: els.senseiInput.value,
+      drill: els.drillInput.value,
     };
     var c = computed(draft);
     els.scorePreview.innerHTML =
@@ -208,7 +213,6 @@
     els.rankedInput.value = 0;
     els.socialInput.value = 0;
     els.drillInput.value = 0;
-    els.senseiInput.value = 0;
     els.saveEntryBtn.textContent = "Add to leaderboard";
     els.cancelEditBtn.hidden = true;
     els.formHeading.textContent = "Add a player";
@@ -233,7 +237,6 @@
     els.rankedInput.value = e.ranked || 0;
     els.socialInput.value = e.social || 0;
     els.drillInput.value = e.drill || 0;
-    els.senseiInput.value = e.sensei || 0;
     els.saveEntryBtn.textContent = "Save changes";
     els.cancelEditBtn.hidden = false;
     els.formHeading.textContent = "Edit player";
@@ -261,7 +264,6 @@
       ranked: int(els.rankedInput.value),
       social: int(els.socialInput.value),
       drill: int(els.drillInput.value),
-      sensei: int(els.senseiInput.value),
     };
     var idx = board.entries.findIndex(function (e) { return e.id === entry.id; });
     if (idx >= 0) board.entries[idx] = entry;
@@ -390,7 +392,7 @@
 
     [
       "startDuprInput", "endDuprInput",
-      "rankedInput", "socialInput", "drillInput", "senseiInput",
+      "rankedInput", "socialInput", "drillInput",
     ].forEach(function (id) { els[id].addEventListener("input", updatePreview); });
 
     els.saveEntryBtn.addEventListener("click", saveEntry);

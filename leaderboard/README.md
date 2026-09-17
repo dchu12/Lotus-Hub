@@ -5,13 +5,14 @@ add players, enter their Start/End DUPR and Lotus community points, and it
 tallies each player's **Lotus Score** automatically:
 
 - **DUPR improvement is calculated automatically** — enter a player's Start
-  DUPR and End DUPR and the app subtracts them for you (no manual override).
-  Every **+0.01 DUPR improvement = +1 point**.
+  DUPR and End DUPR and the app subtracts them for you into its own
+  **DUPR Improvement** field, shown read-only right next to them (no manual
+  override — it's always Start DUPR − End DUPR). Every **+0.01 DUPR
+  improvement = +1 point**.
 - **Lotus community points**, earned per session attended:
   - 🏓 Ranked Play — **+1**
   - 👥 Social Play — **+3**
   - 🚧 Drill Training — **+2**
-  - ⭐ Sensei Training — **+5**
 - **Lotus Score = Skill Points + Community Points.**
 
 The table itself stays minimal — Rank, Player, Skill Points, Community Points,
