@@ -17,6 +17,16 @@
   --shadow:     0 10px 30px rgba(120, 30, 40, .12);
   --shadow-sm:  0 3px 10px rgba(120, 30, 40, .10);
   --danger:     #b3261e;
+  /* Scoreboard banner + table header — dark charcoal, gold/silver/bronze medals */
+  --board-dark: #1b1e29;
+  --board-dark-2:#262a3a;
+  --gold-1:     #d89b1c;
+  --gold-2:     #ffe27a;
+  --silver-1:   #9ba1ab;
+  --silver-2:   #eef0f3;
+  --bronze-1:   #ad6a33;
+  --bronze-2:   #e8b184;
+  --zebra:      rgba(0, 0, 0, .02);
 }
 html[data-theme="dark"] {
   --brand:      #f0637a;
@@ -33,6 +43,9 @@ html[data-theme="dark"] {
   --shadow:     0 12px 34px rgba(0, 0, 0, .5);
   --shadow-sm:  0 3px 12px rgba(0, 0, 0, .4);
   --danger:     #ff8a80;
+  --board-dark: #0e0f16;
+  --board-dark-2:#181a26;
+  --zebra:      rgba(255, 255, 255, .03);
 }
 
 * { box-sizing: border-box; }
@@ -57,7 +70,10 @@ body {
   border-radius: 18px; background: linear-gradient(140deg, var(--brand), var(--brand-hover));
   box-shadow: 0 8px 22px rgba(192, 31, 44, .38);
 }
-.hd h1 { margin: 0; font-size: 1.5rem; letter-spacing: -.02em; line-height: 1.15; }
+.hd h1 {
+  margin: 0; font-size: 1.5rem; line-height: 1.05; text-transform: uppercase;
+  font-family: "Anton", Impact, "Arial Narrow", sans-serif; font-weight: 400; letter-spacing: .01em;
+}
 .hd-sub { margin: 4px 0 0; color: var(--muted); font-size: .9rem; }
 .hd-actions { display: flex; gap: 8px; flex: none; }
 .icon-btn {
@@ -86,7 +102,10 @@ body {
 }
 .leader .trophy { font-size: 30px; flex: none; }
 .leader .leader-txt { flex: 1; min-width: 0; }
-.leader .leader-name { font-weight: 800; font-size: 1.1rem; }
+.leader .leader-name {
+  font-family: "Anton", Impact, "Arial Narrow", sans-serif; font-weight: 400;
+  text-transform: uppercase; letter-spacing: .01em; font-size: 1.2rem; color: var(--brand);
+}
 .leader .leader-score { color: var(--muted); font-size: .88rem; }
 
 /* Forms */
@@ -106,11 +125,6 @@ body {
   position: absolute; top: 0; right: 0; font-size: .7rem; font-weight: 700; color: var(--accent);
   background: var(--gold-bg); padding: 1px 6px; border-radius: 999px;
 }
-
-.dupr-mode { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
-.mode-label { font-weight: 700; font-size: .9rem; }
-.switch { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--muted); cursor: pointer; }
-.switch input { width: 16px; height: 16px; }
 
 .section-lbl { margin: 4px 0 8px; font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 
@@ -132,19 +146,59 @@ body {
 .form-msg.err { color: var(--danger); }
 .form-msg.ok { color: #0f9d58; }
 
-/* Board */
-.board-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
-.count { color: var(--muted); font-size: .84rem; }
-.empty { color: var(--muted); text-align: center; padding: 24px 8px; }
-.table-wrap { overflow-x: auto; }
+/* Board — scoreboard banner + dark header row, matching the flyer's
+   jumbotron look (crimson/gold banner, charcoal column headers, gold /
+   silver / bronze rank medals). */
+.board-card { padding: 0; overflow: hidden; }
+.board-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 18px; position: relative; overflow: hidden; color: #fff;
+  background: linear-gradient(120deg, var(--brand), var(--brand-hover));
+}
+.board-head::after {
+  /* diagonal gold accent stripe, like the flyer's corner flash */
+  content: ""; position: absolute; top: -60%; right: 34px; width: 26px; height: 220%;
+  background: var(--accent); transform: rotate(18deg); opacity: .95;
+}
+.board-head h2 {
+  position: relative; z-index: 1; margin: 0; display: flex; align-items: center; gap: 8px;
+  font-family: "Anton", Impact, "Arial Narrow", sans-serif; font-weight: 400;
+  text-transform: uppercase; letter-spacing: .03em; font-size: 1.25rem; line-height: 1;
+}
+.board-head-icon { font-size: 1.1rem; }
+.board-head .count {
+  position: relative; z-index: 1; color: #fff; font-size: .78rem; font-weight: 700;
+  background: rgba(0, 0, 0, .22); padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+}
+.empty { color: var(--muted); text-align: center; padding: 28px 18px; }
+.table-wrap { overflow-x: auto; padding: 0 18px 16px; }
 table { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 640px; }
-th, td { padding: 9px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
-th.rank, td.rank { text-align: center; width: 34px; color: var(--muted); }
+th, td { padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th.rank, td.rank { text-align: center; width: 40px; }
 th.name, td.name { text-align: left; white-space: normal; }
-th { font-size: .74rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 700; }
+thead tr { background: linear-gradient(180deg, var(--board-dark-2), var(--board-dark)); }
+th {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 800;
+  color: #fff; border-bottom: none; padding-top: 12px; padding-bottom: 12px;
+}
+tbody tr:nth-child(even) td { background: var(--zebra); }
 td.total, th.total { color: var(--brand); font-weight: 800; }
-tr.leader-row td { background: var(--gold-bg); }
-tr.leader-row td.name::before { content: "🏆 "; }
+html[data-theme="dark"] td.total, html[data-theme="dark"] th.total { color: var(--accent); }
+
+/* Rank medal badges — gold / silver / bronze for the top 3, plain otherwise */
+.rank-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%; font-weight: 800; font-size: .8rem;
+  color: var(--ink-2); background: var(--field); border: 1px solid var(--line);
+}
+.rank-badge.gold {
+  background: linear-gradient(150deg, var(--gold-2), var(--gold-1)); color: #4a2f00; border: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent), transparent 55%);
+}
+.rank-badge.silver { background: linear-gradient(150deg, var(--silver-2), var(--silver-1)); color: #2c2f34; border: none; }
+.rank-badge.bronze { background: linear-gradient(150deg, var(--bronze-2), var(--bronze-1)); color: #3d2208; border: none; }
+
+tr.leader-row td { background: linear-gradient(90deg, color-mix(in srgb, var(--accent), transparent 68%), color-mix(in srgb, var(--accent), transparent 88%)); font-weight: 700; }
 td.actions, th.actions { text-align: right; }
 td.actions .row-actions { display: inline-flex; gap: 6px; }
 .player-name { font-weight: 700; }
