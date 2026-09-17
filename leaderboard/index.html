@@ -16,7 +16,7 @@
   <!-- Bold display font for the scoreboard banner, matching the flyer. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap" />
   <!-- ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -96,13 +96,8 @@
             <tr>
               <th class="rank">#</th>
               <th class="name">Player</th>
-              <th class="num">DUPR Δ</th>
-              <th class="num">DUPR Pts</th>
-              <th class="num">🏓</th>
-              <th class="num">👥</th>
-              <th class="num">🚧</th>
-              <th class="num">⭐</th>
-              <th class="num">Community</th>
+              <th class="num">Skill Points</th>
+              <th class="num">Community Points</th>
               <th class="num total">Lotus Score</th>
               <th class="actions" id="actionsHeader"></th>
             </tr>
@@ -113,7 +108,7 @@
     </section>
 
     <footer class="ft">
-      <p>Lotus Score = DUPR improvement points (calculated automatically from Start/End DUPR, +0.01 = +1 point) + Lotus community points.</p>
+      <p>Lotus Score = Skill Points (DUPR improvement, calculated automatically from Start/End DUPR — +0.01 = +1 point) + Community Points.</p>
     </footer>
   </div>
 
@@ -125,6 +120,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js?v=1"></script>
   <script src="/firebase.js?v=1"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

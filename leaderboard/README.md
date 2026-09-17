@@ -12,10 +12,11 @@ tallies each player's **Lotus Score** automatically:
   - 👥 Social Play — **+3**
   - 🚧 Drill Training — **+2**
   - ⭐ Sensei Training — **+5**
-- **Lotus Score = DUPR points + community points.**
+- **Lotus Score = Skill Points + Community Points.**
 
-The board sorts by score automatically and calls out the current leader with 🏆
-(and gold/silver/bronze medal badges for the top 3 in the table).
+The table itself stays minimal — Rank, Player, Skill Points, Community Points,
+Lotus Score — sorts automatically, and calls out the current leader with 🏆
+(plus gold/silver/bronze medal badges for the top 3).
 
 ## How it's shared
 

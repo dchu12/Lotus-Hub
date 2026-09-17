@@ -54,10 +54,6 @@
   function uid() {
     return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
-  function fmtSigned(n) {
-    n = num(n);
-    return (n > 0 ? "+" : "") + n.toFixed(2);
-  }
   function computed(e) {
     var duprPoints = Math.round(num(e.duprImprovement) * 100);
     var community =
@@ -200,7 +196,7 @@
     };
     var c = computed(draft);
     els.scorePreview.innerHTML =
-      "DUPR points: <b>" + c.duprPoints + "</b> &nbsp;+&nbsp; Community points: <b>" + c.community +
+      "Skill points: <b>" + c.duprPoints + "</b> &nbsp;+&nbsp; Community points: <b>" + c.community +
       "</b> &nbsp;=&nbsp; Lotus Score: <b>" + c.total + "</b>";
   }
 
@@ -338,9 +334,6 @@
     var MEDALS = ["gold", "silver", "bronze"];
     els.boardBody.innerHTML = list
       .map(function (e, i) {
-        var sub = e.mode === "range" && (e.startDupr || e.endDupr)
-          ? '<span class="player-sub">' + num(e.startDupr).toFixed(2) + " → " + num(e.endDupr).toFixed(2) + " DUPR</span>"
-          : "";
         var actionsCell = readOnly
           ? ""
           : '<td class="actions"><span class="row-actions">' +
@@ -351,13 +344,8 @@
         return (
           '<tr class="' + (i === 0 ? "leader-row" : "") + '">' +
           '<td class="rank">' + rankBadge + "</td>" +
-          '<td class="name"><span class="player-name">' + esc(e.name) + "</span>" + sub + "</td>" +
-          "<td>" + fmtSigned(e.duprImprovement) + "</td>" +
+          '<td class="name"><span class="player-name">' + esc(e.name) + "</span></td>" +
           "<td>" + e._c.duprPoints + "</td>" +
-          "<td>" + int(e.ranked) + "</td>" +
-          "<td>" + int(e.social) + "</td>" +
-          "<td>" + int(e.drill) + "</td>" +
-          "<td>" + int(e.sensei) + "</td>" +
           "<td>" + e._c.community + "</td>" +
           '<td class="total">' + e._c.total + "</td>" +
           actionsCell +

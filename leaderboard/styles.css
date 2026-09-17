@@ -172,7 +172,7 @@ body {
 }
 .empty { color: var(--muted); text-align: center; padding: 28px 18px; }
 .table-wrap { overflow-x: auto; padding: 0 18px 16px; }
-table { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 640px; }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 460px; }
 th, td { padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
 th.rank, td.rank { text-align: center; width: 40px; }
 th.name, td.name { text-align: left; white-space: normal; }
@@ -202,7 +202,6 @@ tr.leader-row td { background: linear-gradient(90deg, color-mix(in srgb, var(--a
 td.actions, th.actions { text-align: right; }
 td.actions .row-actions { display: inline-flex; gap: 6px; }
 .player-name { font-weight: 700; }
-.player-sub { display: block; color: var(--muted); font-size: .76rem; font-weight: 400; }
 
 .ft { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 22px; }
 
