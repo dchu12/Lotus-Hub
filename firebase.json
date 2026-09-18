@@ -1,20 +1,23 @@
 {
-  "hosting": {
-    "public": ".",
-    "ignore": [
-      "firebase.json",
-      ".firebaserc",
-      "firestore.rules",
-      "**/.git/**",
-      "**/node_modules/**",
-      "functions/**",
-      "docs/**",
-      "*.md"
-    ],
-    "rewrites": [
-      { "source": "**", "destination": "/index.html" }
-    ]
-  },
+  "hosting": [
+    {
+      "target": "main",
+      "public": ".",
+      "ignore": [
+        "firebase.json",
+        ".firebaserc",
+        "firestore.rules",
+        "**/.git/**",
+        "**/node_modules/**",
+        "functions/**",
+        "docs/**",
+        "*.md"
+      ],
+      "rewrites": [
+        { "source": "**", "destination": "/index.html" }
+      ]
+    }
+  ],
   "firestore": {
     "rules": "firestore.rules"
   },

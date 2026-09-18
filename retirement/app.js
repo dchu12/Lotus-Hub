@@ -1034,7 +1034,7 @@
       el.saveStatus.textContent = "✓ Auto-saving on this device — your numbers will be here when you come back. (Tip: “Save my plan to a file” keeps a backup you can’t lose.)";
     } else {
       el.saveStatus.className = "sb-status warn";
-      el.saveStatus.textContent = "⚠️ This preview can’t save your numbers. Open the website version (lots-hub.web.app/retirement/) — or tap “Save my plan to a file” and keep it safe.";
+      el.saveStatus.textContent = "⚠️ This preview can’t save your numbers. Open the website version (lotus-hub.web.app/retirement/) — or tap “Save my plan to a file” and keep it safe.";
       // a storage problem must never hide behind the gear — force the panel open
       if (el.settingsPanel) { el.settingsPanel.hidden = false; if (el.gearBtn) el.gearBtn.setAttribute("aria-expanded", "true"); }
     }
