@@ -1,8 +1,9 @@
 name: Deploy to Firebase
 
 # Publishes the site (Firebase Hosting) AND the Firestore security rules to the
-# lots-hub project on every push to main. Also runnable on demand from the
-# Actions tab (workflow_dispatch).
+# lots-hub project (live at the correctly-spelled lotus-hub.web.app — see the
+# "main" hosting target in .firebaserc / firebase.json) on every push to main.
+# Also runnable on demand from the Actions tab (workflow_dispatch).
 #
 # One-time setup (all in the browser, no terminal needed):
 #   1. Google Cloud console -> IAM & Admin -> Service Accounts -> Create.
@@ -62,4 +63,4 @@ jobs:
         run: firebase deploy --only hosting,firestore:rules --project lots-hub --non-interactive
 
       - name: Done
-        run: echo "Deployed → https://lots-hub.web.app  (tracker at /thank-you.html)"
+        run: echo "Deployed → https://lotus-hub.web.app  (tracker at /thank-you.html)"

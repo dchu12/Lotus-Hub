@@ -1,5 +1,12 @@
 {
   "projects": {
     "default": "lots-hub"
+  },
+  "targets": {
+    "lots-hub": {
+      "hosting": {
+        "main": ["lotus-hub"]
+      }
+    }
   }
 }
