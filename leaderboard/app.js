@@ -21,7 +21,21 @@
   var POINTS = { ranked: 1, social: 3, drill: 2 };
   var THEME_KEY = "lotus-leaderboard:theme";
   var params = new URLSearchParams(location.search);
-  var boardId = params.get("board") || "default";
+
+  // Board routing: /leaderboard/<slug> (clean path, e.g. shared links) takes
+  // over from a bare /leaderboard/ or an explicit ?board= — either works,
+  // path wins when both are present. A slug can alias an existing board's
+  // storage id so a nicer link doesn't fragment data already on that board.
+  function boardIdFromPath() {
+    var segments = location.pathname.split("/").filter(Boolean);
+    if (segments[0] === "leaderboard") segments.shift();
+    var slug = segments[0];
+    if (!slug || slug === "index.html") return null;
+    return decodeURIComponent(slug);
+  }
+  var BOARD_ALIASES = { lotusoctoberchallenge: "default" };
+  var requestedBoardId = params.get("board") || boardIdFromPath() || "default";
+  var boardId = BOARD_ALIASES[requestedBoardId] || requestedBoardId;
   var LOCAL_KEY = "lotus-leaderboard:" + boardId;
   // Cosmetic split, not a security boundary: the board itself is open-write
   // to anyone with the link (see firestore.rules), same as the wedding

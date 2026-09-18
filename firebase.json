@@ -12,6 +12,7 @@
       "*.md"
     ],
     "rewrites": [
+      { "source": "/leaderboard/**", "destination": "/leaderboard/index.html" },
       { "source": "**", "destination": "/index.html" }
     ]
   },
