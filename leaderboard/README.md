@@ -26,8 +26,20 @@ Hub uses (`firebase-config.js`), stored open (no sign-in) like the wedding
 thank-you tracker — anyone with the link can view and edit it. Keep it private
 by not sharing the URL outside your organizers.
 
-Multiple boards can exist side by side via `?board=<id>` in the URL (e.g.
-`?board=november-2026`); leaving it off uses `default`.
+Multiple boards can exist side by side, addressed either by a clean path —
+`/leaderboard/<slug>` (e.g. `/leaderboard/november-2026`) — or a `?board=<id>`
+query param; leaving both off uses `default`. Path wins if a page somehow has
+both. `/leaderboard/lotusoctoberchallenge` is a built-in alias for `default`
+(see `BOARD_ALIASES` in `app.js`) so the pretty URL for the current challenge
+points at the same data as the plain `/leaderboard/` link, rather than
+starting a second, empty board — add more aliases there the same way for
+future months if you want a memorable link without renaming the underlying
+board.
+
+The clean-path form needs the hosting rewrite in the repo's
+[`firebase.json`](../firebase.json) (`/leaderboard/** -> /leaderboard/index.html`,
+ahead of the site-wide catch-all) — already included, just noting it's not
+optional for that URL style to work.
 
 **First-time setup:** publish the `leaderboards/{boardId}` rule added to the
 repo's [`firestore.rules`](../firestore.rules) — Firebase console → Firestore
