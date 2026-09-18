@@ -8,15 +8,18 @@
   <meta name="description" content="Live leaderboard for the Lotus Pickleball Academy challenge — DUPR improvement + community points add up to a Lotus Score." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%86%3C/text%3E%3C/svg%3E" />
   <!-- PWA: installable + offline -->
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="manifest" href="/leaderboard/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/leaderboard/icon.svg" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Leaderboard" />
   <!-- Primary typeface — a clean, modern sans for a professional look. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" />
-  <!-- ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <!-- Absolute paths below (not relative) — this page can be reached at URLs
+       that aren't literally under /leaderboard/ (e.g. the short alias
+       /lotusoctoberchallenge), and relative paths would resolve wrong there.
+       ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=6" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -120,6 +123,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js?v=1"></script>
   <script src="/firebase.js?v=1"></script>
-  <script src="app.js?v=6"></script>
+  <script src="/leaderboard/app.js?v=7"></script>
 </body>
 </html>

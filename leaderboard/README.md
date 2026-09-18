@@ -29,17 +29,28 @@ by not sharing the URL outside your organizers.
 Multiple boards can exist side by side, addressed either by a clean path —
 `/leaderboard/<slug>` (e.g. `/leaderboard/november-2026`) — or a `?board=<id>`
 query param; leaving both off uses `default`. Path wins if a page somehow has
-both. `/leaderboard/lotusoctoberchallenge` is a built-in alias for `default`
-(see `BOARD_ALIASES` in `app.js`) so the pretty URL for the current challenge
-points at the same data as the plain `/leaderboard/` link, rather than
-starting a second, empty board — add more aliases there the same way for
-future months if you want a memorable link without renaming the underlying
-board.
+both. `/leaderboard/lotusoctoberchallenge` **and** the even shorter
+`/lotusoctoberchallenge` (no `/leaderboard/` prefix at all — see the extra
+rewrite pair in `firebase.json`) both alias to `default` (see `BOARD_ALIASES`
+in `app.js`), so any of the three URLs for the current challenge point at the
+*same* data — none of them start a second, empty board. Add more aliases the
+same way for future months if you want a memorable link without renaming the
+underlying board.
 
-The clean-path form needs the hosting rewrite in the repo's
-[`firebase.json`](../firebase.json) (`/leaderboard/** -> /leaderboard/index.html`,
-ahead of the site-wide catch-all) — already included, just noting it's not
-optional for that URL style to work.
+Both clean-path forms need matching hosting rewrites in the repo's
+[`firebase.json`](../firebase.json) — already included — routing that URL to
+`/leaderboard/index.html`. Because a page can then be served at a URL that
+isn't literally under `/leaderboard/`, every asset this page loads
+(`styles.css`, `app.js`, `manifest.webmanifest`, `icon.svg`, and the service
+worker registration) uses an **absolute** `/leaderboard/...` path rather than
+a relative one — a relative path resolves against the *browser's URL*, not
+this file's location, so it'd 404 or load the wrong thing from a short alias
+like `/lotusoctoberchallenge`. Keep that in mind if you add more assets here.
+
+These path-based rewrites only take effect on the real Firebase Hosting
+deploy — a plain `python3 -m http.server` (see "Run it" below) doesn't apply
+them, so only the bare `/leaderboard/` URL works for local testing; the short
+aliases will 404 locally.
 
 **First-time setup:** publish the `leaderboards/{boardId}` rule added to the
 repo's [`firestore.rules`](../firestore.rules) — Firebase console → Firestore

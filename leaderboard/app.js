@@ -444,7 +444,11 @@
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
-      navigator.serviceWorker.register("sw.js").catch(function () {});
+      // Absolute src + explicit scope: this script can run from a page URL
+      // that isn't literally under /leaderboard/ (e.g. the short alias
+      // /lotusoctoberchallenge), and "sw.js" alone would resolve relative to
+      // that page instead of this app's own directory.
+      navigator.serviceWorker.register("/leaderboard/sw.js", { scope: "/leaderboard/" }).catch(function () {});
     });
   }
 })();
