@@ -1,8 +1,8 @@
 /* Lotus Leaderboard — crimson + gold brand, executed as a clean, modern
    dashboard rather than a poster/flyer: restrained accent color, a real
-   typographic scale, and a proper data table. Light + dark. Self-contained
-   (shares only firebase.js / firebase-config.js with the rest of the hub,
-   not any app UI). */
+   typographic scale, and a proper data table. Light theme only, by design.
+   Self-contained (shares only firebase.js / firebase-config.js with the
+   rest of the hub, not any app UI). */
 
 :root {
   --brand:      #b91c2b;
@@ -25,27 +25,6 @@
   --bronze:     #a35d28;
   --zebra:      rgba(28, 20, 20, .015);
 }
-html[data-theme="dark"] {
-  --brand:      #ef5f74;
-  --brand-hover:#f5899b;
-  --accent:     #e0ab4c;
-  --accent-bg:  #35290f;
-  --bg:         #151211;
-  --card:       #1f1a19;
-  --ink:        #f3ecea;
-  --ink-2:      #c8bebb;
-  --muted:      #8c807d;
-  --line:       #332b29;
-  --field:      #241e1d;
-  --thead-bg:   #241e1d;
-  --shadow:     0 16px 34px rgba(0, 0, 0, .45);
-  --shadow-sm:  0 1px 4px rgba(0, 0, 0, .35);
-  --danger:     #ff8a80;
-  --gold:       #e0ab4c;
-  --silver:     #a7aeb8;
-  --bronze:     #c17d45;
-  --zebra:      rgba(255, 255, 255, .02);
-}
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -65,9 +44,10 @@ body {
 .hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
 .hd-brand { display: flex; align-items: center; gap: 14px; }
 .hd-logo {
-  display: grid; place-items: center; width: 48px; height: 48px; flex: none; font-size: 22px;
+  display: grid; place-items: center; width: 48px; height: 48px; flex: none; color: #fff;
   border-radius: 14px; background: var(--brand); box-shadow: 0 4px 14px rgba(185, 28, 43, .28);
 }
+.hd-logo svg { width: 24px; height: 24px; display: block; }
 .hd h1 {
   margin: 0; font-size: 1.4rem; line-height: 1.2; font-weight: 800; letter-spacing: -.02em;
 }
@@ -75,10 +55,11 @@ body {
 .hd-actions { display: flex; gap: 8px; flex: none; }
 .icon-btn {
   appearance: none; width: 40px; height: 40px; flex: none; display: grid; place-items: center;
-  border: 1px solid var(--line); background: var(--card); border-radius: 11px; font-size: 16px;
+  border: 1px solid var(--line); background: var(--card); border-radius: 11px; color: var(--ink-2);
   cursor: pointer; transition: border-color .15s, background .15s; box-shadow: var(--shadow-sm);
 }
-.icon-btn:hover { border-color: var(--brand); background: var(--field); }
+.icon-btn svg { width: 18px; height: 18px; display: block; }
+.icon-btn:hover { border-color: var(--brand); background: var(--field); color: var(--brand); }
 
 .banner {
   margin: 0 0 16px; padding: 11px 14px; border-radius: 10px; font-size: .86rem;
@@ -98,9 +79,10 @@ body {
   border-left: 3px solid var(--gold);
 }
 .leader .trophy {
-  font-size: 20px; flex: none; display: grid; place-items: center;
+  color: var(--gold); flex: none; display: grid; place-items: center;
   width: 40px; height: 40px; border-radius: 11px; background: var(--accent-bg);
 }
+.leader .trophy svg { width: 20px; height: 20px; display: block; }
 .leader .leader-txt { flex: 1; min-width: 0; }
 .leader .leader-name { font-weight: 800; font-size: 1.02rem; letter-spacing: -.01em; }
 .leader .leader-score { color: var(--muted); font-size: .84rem; margin-top: 1px; }
@@ -112,6 +94,11 @@ body {
   font-weight: 600; flex: 1; min-width: 140px; position: relative;
 }
 .form-row label.grow { flex: 2 1 260px; }
+.lbl {
+  display: inline-flex; align-items: center; gap: 6px; width: 100%;
+  padding-right: 48px; box-sizing: border-box; /* leaves room for the absolutely-positioned .pt-tag corner */
+}
+.lbl svg { width: 15px; height: 15px; flex: none; color: var(--muted); }
 .form-row input[type="text"], .form-row input[type="number"] {
   font: inherit; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--line);
   background: var(--field); color: var(--ink); width: 100%; transition: border-color .15s;
@@ -168,9 +155,10 @@ body {
   font-size: 1.05rem; letter-spacing: -.01em; color: var(--ink);
 }
 .board-head-icon {
-  font-size: .95rem; display: grid; place-items: center; width: 28px; height: 28px;
+  color: var(--brand); display: grid; place-items: center; width: 28px; height: 28px;
   border-radius: 8px; background: var(--accent-bg); flex: none;
 }
+.board-head-icon svg { width: 16px; height: 16px; display: block; }
 .board-head .count {
   color: var(--muted); font-size: .8rem; font-weight: 600; white-space: nowrap;
 }
