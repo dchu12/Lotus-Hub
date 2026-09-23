@@ -19,7 +19,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=7" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=8" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -40,12 +40,18 @@
 
     <p id="connBanner" class="banner" hidden></p>
 
-    <!-- Edit challenge title / date range -->
+    <!-- Edit challenge title / date range / admin PIN -->
     <section class="card edit-panel" id="editPanel" hidden aria-label="Edit challenge details">
       <div class="form-row">
         <label>Challenge name<input type="text" id="titleInput" placeholder="October Lotus Challenge" /></label>
         <label>Dates<input type="text" id="subtitleInput" placeholder="October 1 – October 31" /></label>
       </div>
+      <h3 class="section-lbl">Admin PIN</h3>
+      <div class="form-row">
+        <label>New PIN<input type="password" inputmode="numeric" autocomplete="off" id="newPinInput" placeholder="Leave blank to keep unchanged" /></label>
+      </div>
+      <label class="checkbox-row"><input type="checkbox" id="removePinInput" /> Remove PIN protection (anyone with this link could edit again)</label>
+      <p class="hint">A deterrent against accidental edits or a shared link — not real security. The board's data is still open the same way it always was; see the leaderboard README.</p>
       <div class="form-actions">
         <button type="button" class="btn primary" id="saveBoardBtn">Save</button>
         <button type="button" class="btn ghost" id="cancelBoardBtn">Cancel</button>
@@ -55,8 +61,22 @@
     <!-- Current leader -->
     <section class="leader card" id="leaderCard" hidden></section>
 
+    <!-- Shown instead of the add-player form when this browser hasn't entered
+         the admin PIN yet for a board that has one set. -->
+    <section class="card lock-card" id="lockCard" hidden aria-label="Admin locked">
+      <h2><span class="lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Admin locked</h2>
+      <p class="lock-copy">Enter the admin PIN to add or edit players on this device.</p>
+      <div class="form-row">
+        <label class="grow">PIN<input type="password" inputmode="numeric" autocomplete="off" id="pinInput" placeholder="••••" /></label>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn primary" id="unlockBtn">Unlock</button>
+      </div>
+      <p class="form-msg" id="pinMsg" role="status"></p>
+    </section>
+
     <!-- Add / edit a player -->
-    <section class="card form-card" aria-label="Add a player">
+    <section class="card form-card" id="formCard" aria-label="Add a player">
       <h2 id="formHeading">Add a player</h2>
       <div class="form-row">
         <label class="grow">Name<input type="text" id="nameInput" placeholder="Player name" /></label>
@@ -122,6 +142,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js?v=1"></script>
   <script src="/firebase.js?v=1"></script>
-  <script src="/leaderboard/app.js?v=8"></script>
+  <script src="/leaderboard/app.js?v=9"></script>
 </body>
 </html>

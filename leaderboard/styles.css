@@ -120,9 +120,28 @@ body {
   font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--muted);
 }
 .section-lbl:first-of-type { margin-top: 4px; padding-top: 0; border-top: none; }
+/* ...except inside the edit panel, where "Admin PIN" is a lone .section-lbl
+   sitting below other fields, not the first thing in the card — it still
+   needs its divider. */
+.edit-panel .section-lbl { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 
 .preview { font-size: .86rem; color: var(--ink-2); background: var(--field); border-radius: 9px; padding: 10px 12px; margin: 6px 0 14px; }
 .preview b { color: var(--brand); font-weight: 800; }
+
+.checkbox-row { display: flex; align-items: center; gap: 8px; font-size: .84rem; color: var(--ink-2); margin: 4px 0 0; cursor: pointer; }
+.checkbox-row input { width: 16px; height: 16px; flex: none; }
+.hint { color: var(--muted); font-size: .78rem; line-height: 1.5; margin: 10px 0 0; }
+
+/* Admin-locked card — same accent language as the leader card, but in
+   brand crimson rather than gold, to read as "attention" not "celebration" */
+.lock-card { border-left: 3px solid var(--brand); }
+.lock-card h2 { display: flex; align-items: center; gap: 8px; }
+.lock-icon {
+  color: var(--brand); display: grid; place-items: center; width: 28px; height: 28px;
+  border-radius: 8px; background: var(--accent-bg); flex: none;
+}
+.lock-icon svg { width: 16px; height: 16px; display: block; }
+.lock-copy { color: var(--ink-2); font-size: .88rem; margin: 6px 0 14px; }
 
 .form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn {

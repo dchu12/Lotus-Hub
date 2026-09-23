@@ -32,6 +32,24 @@ Hub uses (`firebase-config.js`), stored open (no sign-in) like the wedding
 thank-you tracker — anyone with the link can view and edit it. Keep it private
 by not sharing the URL outside your organizers.
 
+### Admin PIN
+
+Set an **Admin PIN** from the ✏️ edit-challenge panel to require it before
+this or any *other* browser/device can add, edit, or delete players — until
+a PIN is set, editing stays open exactly as before (opt-in, not forced). The
+board itself is still readable and writable to anyone with the link at the
+Firestore level (see `firestore.rules`); the PIN only gates this page's UI,
+storing a SHA-256 hash of it on the board doc and a matching copy in
+`localStorage` on whichever browser(s) have unlocked it. **This deters
+accidental edits and a casually shared or screenshotted link — it is not
+real security.** Anyone who opens the browser console and calls the
+Firestore SDK directly bypasses it entirely, same as the existing
+`?mode=view` split. Real enforcement would need Firebase Auth + rewritten
+security rules, out of scope for this tool.
+
+To remove PIN protection, open the edit panel (once unlocked) and check
+"Remove PIN protection."
+
 Multiple boards can exist side by side, addressed either by a clean path —
 `/leaderboard/<slug>` (e.g. `/leaderboard/november-2026`) — or a `?board=<id>`
 query param; leaving both off uses `default`. Path wins if a page somehow has
