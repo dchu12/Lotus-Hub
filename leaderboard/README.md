@@ -19,6 +19,12 @@ The table itself stays minimal — Rank, Player, Skill Points, Community Points,
 Lotus Score — sorts automatically, and calls out the current leader (plus
 gold/silver/bronze medal badges for the top 3).
 
+- **Points breakdown** — tap (or click / Enter on) any player in the table
+  to expand a row underneath showing exactly how their score was built:
+  Start → End DUPR and the resulting skill points, each community-point
+  category as `sessions × points`, and `Skill + Community = Lotus Score`.
+  Works in both the admin and `?mode=view` player views; one player open at a
+  time, and it stays open through live Firestore updates.
 - **"Updated N minutes ago"** next to the leaderboard header, so players can
   tell the board is current rather than stale. Only shows once there's a
   real synced timestamp from Firestore (`updatedAt`, set on every save) —

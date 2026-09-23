@@ -85,6 +85,7 @@
   };
 
   var editingId = null;
+  var expandedId = null;
   var connected = false;
   var unsub = null;
   var lastUpdated = null; // Date, from Firestore's server-set updatedAt; null until we have a real one
@@ -126,6 +127,35 @@
       int(e.social) * POINTS.social +
       int(e.drill) * POINTS.drill;
     return { duprPoints: duprPoints, community: community, total: duprPoints + community };
+  }
+  function fmtDupr(v) {
+    var n = num(v);
+    var s = String(n);
+    return s.indexOf(".") === -1 || s.split(".")[1].length < 2 ? n.toFixed(2) : s;
+  }
+  function breakdownHtml(e) {
+    var c = e._c;
+    var improvement = num(e.duprImprovement);
+    var duprLine = e.mode === "range"
+      ? "DUPR " + fmtDupr(e.startDupr) + " &rarr; " + fmtDupr(e.endDupr) + " = <b>" + fmtSigned(improvement) + "</b>"
+      : "DUPR improvement <b>" + fmtSigned(improvement) + "</b>";
+    var sessions = [
+      ["Ranked Play", int(e.ranked), POINTS.ranked],
+      ["Social Play", int(e.social), POINTS.social],
+      ["Drill Training", int(e.drill), POINTS.drill],
+    ].map(function (s) {
+      return '<li><span>' + s[0] + '</span><span class="bd-calc">' + s[1] + " &times; " + s[2] + " = <b>" + s[1] * s[2] + "</b></span></li>";
+    }).join("");
+    return (
+      '<div class="bd">' +
+      '<div class="bd-sec"><div class="bd-h"><span>Skill Points</span><b>' + c.duprPoints + "</b></div>" +
+      '<ul><li><span>' + duprLine + "</span></li>" +
+      '<li class="bd-note"><span>Every +0.01 DUPR = 1 point</span></li></ul></div>' +
+      '<div class="bd-sec"><div class="bd-h"><span>Community Points</span><b>' + c.community + "</b></div>" +
+      "<ul>" + sessions + "</ul></div>" +
+      '<div class="bd-total"><span>Lotus Score</span><span class="bd-calc">' + c.duprPoints + " + " + c.community + " = <b>" + c.total + "</b></span></div>" +
+      "</div>"
+    );
   }
   function sortedEntries() {
     return board.entries
@@ -238,7 +268,7 @@
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "editBoardBtn", "editPanel", "titleInput",
       "subtitleInput", "saveBoardBtn", "cancelBoardBtn", "leaderCard",
-      "boardEmpty", "boardTable", "boardBody", "playerCount",
+      "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
       "shareLinkBtn", "actionsHeader", "formCard", "lockCard", "pinInput",
       "pinMsg", "unlockBtn", "newPinInput", "removePinInput",
       "lastUpdatedText", "exportCsvBtn", "qrBtn", "qrCard", "qrWrap",
@@ -463,6 +493,7 @@
     els.playerCount.textContent = list.length ? list.length + (list.length === 1 ? " player" : " players") : "";
     els.boardEmpty.hidden = !!list.length;
     els.boardTable.hidden = !list.length;
+    els.boardHint.hidden = !list.length;
 
     var MEDALS = ["gold", "silver", "bronze"];
     els.boardBody.innerHTML = list
@@ -474,15 +505,19 @@
             '<button type="button" class="btn small danger" data-del="' + esc(e.id) + '">Delete</button>' +
             "</span></td>";
         var rankBadge = '<span class="rank-badge' + (MEDALS[i] ? " " + MEDALS[i] : "") + '">' + (i + 1) + "</span>";
+        var open = e.id === expandedId;
+        var classes = ["player-row", i === 0 ? "leader-row" : "", i % 2 ? "zebra" : "", open ? "open" : ""].join(" ").trim();
         return (
-          '<tr class="' + (i === 0 ? "leader-row" : "") + '">' +
+          '<tr class="' + classes + '" data-toggle="' + esc(e.id) + '">' +
           '<td class="rank">' + rankBadge + "</td>" +
-          '<td class="name"><span class="player-name">' + esc(e.name) + "</span></td>" +
+          '<td class="name"><button type="button" class="name-btn" aria-expanded="' + open + '" data-toggle="' + esc(e.id) + '">' +
+          '<span class="player-name">' + esc(e.name) + '</span><span class="chev" aria-hidden="true"></span></button></td>' +
           "<td>" + e._c.duprPoints + "</td>" +
           "<td>" + e._c.community + "</td>" +
           '<td class="total">' + e._c.total + "</td>" +
           actionsCell +
-          "</tr>"
+          "</tr>" +
+          (open ? '<tr class="bd-row"><td colspan="' + (restricted ? 5 : 6) + '">' + breakdownHtml(e) + "</td></tr>" : "")
         );
       })
       .join("");
@@ -600,6 +635,14 @@
       var delId = ev.target.getAttribute("data-del");
       if (editId) editEntryById(editId);
       if (delId) deleteEntryById(delId);
+      if (editId || delId) return;
+      var row = ev.target.closest("[data-toggle]");
+      if (!row) return;
+      var id = row.getAttribute("data-toggle");
+      expandedId = expandedId === id ? null : id;
+      render();
+      var btn = [].find.call(els.boardBody.querySelectorAll(".name-btn"), function (b) { return b.getAttribute("data-toggle") === id; });
+      if (btn && ev.target.closest(".name-btn")) btn.focus();
     });
   }
 
