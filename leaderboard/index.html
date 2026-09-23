@@ -19,7 +19,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=8" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=9" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -34,11 +34,24 @@
       </div>
       <div class="hd-actions">
         <button id="shareLinkBtn" class="icon-btn" type="button" aria-label="Copy player view link" title="Copy player view link (read-only)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1 1"/><path d="M14 11a5 5 0 0 0-7.07 0l-2 2a5 5 0 0 0 7.07 7.07l1-1"/></svg></button>
+        <button id="qrBtn" class="icon-btn" type="button" aria-label="Show player link QR code" title="Show player link QR code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M14 20h3"/><path d="M20 14v3"/><path d="M20 20h.01"/></svg></button>
         <button id="editBoardBtn" class="icon-btn" type="button" aria-label="Edit challenge name & dates" title="Edit challenge details"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
       </div>
     </header>
 
     <p id="connBanner" class="banner" hidden></p>
+
+    <!-- Player link QR code -->
+    <section class="card qr-card" id="qrCard" hidden aria-label="Player link QR code">
+      <h2>Player link QR code</h2>
+      <p class="lock-copy">Scan to open the read-only leaderboard — nothing to install.</p>
+      <div class="qr-wrap" id="qrWrap"></div>
+      <p class="qr-url" id="qrUrlText"></p>
+      <div class="form-actions">
+        <button type="button" class="btn ghost" id="qrCopyBtn">Copy link</button>
+        <button type="button" class="btn ghost" id="qrCloseBtn">Close</button>
+      </div>
+    </section>
 
     <!-- Edit challenge title / date range / admin PIN -->
     <section class="card edit-panel" id="editPanel" hidden aria-label="Edit challenge details">
@@ -109,7 +122,11 @@
     <section class="card board-card" aria-label="Leaderboard">
       <div class="board-head">
         <h2><span class="board-head-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="10" height="13" rx="5"/><line x1="10" y1="16" x2="10" y2="21"/><circle cx="18.5" cy="6" r="1.6" fill="currentColor" stroke="none"/></svg></span>Lotus Leaderboard</h2>
-        <span class="count" id="playerCount"></span>
+        <div class="board-head-right">
+          <span class="count" id="playerCount"></span>
+          <span class="last-updated" id="lastUpdatedText"></span>
+          <button type="button" class="btn small ghost" id="exportCsvBtn">Export CSV</button>
+        </div>
       </div>
       <div id="boardEmpty" class="empty" hidden>No players yet — add the first one above.</div>
       <div class="table-wrap">
@@ -142,6 +159,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js?v=1"></script>
   <script src="/firebase.js?v=1"></script>
-  <script src="/leaderboard/app.js?v=9"></script>
+  <!-- QR code generator for the player-link QR panel — pure JS, generates
+       client-side (no data sent anywhere to render a code). Exposes a
+       global qrcode() function; app.js checks it's actually loaded before
+       using it and falls back to just the plain link if not. -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <script src="/leaderboard/app.js?v=10"></script>
 </body>
 </html>

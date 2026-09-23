@@ -28,6 +28,8 @@
   var ICONS = {
     trophy:
       '<svg viewBox="0 0 24 24" ' + ICON_ATTRS + '><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5.5a2 2 0 0 0 0 4H7"/><path d="M16 5h2.5a2 2 0 0 1 0 4H17"/><path d="M12 13v3"/><path d="M9 20h6"/><path d="M10 16h4l.8 4H9.2l.8-4Z"/></svg>',
+    qr:
+      '<svg viewBox="0 0 24 24" ' + ICON_ATTRS + '><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M14 20h3"/><path d="M20 14v3"/><path d="M20 20h.01"/></svg>',
   };
 
   // ---- admin PIN -----------------------------------------------------------
@@ -85,6 +87,7 @@
   var editingId = null;
   var connected = false;
   var unsub = null;
+  var lastUpdated = null; // Date, from Firestore's server-set updatedAt; null until we have a real one
 
   // ---- helpers ------------------------------------------------------------
   function esc(s) {
@@ -104,6 +107,17 @@
   function fmtSigned(n) {
     n = num(n);
     return (n > 0 ? "+" : "") + n.toFixed(2);
+  }
+  function formatRelativeTime(date) {
+    var secs = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+    if (secs < 45) return "just now";
+    var mins = Math.round(secs / 60);
+    if (mins < 60) return mins + " minute" + (mins === 1 ? "" : "s") + " ago";
+    var hours = Math.round(mins / 60);
+    if (hours < 24) return hours + " hour" + (hours === 1 ? "" : "s") + " ago";
+    var days = Math.round(hours / 24);
+    if (days < 7) return days + " day" + (days === 1 ? "" : "s") + " ago";
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   }
   function computed(e) {
     var duprPoints = Math.round(num(e.duprImprovement) * 100);
@@ -165,6 +179,12 @@
       board.subtitle = data.subtitle || board.subtitle;
       board.entries = Array.isArray(data.entries) ? data.entries : [];
       board.adminPinHash = data.adminPinHash || null;
+      // A write we just made ourselves can arrive with updatedAt still null
+      // for one snapshot (the serverTimestamp placeholder resolves a moment
+      // later) — keep whatever we last had rather than blanking it.
+      if (data.updatedAt && typeof data.updatedAt.toDate === "function") {
+        lastUpdated = data.updatedAt.toDate();
+      }
       hideBanner();
       saveLocal();
     } else {
@@ -221,6 +241,8 @@
       "boardEmpty", "boardTable", "boardBody", "playerCount",
       "shareLinkBtn", "actionsHeader", "formCard", "lockCard", "pinInput",
       "pinMsg", "unlockBtn", "newPinInput", "removePinInput",
+      "lastUpdatedText", "exportCsvBtn", "qrBtn", "qrCard", "qrWrap",
+      "qrUrlText", "qrCopyBtn", "qrCloseBtn",
     ].forEach(function (id) { els[id] = document.getElementById(id); });
   }
 
@@ -406,7 +428,11 @@
     els.lockCard.hidden = !locked;
     els.editBoardBtn.hidden = restricted;
     els.shareLinkBtn.hidden = readOnly;
+    els.qrBtn.hidden = readOnly;
+    els.exportCsvBtn.hidden = restricted;
     els.actionsHeader.hidden = restricted;
+    if (restricted) els.qrCard.hidden = true;
+    updateLastUpdatedText();
 
     var list = sortedEntries();
 
@@ -468,6 +494,68 @@
     }
   }
 
+  // ---- QR code (of the player link) -----------------------------------------
+  // Uses the "qrcode-generator" library (loaded via <script> in index.html) —
+  // pure JS, no network calls per code generated, so it still works offline
+  // and never sends the link to a third-party image service.
+  function renderQr() {
+    var url = playerViewUrl();
+    els.qrUrlText.textContent = url;
+    if (typeof qrcode !== "function") {
+      els.qrWrap.innerHTML = '<p class="hint">QR code generator didn’t load (offline?) — copy the link below instead.</p>';
+      return;
+    }
+    var qr = qrcode(0, "M");
+    qr.addData(url);
+    qr.make();
+    els.qrWrap.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2, scalable: true });
+  }
+  function toggleQr() {
+    if (els.qrCard.hidden) {
+      renderQr();
+      els.qrCard.hidden = false;
+    } else {
+      els.qrCard.hidden = true;
+    }
+  }
+
+  // ---- CSV export -------------------------------------------------------
+  function csvField(v) {
+    var s = String(v == null ? "" : v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function exportCsv() {
+    var list = sortedEntries();
+    var header = [
+      "Rank", "Player", "Start DUPR", "End DUPR", "DUPR Improvement", "Skill Points",
+      "Ranked Sessions", "Social Sessions", "Drill Sessions", "Community Points", "Lotus Score",
+    ];
+    var rows = list.map(function (e, i) {
+      return [
+        i + 1, e.name, e.startDupr != null ? e.startDupr : "", e.endDupr != null ? e.endDupr : "",
+        fmtSigned(e.duprImprovement), e._c.duprPoints,
+        int(e.ranked), int(e.social), int(e.drill),
+        e._c.community, e._c.total,
+      ];
+    });
+    var csv = [header].concat(rows).map(function (r) { return r.map(csvField).join(","); }).join("\r\n");
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = (board.title || "lotus-leaderboard").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    toast("Exported " + list.length + " player" + (list.length === 1 ? "" : "s") + " to CSV");
+  }
+
+  // ---- last-updated display ---------------------------------------------
+  function updateLastUpdatedText() {
+    els.lastUpdatedText.textContent = lastUpdated ? "Updated " + formatRelativeTime(lastUpdated) : "";
+  }
+
   // ---- wire up ------------------------------------------------------------
   function bind() {
     [
@@ -485,6 +573,10 @@
       els.editPanel.hidden ? openEditPanel() : (els.editPanel.hidden = true);
     });
     els.shareLinkBtn.addEventListener("click", copyPlayerLink);
+    els.qrBtn.addEventListener("click", toggleQr);
+    els.qrCloseBtn.addEventListener("click", function () { els.qrCard.hidden = true; });
+    els.qrCopyBtn.addEventListener("click", copyPlayerLink);
+    els.exportCsvBtn.addEventListener("click", exportCsv);
     els.saveBoardBtn.addEventListener("click", saveBoardMeta);
     els.cancelBoardBtn.addEventListener("click", function () { els.editPanel.hidden = true; });
 
@@ -507,6 +599,8 @@
     resetForm();
     render();
     connect();
+    // Keep the "Updated N minutes ago" text fresh without a full re-render.
+    setInterval(updateLastUpdatedText, 30000);
   }
 
   document.addEventListener("DOMContentLoaded", boot);

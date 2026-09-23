@@ -19,6 +19,23 @@ The table itself stays minimal — Rank, Player, Skill Points, Community Points,
 Lotus Score — sorts automatically, and calls out the current leader (plus
 gold/silver/bronze medal badges for the top 3).
 
+- **"Updated N minutes ago"** next to the leaderboard header, so players can
+  tell the board is current rather than stale. Only shows once there's a
+  real synced timestamp from Firestore (`updatedAt`, set on every save) —
+  never a made-up local time. Refreshes itself every 30s while the page is
+  open.
+- **QR code** (🔲 button, next to the share-link button) — a scannable code
+  for the player link, generated entirely client-side via the
+  [`qrcode-generator`](https://github.com/kazuhikoarase/qrcode-generator)
+  library (loaded from jsDelivr in `index.html`; nothing about the link is
+  sent to any server to render it). If that script didn't load (offline, or
+  blocked), the panel still shows the plain link and a copy button.
+- **Export CSV** (admin only, board-card header) — downloads every player's
+  full data (start/end DUPR, session counts, computed points) as a `.csv`,
+  entirely client-side (`Blob` + a throwaway `<a download>`, no server round
+  trip). It's the only backup of a board's data and the easiest way to do
+  prize math or email winners outside the app.
+
 No emoji anywhere in the UI — every icon (trophy, edit, link, the three
 community-point icons) is a small custom inline SVG defined in `index.html`
 (and, for the one JS-generated icon — the leader-card trophy — in the
