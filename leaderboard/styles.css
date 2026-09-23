@@ -44,10 +44,10 @@ body {
 .hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
 .hd-brand { display: flex; align-items: center; gap: 14px; }
 .hd-logo {
-  display: grid; place-items: center; width: 48px; height: 48px; flex: none; color: #fff;
-  border-radius: 14px; background: var(--brand); box-shadow: 0 4px 14px rgba(185, 28, 43, .28);
+  display: grid; place-items: center; width: 52px; height: 52px; flex: none; overflow: hidden;
+  border-radius: 14px; background: #fff; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(15, 23, 42, .06);
 }
-.hd-logo svg { width: 24px; height: 24px; display: block; }
+.hd-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .hd h1 {
   margin: 0; font-size: 1.4rem; line-height: 1.2; font-weight: 800; letter-spacing: -.02em;
 }

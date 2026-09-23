@@ -3,15 +3,16 @@
    you're online), falling back to the cache when the network is unavailable.
    The leaderboard data itself lives in Firestore (real-time), so this SW only
    caches the app shell. */
-var CACHE = "lotus-leaderboard-v11";
+var CACHE = "lotus-leaderboard-v12";
 var CACHE_PREFIX = "lotus-leaderboard-"; // only ever manage caches under this prefix
 var ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=9",
+  "./styles.css?v=10",
   "./app.js?v=10",
   "./manifest.webmanifest",
   "./icon.svg",
+  "./logo.png",
 ];
 
 self.addEventListener("install", function (e) {
