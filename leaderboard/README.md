@@ -35,6 +35,11 @@ gold/silver/bronze medal badges for the top 3).
   entirely client-side (`Blob` + a throwaway `<a download>`, no server round
   trip). It's the only backup of a board's data and the easiest way to do
   prize math or email winners outside the app.
+- **Duplicate-name check** — adding (or renaming, via edit) a player to a
+  name that's already on the board (case-insensitive) asks for confirmation
+  first, so "did I already add them?" doesn't quietly create two rows for
+  the same person. Confirming still allows it, for the rare case of two
+  players who really do share a name.
 
 No emoji anywhere in the UI — every icon (trophy, edit, link, the three
 community-point icons) is a small custom inline SVG defined in `index.html`
@@ -66,6 +71,27 @@ security rules, out of scope for this tool.
 
 To remove PIN protection, open the edit panel (once unlocked) and check
 "Remove PIN protection."
+
+### Firestore write validation
+
+The `leaderboards/{boardId}` rule in [`firestore.rules`](../firestore.rules)
+stays open to writes from anyone (no auth — same trust model as the PIN
+above, which is UI-only and not enforced here), but a write must now match
+the document shape this app actually produces: known fields only, title/
+subtitle length caps, the entries array capped at 300 players, `adminPinHash`
+either `null` or a real 64-character SHA-256 hex digest, and `updatedAt`
+required to be a genuine server timestamp (not a spoofed date). This is
+meant to stop a write crafted directly against the Firestore SDK — bypassing
+`app.js`, and so the PIN prompt, entirely — from corrupting the board with a
+runaway array or garbage top-level data.
+
+**What this does *not* do:** validate the contents of individual entries
+inside that array (a garbage player name or DUPR value inside an otherwise
+well-shaped document still gets through). The Firestore rules language has
+no per-element loop, and `entries` is a plain array rather than a
+subcollection, so per-entry validation isn't practically achievable without
+a data-model change. Real protection for that would need Firebase Auth —
+out of scope here, same as the PIN.
 
 Multiple boards can exist side by side, addressed either by a clean path —
 `/leaderboard/<slug>` (e.g. `/leaderboard/november-2026`) — or a `?board=<id>`

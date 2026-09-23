@@ -54,8 +54,32 @@ service cloud.firestore {
     // Challenge. Same "open by request" model as trackers above: no
     // sign-in, anyone with the link can view/edit. Keep it private by not
     // sharing the URL.
+    //
+    // Writes are still open to anyone (no auth — same trust model as the
+    // admin PIN, which is a UI-only deterrent, not enforced here), but must
+    // match the shape the app actually writes. This stops a write crafted
+    // directly against the Firestore SDK (bypassing app.js and its PIN
+    // prompt entirely) from corrupting the document with a runaway entries
+    // array, oversized strings, a spoofed adminPinHash, or a backdated
+    // updatedAt. It does NOT validate individual entries inside the array
+    // (a garbage player name/DUPR value within a well-shaped doc still gets
+    // through) — the Firestore rules language has no per-element loop, and
+    // entries is a plain array rather than a subcollection. Real protection
+    // for that would need Firebase Auth + a data model change; out of scope
+    // here, same as the PIN's own documented limits (see leaderboard/README.md).
+    function isValidLeaderboard(d) {
+      return d.keys().hasOnly(['title', 'subtitle', 'entries', 'adminPinHash', 'updatedAt', 'updatedBy', 'updatedByEmail'])
+        && d.title is string && d.title.size() <= 120
+        && d.subtitle is string && d.subtitle.size() <= 120
+        && d.entries is list && d.entries.size() <= 300
+        && (d.adminPinHash == null || (d.adminPinHash is string && d.adminPinHash.size() == 64))
+        && d.updatedAt == request.time
+        && d.updatedBy is string && d.updatedBy.size() <= 128
+        && (d.updatedByEmail == null || (d.updatedByEmail is string && d.updatedByEmail.size() <= 254));
+    }
     match /leaderboards/{boardId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isValidLeaderboard(request.resource.data);
     }
 
     // TapMenu — multi-tenant QR menu / link pages for local businesses.

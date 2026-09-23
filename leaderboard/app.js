@@ -315,6 +315,16 @@
       els.nameInput.focus();
       return;
     }
+    // Catches "did I already add them?" mistakes — case-insensitive, and
+    // excludes whichever entry is currently being edited so renaming a
+    // player (or re-saving them unchanged) never trips this on itself.
+    var isDuplicate = board.entries.some(function (e) {
+      return e.id !== editingId && e.name.trim().toLowerCase() === name.toLowerCase();
+    });
+    if (isDuplicate && !window.confirm('A player named "' + name + '" is already on the board. Add another one with the same name?')) {
+      els.nameInput.focus();
+      return;
+    }
     var entry = {
       id: editingId || uid(),
       name: name,
