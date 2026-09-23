@@ -143,6 +143,21 @@ body {
 .lock-icon svg { width: 16px; height: 16px; display: block; }
 .lock-copy { color: var(--ink-2); font-size: .88rem; margin: 6px 0 14px; }
 
+/* Player-link QR panel */
+.qr-card { border-left: 3px solid var(--accent); text-align: center; }
+.qr-card .lock-copy { text-align: left; }
+.qr-wrap {
+  display: inline-block; background: #fff; padding: 14px; border-radius: 12px;
+  border: 1px solid var(--line); margin: 4px 0 12px;
+}
+.qr-wrap svg { display: block; width: 180px; height: 180px; }
+.qr-url {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .78rem;
+  color: var(--ink-2); word-break: break-all; background: var(--field); border-radius: 8px;
+  padding: 8px 12px; margin: 0 0 14px;
+}
+.qr-card .form-actions { justify-content: center; }
+
 .form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn {
   appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--ink);
@@ -178,9 +193,11 @@ body {
   border-radius: 8px; background: var(--accent-bg); flex: none;
 }
 .board-head-icon svg { width: 16px; height: 16px; display: block; }
+.board-head-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .board-head .count {
   color: var(--muted); font-size: .8rem; font-weight: 600; white-space: nowrap;
 }
+.last-updated { color: var(--muted); font-size: .78rem; white-space: nowrap; }
 .empty { color: var(--muted); text-align: center; padding: 32px 18px; font-size: .92rem; }
 .table-wrap { overflow-x: auto; padding: 0 22px 20px; }
 table { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 440px; }
@@ -223,7 +240,8 @@ td.actions .row-actions { display: inline-flex; gap: 6px; }
 @media (max-width: 640px) {
   .form-row.counts { gap: 10px; }
   .form-row.counts label { min-width: calc(50% - 6px); flex: 1 1 calc(50% - 6px); }
-  .board-head { padding: 14px 16px; }
+  .board-head { padding: 14px 16px; flex-wrap: wrap; }
+  .board-head-right { width: 100%; justify-content: space-between; }
   .table-wrap { padding: 0 16px 16px; }
   th, td { padding: 10px 6px; }
 }
