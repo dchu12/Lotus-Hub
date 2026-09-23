@@ -56,8 +56,8 @@
     <!-- Edit challenge title / date range / admin PIN -->
     <section class="card edit-panel" id="editPanel" hidden aria-label="Edit challenge details">
       <div class="form-row">
-        <label>Challenge name<input type="text" id="titleInput" placeholder="October Lotus Challenge" /></label>
-        <label>Dates<input type="text" id="subtitleInput" placeholder="October 1 – October 31" /></label>
+        <label>Challenge name<input type="text" id="titleInput" placeholder="October Lotus Challenge" maxlength="120" /></label>
+        <label>Dates<input type="text" id="subtitleInput" placeholder="October 1 – October 31" maxlength="120" /></label>
       </div>
       <h3 class="section-lbl">Admin PIN</h3>
       <div class="form-row">
@@ -92,7 +92,7 @@
     <section class="card form-card" id="formCard" aria-label="Add a player">
       <h2 id="formHeading">Add a player</h2>
       <div class="form-row">
-        <label class="grow">Name<input type="text" id="nameInput" placeholder="Player name" /></label>
+        <label class="grow">Name<input type="text" id="nameInput" placeholder="Player name" maxlength="60" /></label>
       </div>
 
       <h3 class="section-lbl">DUPR improvement — calculated automatically</h3>
