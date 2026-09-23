@@ -199,7 +199,7 @@ body {
 }
 .last-updated { color: var(--muted); font-size: .78rem; white-space: nowrap; }
 .empty { color: var(--muted); text-align: center; padding: 32px 18px; font-size: .92rem; }
-.table-wrap { overflow-x: auto; padding: 0 22px 20px; }
+.table-wrap { overflow-x: auto; padding: 0 22px 20px; container-type: inline-size; }
 table { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 440px; }
 th, td { padding: 12px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
 th.rank, td.rank { text-align: center; width: 40px; }
@@ -209,8 +209,10 @@ th {
   font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700;
   color: var(--muted); border-bottom: 2px solid var(--brand); padding-top: 13px; padding-bottom: 13px;
 }
-tbody tr:nth-child(even) td { background: var(--zebra); }
-tbody tr:hover td { background: color-mix(in srgb, var(--brand), transparent 96%); }
+tbody tr.zebra td { background: var(--zebra); }
+tbody tr.player-row { cursor: pointer; }
+tbody tr.player-row:hover td { background: color-mix(in srgb, var(--brand), transparent 96%); }
+tbody tr.open td { border-bottom-color: transparent; }
 td.total, th.total { color: var(--brand); font-weight: 800; }
 
 /* Rank medal chips — flat fills, not glossy gradients */
@@ -228,6 +230,40 @@ tr.leader-row:hover td { background: var(--accent-bg); }
 td.actions, th.actions { text-align: right; }
 td.actions .row-actions { display: inline-flex; gap: 6px; }
 .player-name { font-weight: 700; }
+.board-hint { margin: 12px 0 0; color: var(--muted); font-size: .78rem; text-align: center; }
+.name-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 0; margin: 0; border: 0; background: none;
+  font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: 4px;
+}
+.name-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.chev {
+  flex: none; width: 7px; height: 7px; margin-top: -3px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg); transition: transform .15s ease;
+}
+tr.open .chev { transform: rotate(-135deg); margin-top: 3px; }
+
+/* Points breakdown, shown under a player's row when it's tapped */
+tr.bd-row td { padding: 0 8px 14px; text-align: left; white-space: normal; background: var(--card); }
+.bd {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; padding: 14px 16px; box-sizing: border-box;
+  max-width: calc(100cqw - 16px); /* fit the visible area even when the table itself scrolls sideways */
+  border: 1px solid var(--line); border-radius: 12px; background: var(--field); font-size: .84rem;
+}
+.bd-h {
+  display: flex; justify-content: space-between; font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--muted); padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid var(--line);
+}
+.bd-h b { color: var(--ink); font-size: .84rem; letter-spacing: 0; }
+.bd ul { list-style: none; margin: 0; padding: 0; }
+.bd li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; color: var(--ink-2); font-weight: 500; }
+.bd li b, .bd-total b { color: var(--ink); }
+.bd li.bd-note { color: var(--muted); font-size: .78rem; }
+.bd-calc { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bd-total {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; padding-top: 10px;
+  border-top: 1px solid var(--line); font-weight: 700; color: var(--ink-2);
+}
+.bd-total b { color: var(--brand); font-weight: 800; }
 
 .ft { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 24px; }
 
@@ -244,4 +280,6 @@ td.actions .row-actions { display: inline-flex; gap: 6px; }
   .board-head-right { width: 100%; justify-content: space-between; }
   .table-wrap { padding: 0 16px 16px; }
   th, td { padding: 10px 6px; }
+  tr.bd-row td { padding: 0 6px 12px; }
+  .bd { grid-template-columns: 1fr; max-width: calc(100cqw - 12px); }
 }
