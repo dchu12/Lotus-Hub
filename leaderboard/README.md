@@ -41,8 +41,10 @@ gold/silver/bronze medal badges for the top 3).
   the same person. Confirming still allows it, for the rare case of two
   players who really do share a name.
 
-No emoji anywhere in the UI — every icon (trophy, edit, link, the three
-community-point icons) is a small custom inline SVG defined in `index.html`
+The header badge (top-left) shows the Lotus Pickleball Academy logo mark
+(`logo.png`, cropped from the full brand logo). No emoji anywhere in the UI —
+every other icon (edit, link, the three community-point icons) is a small
+custom inline SVG defined in `index.html`
 (and, for the one JS-generated icon — the leader-card trophy — in the
 `ICONS` object at the top of `app.js`). Light theme only, by design; there's
 no dark-mode toggle or `prefers-color-scheme` handling.
@@ -133,6 +135,7 @@ so) and syncs to everyone once the rules go live.
 | `index.html` | App shell — header, add-player form, leaderboard table |
 | `styles.css` | Crimson + gold theme, light only |
 | `app.js` | Scoring logic, form handling, Firestore sync + local fallback |
+| `logo.png` | Lotus Pickleball Academy logo mark, shown in the header |
 | `manifest.webmanifest` / `sw.js` | PWA install + offline app shell |
 
 Uses the shared `LH.watchLeaderboard` / `LH.saveLeaderboard` helpers added to
