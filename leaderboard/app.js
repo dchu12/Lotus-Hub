@@ -483,9 +483,7 @@
       els.leaderCard.innerHTML =
         '<span class="trophy" aria-hidden="true">' + ICONS.trophy + "</span>" +
         '<div class="leader-txt"><div class="leader-name">' + esc(lead.name) + " is leading</div>" +
-        '<div class="leader-score">' + lead._c.total + " Lotus points" +
-        (list.length > 1 ? " · " + (list.length - 1) + " other player" + (list.length - 1 === 1 ? "" : "s") + " on the board" : "") +
-        "</div></div>";
+        '<div class="leader-score">' + lead._c.total + " Lotus points</div></div>";
     } else {
       els.leaderCard.hidden = true;
     }
