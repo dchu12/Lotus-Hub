@@ -19,8 +19,16 @@
   "use strict";
 
   var POINTS = { ranked: 1, social: 3, drill: 2 };
-  var THEME_KEY = "lotus-leaderboard:theme";
   var params = new URLSearchParams(location.search);
+
+  // Custom line-icon set (replaces emoji throughout the page). Plain inline
+  // SVG strings, no icon font/library — stroke="currentColor" so each icon
+  // picks up whatever text color its container sets.
+  var ICON_ATTRS = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+  var ICONS = {
+    trophy:
+      '<svg viewBox="0 0 24 24" ' + ICON_ATTRS + '><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5.5a2 2 0 0 0 0 4H7"/><path d="M16 5h2.5a2 2 0 0 1 0 4H17"/><path d="M12 13v3"/><path d="M9 20h6"/><path d="M10 16h4l.8 4H9.2l.8-4Z"/></svg>',
+  };
 
   // Board routing: /leaderboard/<slug> (clean path, e.g. shared links) takes
   // over from a bare /leaderboard/ or an explicit ?board= — either works,
@@ -172,19 +180,6 @@
     toastTimer = setTimeout(function () { t.hidden = true; }, 2200);
   }
 
-  // ---- theme ----------------------------------------------------------------
-  function setTheme(mode) {
-    document.documentElement.setAttribute("data-theme", mode);
-    try { localStorage.setItem(THEME_KEY, mode); } catch (e) {}
-    document.getElementById("themeToggle").textContent = mode === "dark" ? "☀️" : "🌙";
-  }
-  function bootTheme() {
-    var saved = null;
-    try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
-    if (!saved) saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    setTheme(saved);
-  }
-
   // ---- form -------------------------------------------------------------
   var els = {};
   function cacheEls() {
@@ -284,7 +279,7 @@
     else board.entries.push(entry);
     persist();
     render();
-    toast(idx >= 0 ? "Saved " + name : "Added " + name + " to the leaderboard 🏓");
+    toast(idx >= 0 ? "Saved " + name : "Added " + name + " to the leaderboard");
     resetForm();
   }
 
@@ -334,7 +329,7 @@
       var lead = list[0];
       els.leaderCard.hidden = false;
       els.leaderCard.innerHTML =
-        '<span class="trophy" aria-hidden="true">🏆</span>' +
+        '<span class="trophy" aria-hidden="true">' + ICONS.trophy + "</span>" +
         '<div class="leader-txt"><div class="leader-name">' + esc(lead.name) + " is leading</div>" +
         '<div class="leader-score">' + lead._c.total + " Lotus points" +
         (list.length > 1 ? " · " + (list.length - 1) + " other player" + (list.length - 1 === 1 ? "" : "s") + " on the board" : "") +
@@ -389,7 +384,7 @@
 
   function copyPlayerLink() {
     var url = playerViewUrl();
-    var done = function () { toast("Player view link copied 🔗"); };
+    var done = function () { toast("Player view link copied"); };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(done).catch(function () { window.prompt("Copy this link:", url); });
     } else {
@@ -399,11 +394,6 @@
 
   // ---- wire up ------------------------------------------------------------
   function bind() {
-    document.getElementById("themeToggle").addEventListener("click", function () {
-      var dark = document.documentElement.getAttribute("data-theme") === "dark";
-      setTheme(dark ? "light" : "dark");
-    });
-
     [
       "startDuprInput", "endDuprInput",
       "rankedInput", "socialInput", "drillInput",
@@ -432,7 +422,6 @@
 
   function boot() {
     cacheEls();
-    bootTheme();
     applyReadOnly();
     bind();
     resetForm();

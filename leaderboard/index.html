@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#b91c2b" />
   <title>Lotus Leaderboard</title>
   <meta name="description" content="Live leaderboard for the Lotus Pickleball Academy challenge — DUPR improvement + community points add up to a Lotus Score." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%86%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="/leaderboard/icon.svg" />
   <!-- PWA: installable + offline -->
   <link rel="manifest" href="/leaderboard/manifest.webmanifest" />
   <link rel="apple-touch-icon" href="/leaderboard/icon.svg" />
@@ -19,23 +19,22 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=6" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=7" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
   <div class="wrap">
     <header class="hd">
       <div class="hd-brand">
-        <span class="hd-logo" aria-hidden="true">🏆</span>
+        <span class="hd-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5.5a2 2 0 0 0 0 4H7"/><path d="M16 5h2.5a2 2 0 0 1 0 4H17"/><path d="M12 13v3"/><path d="M9 20h6"/><path d="M10 16h4l.8 4H9.2l.8-4Z"/></svg></span>
         <div>
           <h1 id="boardTitle">Lotus Challenge</h1>
           <p class="hd-sub" id="boardSubtitle">Highest Lotus Score wins</p>
         </div>
       </div>
       <div class="hd-actions">
-        <button id="shareLinkBtn" class="icon-btn" type="button" aria-label="Copy player view link" title="Copy player view link (read-only)">🔗</button>
-        <button id="editBoardBtn" class="icon-btn" type="button" aria-label="Edit challenge name & dates" title="Edit challenge details">✏️</button>
-        <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode" title="Toggle theme">🌙</button>
+        <button id="shareLinkBtn" class="icon-btn" type="button" aria-label="Copy player view link" title="Copy player view link (read-only)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1 1"/><path d="M14 11a5 5 0 0 0-7.07 0l-2 2a5 5 0 0 0 7.07 7.07l1-1"/></svg></button>
+        <button id="editBoardBtn" class="icon-btn" type="button" aria-label="Edit challenge name & dates" title="Edit challenge details"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
       </div>
     </header>
 
@@ -72,9 +71,9 @@
 
       <h3 class="section-lbl">Lotus community points</h3>
       <div class="form-row counts">
-        <label>🏓 Ranked Play<span class="pt-tag">+1 ea</span><input type="number" min="0" step="1" id="rankedInput" value="0" /></label>
-        <label>👥 Social Play<span class="pt-tag">+3 ea</span><input type="number" min="0" step="1" id="socialInput" value="0" /></label>
-        <label>🚧 Drill Training<span class="pt-tag">+2 ea</span><input type="number" min="0" step="1" id="drillInput" value="0" /></label>
+        <label><span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="10" height="13" rx="5"/><line x1="10" y1="16" x2="10" y2="21"/><circle cx="18.5" cy="6" r="1.6" fill="currentColor" stroke="none"/></svg>Ranked Play</span><span class="pt-tag">+1 ea</span><input type="number" min="0" step="1" id="rankedInput" value="0" /></label>
+        <label><span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M15 3.13a4 4 0 0 1 0 7.75"/></svg>Social Play</span><span class="pt-tag">+3 ea</span><input type="number" min="0" step="1" id="socialInput" value="0" /></label>
+        <label><span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>Drill Training</span><span class="pt-tag">+2 ea</span><input type="number" min="0" step="1" id="drillInput" value="0" /></label>
       </div>
 
       <p class="preview" id="scorePreview"></p>
@@ -89,10 +88,10 @@
     <!-- Leaderboard table (desktop) / cards (mobile) -->
     <section class="card board-card" aria-label="Leaderboard">
       <div class="board-head">
-        <h2><span class="board-head-icon" aria-hidden="true">🏓</span>Lotus Leaderboard</h2>
+        <h2><span class="board-head-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="10" height="13" rx="5"/><line x1="10" y1="16" x2="10" y2="21"/><circle cx="18.5" cy="6" r="1.6" fill="currentColor" stroke="none"/></svg></span>Lotus Leaderboard</h2>
         <span class="count" id="playerCount"></span>
       </div>
-      <div id="boardEmpty" class="empty" hidden>No players yet — add the first one above 🏓</div>
+      <div id="boardEmpty" class="empty" hidden>No players yet — add the first one above.</div>
       <div class="table-wrap">
         <table id="boardTable" hidden>
           <thead>
@@ -123,6 +122,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js?v=1"></script>
   <script src="/firebase.js?v=1"></script>
-  <script src="/leaderboard/app.js?v=7"></script>
+  <script src="/leaderboard/app.js?v=8"></script>
 </body>
 </html>

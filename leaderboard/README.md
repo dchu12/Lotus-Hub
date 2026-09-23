@@ -10,14 +10,20 @@ tallies each player's **Lotus Score** automatically:
   override — it's always Start DUPR − End DUPR). Every **+0.01 DUPR
   improvement = +1 point**.
 - **Lotus community points**, earned per session attended:
-  - 🏓 Ranked Play — **+1**
-  - 👥 Social Play — **+3**
-  - 🚧 Drill Training — **+2**
+  - Ranked Play — **+1**
+  - Social Play — **+3**
+  - Drill Training — **+2**
 - **Lotus Score = Skill Points + Community Points.**
 
 The table itself stays minimal — Rank, Player, Skill Points, Community Points,
-Lotus Score — sorts automatically, and calls out the current leader with 🏆
-(plus gold/silver/bronze medal badges for the top 3).
+Lotus Score — sorts automatically, and calls out the current leader (plus
+gold/silver/bronze medal badges for the top 3).
+
+No emoji anywhere in the UI — every icon (trophy, edit, link, the three
+community-point icons) is a small custom inline SVG defined in `index.html`
+(and, for the one JS-generated icon — the leader-card trophy — in the
+`ICONS` object at the top of `app.js`). Light theme only, by design; there's
+no dark-mode toggle or `prefers-color-scheme` handling.
 
 ## How it's shared
 
@@ -64,7 +70,7 @@ so) and syncs to everyone once the rules go live.
 | File | Purpose |
 |------|---------|
 | `index.html` | App shell — header, add-player form, leaderboard table |
-| `styles.css` | Crimson + gold theme (light & dark), matching the flyer |
+| `styles.css` | Crimson + gold theme, light only |
 | `app.js` | Scoring logic, form handling, Firestore sync + local fallback |
 | `manifest.webmanifest` / `sw.js` | PWA install + offline app shell |
 
