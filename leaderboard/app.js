@@ -30,6 +30,30 @@
       '<svg viewBox="0 0 24 24" ' + ICON_ATTRS + '><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5.5a2 2 0 0 0 0 4H7"/><path d="M16 5h2.5a2 2 0 0 1 0 4H17"/><path d="M12 13v3"/><path d="M9 20h6"/><path d="M10 16h4l.8 4H9.2l.8-4Z"/></svg>',
   };
 
+  // ---- admin PIN -----------------------------------------------------------
+  // A lightweight deterrent, not real security: the board's Firestore rules
+  // stay open (see firestore.rules) exactly as before, so this only gates the
+  // UI in this browser. It stops casual edits from a shared/leaked link —
+  // it does not stop someone technical enough to write to Firestore directly.
+  var pinVerified = false;
+  function sha256Hex(text) {
+    var data = new TextEncoder().encode(text);
+    return crypto.subtle.digest("SHA-256", data).then(function (buf) {
+      return Array.prototype.map
+        .call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, "0"); })
+        .join("");
+    });
+  }
+  // Purely a string compare — the stored hash and the saved one are both
+  // already hex digests, so this needs no crypto and can run synchronously
+  // on every render().
+  function checkPinVerified() {
+    if (!board.adminPinHash) { pinVerified = true; return; }
+    var saved = null;
+    try { saved = localStorage.getItem(PIN_KEY); } catch (e) {}
+    pinVerified = !!saved && saved === board.adminPinHash;
+  }
+
   // Board routing: /leaderboard/<slug> (clean path, e.g. shared links) takes
   // over from a bare /leaderboard/ or an explicit ?board= — either works,
   // path wins when both are present. A slug can alias an existing board's
@@ -45,6 +69,7 @@
   var requestedBoardId = params.get("board") || boardIdFromPath() || "default";
   var boardId = BOARD_ALIASES[requestedBoardId] || requestedBoardId;
   var LOCAL_KEY = "lotus-leaderboard:" + boardId;
+  var PIN_KEY = "lotus-leaderboard:pin:" + boardId; // must come after boardId is resolved above
   // Cosmetic split, not a security boundary: the board itself is open-write
   // to anyone with the link (see firestore.rules), same as the wedding
   // tracker. ?mode=view just hides the editing controls so players get a
@@ -116,7 +141,10 @@
   function persist() {
     saveLocal();
     if (window.LH && LH.ready) {
-      LH.saveLeaderboard(boardId, { title: board.title, subtitle: board.subtitle, entries: board.entries }).catch(function (err) {
+      LH.saveLeaderboard(boardId, {
+        title: board.title, subtitle: board.subtitle, entries: board.entries,
+        adminPinHash: board.adminPinHash || null,
+      }).catch(function (err) {
         showBanner("Couldn't save to the shared board (" + (err && err.message ? err.message : "unknown error") + "). Your change is kept on this device only.");
       });
     }
@@ -136,6 +164,7 @@
       board.title = data.title || board.title;
       board.subtitle = data.subtitle || board.subtitle;
       board.entries = Array.isArray(data.entries) ? data.entries : [];
+      board.adminPinHash = data.adminPinHash || null;
       hideBanner();
       saveLocal();
     } else {
@@ -190,7 +219,8 @@
       "boardTitle", "boardSubtitle", "editBoardBtn", "editPanel", "titleInput",
       "subtitleInput", "saveBoardBtn", "cancelBoardBtn", "leaderCard",
       "boardEmpty", "boardTable", "boardBody", "playerCount",
-      "shareLinkBtn", "actionsHeader",
+      "shareLinkBtn", "actionsHeader", "formCard", "lockCard", "pinInput",
+      "pinMsg", "unlockBtn", "newPinInput", "removePinInput",
     ].forEach(function (id) { els[id] = document.getElementById(id); });
   }
 
@@ -303,15 +333,59 @@
   function openEditPanel() {
     els.titleInput.value = board.title;
     els.subtitleInput.value = board.subtitle;
+    els.newPinInput.value = "";
+    els.removePinInput.checked = false;
     els.editPanel.hidden = false;
   }
   function saveBoardMeta() {
     board.title = els.titleInput.value.trim() || board.title;
     board.subtitle = els.subtitleInput.value.trim() || board.subtitle;
-    els.editPanel.hidden = true;
-    persist();
-    renderHeader();
-    toast("Challenge details saved");
+
+    var finish = function () {
+      els.editPanel.hidden = true;
+      els.newPinInput.value = "";
+      els.removePinInput.checked = false;
+      persist();
+      render();
+      toast("Challenge details saved");
+    };
+
+    if (els.removePinInput.checked) {
+      board.adminPinHash = null;
+      pinVerified = true;
+      finish();
+    } else if (els.newPinInput.value.trim()) {
+      sha256Hex(els.newPinInput.value.trim()).then(function (hash) {
+        board.adminPinHash = hash;
+        pinVerified = true;
+        try { localStorage.setItem(PIN_KEY, hash); } catch (e) {}
+        finish();
+      });
+    } else {
+      finish();
+    }
+  }
+
+  function attemptUnlock() {
+    var pin = els.pinInput.value.trim();
+    if (!pin) {
+      els.pinMsg.textContent = "Enter the PIN.";
+      els.pinMsg.className = "form-msg err";
+      return;
+    }
+    sha256Hex(pin).then(function (hash) {
+      if (hash === board.adminPinHash) {
+        pinVerified = true;
+        try { localStorage.setItem(PIN_KEY, hash); } catch (e) {}
+        els.pinInput.value = "";
+        els.pinMsg.textContent = "";
+        toast("Unlocked");
+        render();
+      } else {
+        els.pinMsg.textContent = "Incorrect PIN.";
+        els.pinMsg.className = "form-msg err";
+      }
+    });
   }
 
   // ---- render ---------------------------------------------------------------
@@ -322,6 +396,18 @@
 
   function render() {
     renderHeader();
+
+    checkPinVerified();
+    var locked = !readOnly && !!board.adminPinHash && !pinVerified;
+    var restricted = readOnly || locked;
+    document.body.classList.toggle("read-only", readOnly);
+    document.body.classList.toggle("locked", locked);
+    els.formCard.hidden = restricted;
+    els.lockCard.hidden = !locked;
+    els.editBoardBtn.hidden = restricted;
+    els.shareLinkBtn.hidden = readOnly;
+    els.actionsHeader.hidden = restricted;
+
     var list = sortedEntries();
 
     // Leader card
@@ -345,7 +431,7 @@
     var MEDALS = ["gold", "silver", "bronze"];
     els.boardBody.innerHTML = list
       .map(function (e, i) {
-        var actionsCell = readOnly
+        var actionsCell = restricted
           ? ""
           : '<td class="actions"><span class="row-actions">' +
             '<button type="button" class="btn small ghost" data-edit="' + esc(e.id) + '">Edit</button>' +
@@ -364,16 +450,6 @@
         );
       })
       .join("");
-  }
-
-  // ---- read-only "player view" ---------------------------------------------
-  function applyReadOnly() {
-    if (!readOnly) return;
-    document.body.classList.add("read-only");
-    document.querySelector(".form-card").hidden = true;
-    els.editBoardBtn.hidden = true;
-    els.shareLinkBtn.hidden = true;
-    els.actionsHeader.hidden = true;
   }
 
   function playerViewUrl() {
@@ -412,6 +488,11 @@
     els.saveBoardBtn.addEventListener("click", saveBoardMeta);
     els.cancelBoardBtn.addEventListener("click", function () { els.editPanel.hidden = true; });
 
+    els.unlockBtn.addEventListener("click", attemptUnlock);
+    els.pinInput.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") attemptUnlock();
+    });
+
     els.boardBody.addEventListener("click", function (ev) {
       var editId = ev.target.getAttribute("data-edit");
       var delId = ev.target.getAttribute("data-del");
@@ -422,7 +503,6 @@
 
   function boot() {
     cacheEls();
-    applyReadOnly();
     bind();
     resetForm();
     render();
