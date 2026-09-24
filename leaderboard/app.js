@@ -805,7 +805,7 @@
   function drawShareCard(me, list, status) {
     var FONT = '"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
     var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-    return Promise.all([loadImg("/leaderboard/logo.png"), loadImg("/leaderboard/prize-paddle.jpg"), fontsReady]).then(function (r) {
+    return Promise.all([loadImg("/leaderboard/logo.png"), loadImg("/leaderboard/prize-paddle.png"), fontsReady]).then(function (r) {
       var logo = r[0], paddle = r[1];
       var W = 1080, H = 1350, c = document.createElement("canvas");
       c.width = W; c.height = H;
@@ -842,9 +842,7 @@
       var textX = 130;
       if (paddle) {
         var ph = 140, pw = paddle.width * ph / paddle.height;
-        ctx.save(); roundRect(ctx, 116, 1055, pw, ph, 14); ctx.clip();
         ctx.drawImage(paddle, 116, 1055, pw, ph);
-        ctx.restore();
         textX = 116 + pw + 34;
       }
       ctx.textAlign = "left";

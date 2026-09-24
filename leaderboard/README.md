@@ -38,7 +38,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   save takes a new snapshot at most once every 7 days, from the rankings
   as they stood before that save, and never while nobody has points.
 - **Prize banner**: right under the header, every visit, with a photo of
-  the paddle (`prize-paddle.jpg`): "1st place wins / Zocker Pro Series
+  the paddle (`prize-paddle.png`, a transparent cut-out so it sits directly on the banner): "1st place wins / Zocker Pro Series
   Control Paddle". It's plain markup in `index.html`
   (`<section class="prize">`); edit it when the prize changes.
 - **Share my rank**: once scores exist, the "your rank" strip has a
