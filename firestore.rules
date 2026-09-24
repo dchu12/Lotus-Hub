@@ -51,32 +51,32 @@ service cloud.firestore {
     }
 
     // Leaderboards — shared boards for things like the monthly Lotus
-    // Challenge. Same "open by request" model as trackers above: no
-    // sign-in, anyone with the link can view/edit. Keep it private by not
-    // sharing the URL.
-    //
-    // Writes are still open to anyone (no auth — same trust model as the
-    // admin PIN, which is a UI-only deterrent, not enforced here), but must
-    // match the shape the app actually writes. This stops a write crafted
-    // directly against the Firestore SDK (bypassing app.js and its PIN
-    // prompt entirely) from corrupting the document with a runaway entries
-    // array, oversized strings, a spoofed adminPinHash, or a backdated
-    // updatedAt. It does NOT validate individual entries inside the array
-    // (a garbage player name/DUPR value within a well-shaped doc still gets
-    // through) — the Firestore rules language has no per-element loop, and
-    // entries is a plain array rather than a subcollection. Real protection
-    // for that would need Firebase Auth + a data model change; out of scope
-    // here, same as the PIN's own documented limits (see leaderboard/README.md).
+    // Challenge. Anyone can read (players get the link, no sign-in). Only the
+    // academy's coach account can write: its Firebase Auth UID, or any
+    // session whose *verified* email is lotuspickleballacademy@gmail.com (so
+    // signing in a different way doesn't lock the academy out). Keep in sync
+    // with COACH_UIDS / COACH_EMAILS in leaderboard/app.js.
+    // Writes must also match the shape the app produces (below), which stops
+    // a malformed or runaway document even from a coach's session. It does
+    // NOT validate individual entries inside the array: the rules language
+    // has no per-element loop, and entries is a plain array rather than a
+    // subcollection.
+    function isLeaderboardCoach() {
+      return request.auth != null
+        && (request.auth.uid in ['ewi5OyB2XlcJBTBRWTdqqUFOO1s2']
+            || (request.auth.token.email == 'lotuspickleballacademy@gmail.com'
+                && request.auth.token.email_verified == true));
+    }
     function isValidLeaderboard(d) {
       return d.keys().hasOnly(['title', 'subtitle', 'entries', 'adminPinHash', 'updatedAt', 'updatedBy', 'updatedByEmail',
                                'startDate', 'endDate', 'snapshot'])
         && d.title is string && d.title.size() <= 120
         && d.subtitle is string && d.subtitle.size() <= 120
         && d.entries is list && d.entries.size() <= 300
-        && (d.adminPinHash == null || (d.adminPinHash is string && d.adminPinHash.size() == 64))
+        && (d.get('adminPinHash', null) == null || (d.adminPinHash is string && d.adminPinHash.size() == 64))
         && d.updatedAt == request.time
         && d.updatedBy is string && d.updatedBy.size() <= 128
-        && (d.updatedByEmail == null || (d.updatedByEmail is string && d.updatedByEmail.size() <= 254))
+        && (d.get('updatedByEmail', null) == null || (d.updatedByEmail is string && d.updatedByEmail.size() <= 254))
         && isOptionalIsoDate(d.get('startDate', null))
         && isOptionalIsoDate(d.get('endDate', null))
         && isValidSnapshot(d.get('snapshot', null));
@@ -96,7 +96,8 @@ service cloud.firestore {
     }
     match /leaderboards/{boardId} {
       allow read: if true;
-      allow write: if isValidLeaderboard(request.resource.data);
+      allow create, update: if isLeaderboardCoach() && isValidLeaderboard(request.resource.data);
+      allow delete: if false;
     }
 
     // TapMenu — multi-tenant QR menu / link pages for local businesses.

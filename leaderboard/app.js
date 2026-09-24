@@ -1,9 +1,9 @@
 /* Lotus Leaderboard — vanilla JS, no build step.
  *
  * Data model: one shared Firestore doc (see /firebase.js -> LH.watchLeaderboard /
- * LH.saveLeaderboard) holding { title, subtitle, entries: [...] }. No sign-in
- * required — open by link, same model as the wedding tracker (see
- * firestore.rules). Falls back to a local copy on this device if Firebase
+ * LH.updateLeaderboard) holding { title, subtitle, entries: [...] }. Anyone
+ * can read it; only the coach account(s) in COACH_UIDS can save, enforced by
+ * firestore.rules. Falls back to a local copy on this device if Firebase
  * isn't reachable yet (e.g. the rules haven't been published), so the tool
  * still works standalone.
  *
@@ -30,28 +30,21 @@
       '<svg viewBox="0 0 24 24" ' + ICON_ATTRS + '><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M14 20h3"/><path d="M20 14v3"/><path d="M20 20h.01"/></svg>',
   };
 
-  // ---- admin PIN -----------------------------------------------------------
-  // A lightweight deterrent, not real security: the board's Firestore rules
-  // stay open (see firestore.rules) exactly as before, so this only gates the
-  // UI in this browser. It stops casual edits from a shared/leaked link —
-  // it does not stop someone technical enough to write to Firestore directly.
-  var pinVerified = false;
-  function sha256Hex(text) {
-    var data = new TextEncoder().encode(text);
-    return crypto.subtle.digest("SHA-256", data).then(function (buf) {
-      return Array.prototype.map
-        .call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, "0"); })
-        .join("");
-    });
-  }
-  // Purely a string compare — the stored hash and the saved one are both
-  // already hex digests, so this needs no crypto and can run synchronously
-  // on every render().
-  function checkPinVerified() {
-    if (!board.adminPinHash) { pinVerified = true; return; }
-    var saved = null;
-    try { saved = localStorage.getItem(PIN_KEY); } catch (e) {}
-    pinVerified = !!saved && saved === board.adminPinHash;
+  // Accounts allowed to save. This mirrors isLeaderboardCoach() in
+  // firestore.rules, which is what actually enforces it; this list only
+  // decides whether to show the editing tools. Firebase Auth UIDs, since they
+  // don't depend on how the account signs in.
+  var COACH_UIDS = [
+    "ewi5OyB2XlcJBTBRWTdqqUFOO1s2", // lotuspickleballacademy@gmail.com
+  ];
+  var COACH_EMAILS = ["lotuspickleballacademy@gmail.com"]; // only counts once verified
+  var user = null;
+  var authKnown = false;
+  function isCoach() {
+    if (!(window.LH && LH.ready)) return true; // no Firebase: local-only mode, nothing is shared
+    if (!user) return false;
+    return COACH_UIDS.indexOf(user.uid) !== -1 ||
+      (!!user.emailVerified && COACH_EMAILS.indexOf(String(user.email || "").toLowerCase()) !== -1);
   }
 
   // Board routing: /leaderboard/<slug> (clean path, e.g. shared links) takes
@@ -73,7 +66,6 @@
   var requestedBoardId = params.get("board") || boardIdFromPath() || "default";
   var boardId = BOARD_ALIASES[requestedBoardId] || requestedBoardId;
   var LOCAL_KEY = "lotus-leaderboard:" + boardId;
-  var PIN_KEY = "lotus-leaderboard:pin:" + boardId; // must come after boardId is resolved above
   // Which player this browser picked in "Where do you rank?", so a returning
   // challenger sees their own rank straight away. Per-device convenience only.
   var ME_KEY = "lotus-leaderboard:me:" + boardId;
@@ -97,7 +89,7 @@
   // Fallback dates for a board whose doc doesn't have them saved yet; the
   // edit panel's date fields override these once saved.
   var DEFAULT_DATES = { "default": ["2026-10-01", "2026-10-31"] };
-  var lastRemoteEntries = null; // entries as last synced, i.e. before a local edit
+  var lastRemoteDoc = null; // the board as last synced from the server, to roll back a failed save
 
   var editingId = null;
   var expandedId = null;
@@ -251,11 +243,11 @@
   // Written on an admin save at most once a week, from the rankings as they
   // stood before that save. Skipped while nobody has points, so a week of
   // all-zero ties can't produce a wall of arrows.
-  function snapshotForSave() {
+  function snapshotBefore(doc) {
     var today = isoToday();
-    var snap = board.snapshot;
+    var snap = doc.snapshot;
     if (snap && validIso(snap.at) && dayNum(today) - dayNum(snap.at) < 7) return snap;
-    var before = sortedEntries(lastRemoteEntries || board.entries);
+    var before = sortedEntries(doc.entries);
     if (!anyScored(before)) return snap || null;
     var ranks = {};
     before.forEach(function (e) { ranks[e.id] = e._rank; });
@@ -287,20 +279,44 @@
   }
 
   // ---- persistence ---------------------------------------------------------
-  function persist() {
+  // Every change is a small mutate(doc) function rather than "write my whole
+  // copy of the board". It's applied to the local board straight away (so
+  // the UI responds instantly), then re-applied inside a Firestore
+  // transaction to the *latest* server copy. Two coaches logging sessions at
+  // the same moment therefore both land, instead of the second save
+  // silently overwriting the first with its stale list.
+  function cleanDoc(src) {
+    src = src || {};
+    return {
+      title: src.title || board.title,
+      subtitle: src.subtitle || board.subtitle,
+      entries: JSON.parse(JSON.stringify(Array.isArray(src.entries) ? src.entries : [])),
+      startDate: validIso(src.startDate) ? src.startDate : null,
+      endDate: validIso(src.endDate) ? src.endDate : null,
+      snapshot: src.snapshot ? JSON.parse(JSON.stringify(src.snapshot)) : null,
+    };
+  }
+  function commit(mutate) {
+    mutate(board);
     saveLocal();
-    if (window.LH && LH.ready) {
-      board.snapshot = snapshotForSave();
-      LH.saveLeaderboard(boardId, {
-        title: board.title, subtitle: board.subtitle, entries: board.entries,
-        adminPinHash: board.adminPinHash || null,
-        startDate: validIso(board.startDate) ? board.startDate : null,
-        endDate: validIso(board.endDate) ? board.endDate : null,
-        snapshot: board.snapshot || null,
-      }).catch(function (err) {
-        showBanner("Couldn't save to the shared board (" + (err && err.message ? err.message : "unknown error") + "). Your change is kept on this device only.");
-      });
-    }
+    render();
+    if (!(window.LH && LH.ready)) return;
+    LH.updateLeaderboard(boardId, function (current) {
+      var doc = cleanDoc(current || board);
+      doc.snapshot = snapshotBefore(doc);
+      mutate(doc);
+      return doc;
+    }).catch(function (err) {
+      if (lastRemoteDoc) {
+        var back = cleanDoc(lastRemoteDoc);
+        Object.keys(back).forEach(function (k) { board[k] = back[k]; });
+        saveLocal();
+        render();
+      }
+      showBanner(err && err.code === "permission-denied"
+        ? "That change wasn't saved: only the academy's coach account can edit the leaderboard. Sign in with it and try again."
+        : "That change wasn't saved (" + (err && err.message ? err.message : "unknown error") + "). Check your connection and try again.");
+    });
   }
 
   function onRemote(data, err, fromCache) {
@@ -317,11 +333,10 @@
       board.title = data.title || board.title;
       board.subtitle = data.subtitle || board.subtitle;
       board.entries = Array.isArray(data.entries) ? data.entries : [];
-      board.adminPinHash = data.adminPinHash || null;
       board.startDate = data.startDate || null;
       board.endDate = data.endDate || null;
       board.snapshot = data.snapshot || null;
-      lastRemoteEntries = JSON.parse(JSON.stringify(board.entries));
+      lastRemoteDoc = cleanDoc(data);
       // A write we just made ourselves can arrive with updatedAt still null
       // for one snapshot (the serverTimestamp placeholder resolves a moment
       // later) — keep whatever we last had rather than blanking it.
@@ -337,7 +352,7 @@
       // never from the player view. An empty-cache snapshot while offline
       // isn't proof, and a seed write queued then would overwrite the real
       // board as soon as the connection came back.
-      if (!fromCache && !readOnly) persist();
+      if (!fromCache && !readOnly && isCoach()) commit(function () {});
       if (fromCache && !board.entries.length) showBanner("Can't reach the leaderboard right now. Check your connection; it'll update as soon as you're back online.");
     }
     render();
@@ -349,7 +364,13 @@
     }
     if (window.LH && LH.ready) {
       unsub = LH.watchLeaderboard(boardId, onRemote);
+      LH.onAuth(function (u) {
+        user = u;
+        authKnown = true;
+        render();
+      });
     } else {
+      authKnown = true;
       var local = loadLocal();
       if (local) board = local;
       showBanner("Not connected to the shared board yet — working from a local copy on this device only. See the leaderboard README to finish Firebase setup.");
@@ -402,8 +423,9 @@
       "noScores", "moveHint", "scoringCard",
       "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
       "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
-      "shareLinkBtn", "formCard", "lockCard", "pinInput", "menuWrap", "menuBtn", "adminMenu", "addPlayerBtn",
-      "pinMsg", "unlockBtn", "newPinInput", "removePinInput",
+      "shareLinkBtn", "formCard", "lockCard", "menuWrap", "menuBtn", "adminMenu", "addPlayerBtn",
+      "lockMsg", "googleSignInBtn", "lockSignOutBtn", "pwSignin", "signinEmail", "signinPassword",
+      "pwSignInBtn", "signinMsg", "menuSignOutBtn",
       "lastUpdatedText", "exportCsvBtn", "qrBtn", "qrCard", "qrWrap",
       "qrUrlText", "qrCopyBtn", "qrCloseBtn",
     ].forEach(function (id) { els[id] = document.getElementById(id); });
@@ -506,32 +528,35 @@
       social: int(els.socialInput.value),
       drill: int(els.drillInput.value),
     };
-    var idx = board.entries.findIndex(function (e) { return e.id === entry.id; });
-    if (idx >= 0) board.entries[idx] = entry;
-    else board.entries.push(entry);
+    var existed = !!editingId;
     formOpen = false;
     resetForm();
-    persist();
-    render();
-    toast(idx >= 0 ? "Saved " + name : "Added " + name + " to the leaderboard");
+    commit(function (doc) {
+      var idx = doc.entries.findIndex(function (e) { return e.id === entry.id; });
+      if (idx >= 0) doc.entries[idx] = JSON.parse(JSON.stringify(entry));
+      else doc.entries.push(JSON.parse(JSON.stringify(entry)));
+    });
+    toast(existed ? "Saved " + name : "Added " + name + " to the leaderboard");
   }
 
   function findEntry(id) {
     return board.entries.find(function (x) { return x.id === id; });
   }
   var SESSION_NAMES = { ranked: "Ranked Play", social: "Social Play", drill: "Drill Training" };
+  // Adjusts the count on whatever the latest copy holds (not a value
+  // computed from this device's possibly-stale copy).
+  function bumpSession(id, field, delta) {
+    return function (doc) {
+      var e = doc.entries.find(function (x) { return x.id === id; });
+      if (e) e[field] = Math.max(0, int(e[field]) + delta);
+    };
+  }
   function logSession(id, field) {
     var e = findEntry(id);
     if (!e) return;
-    e[field] = int(e[field]) + 1;
-    persist();
-    render();
+    commit(bumpSession(id, field, 1));
     toast(e.name + ": +1 " + SESSION_NAMES[field] + " (+" + pts(POINTS[field]) + ")", "Undo", function () {
-      var cur = findEntry(id);
-      if (!cur || int(cur[field]) < 1) return;
-      cur[field] = int(cur[field]) - 1;
-      persist();
-      render();
+      commit(bumpSession(id, field, -1));
       toast("Undone");
     });
   }
@@ -545,10 +570,10 @@
     var e = board.entries.find(function (x) { return x.id === id; });
     if (!e) return;
     if (!window.confirm("Remove " + e.name + " from the leaderboard?")) return;
-    board.entries = board.entries.filter(function (x) { return x.id !== id; });
     if (editingId === id) { resetForm(); formOpen = false; }
-    persist();
-    render();
+    commit(function (doc) {
+      doc.entries = doc.entries.filter(function (x) { return x.id !== id; });
+    });
     toast("Removed " + e.name);
   }
 
@@ -559,61 +584,42 @@
     els.subtitleInput.value = board.subtitle;
     els.startDateInput.value = d.start || "";
     els.endDateInput.value = d.end || "";
-    els.newPinInput.value = "";
-    els.removePinInput.checked = false;
     els.editPanel.hidden = false;
   }
   function saveBoardMeta() {
-    board.title = els.titleInput.value.trim() || board.title;
-    board.subtitle = els.subtitleInput.value.trim() || board.subtitle;
-    board.startDate = validIso(els.startDateInput.value) ? els.startDateInput.value : null;
-    board.endDate = validIso(els.endDateInput.value) ? els.endDateInput.value : null;
-
-    var finish = function () {
-      els.editPanel.hidden = true;
-      els.newPinInput.value = "";
-      els.removePinInput.checked = false;
-      persist();
-      render();
-      toast("Challenge details saved");
-    };
-
-    if (els.removePinInput.checked) {
-      board.adminPinHash = null;
-      pinVerified = true;
-      finish();
-    } else if (els.newPinInput.value.trim()) {
-      sha256Hex(els.newPinInput.value.trim()).then(function (hash) {
-        board.adminPinHash = hash;
-        pinVerified = true;
-        try { localStorage.setItem(PIN_KEY, hash); } catch (e) {}
-        finish();
-      });
-    } else {
-      finish();
-    }
+    var title = els.titleInput.value.trim();
+    var subtitle = els.subtitleInput.value.trim();
+    var start = validIso(els.startDateInput.value) ? els.startDateInput.value : null;
+    var end = validIso(els.endDateInput.value) ? els.endDateInput.value : null;
+    els.editPanel.hidden = true;
+    commit(function (doc) {
+      if (title) doc.title = title;
+      if (subtitle) doc.subtitle = subtitle;
+      doc.startDate = start;
+      doc.endDate = end;
+    });
+    toast("Challenge details saved");
   }
 
-  function attemptUnlock() {
-    var pin = els.pinInput.value.trim();
-    if (!pin) {
-      els.pinMsg.textContent = "Enter the PIN.";
-      els.pinMsg.className = "form-msg err";
-      return;
-    }
-    sha256Hex(pin).then(function (hash) {
-      if (hash === board.adminPinHash) {
-        pinVerified = true;
-        try { localStorage.setItem(PIN_KEY, hash); } catch (e) {}
-        els.pinInput.value = "";
-        els.pinMsg.textContent = "";
-        toast("Unlocked");
-        render();
-      } else {
-        els.pinMsg.textContent = "Incorrect PIN.";
-        els.pinMsg.className = "form-msg err";
-      }
+  // ---- coach sign-in ---------------------------------------------------------
+  function signinError(err) {
+    var code = err && err.code;
+    if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return "";
+    if (code === "auth/popup-blocked") return "Your browser blocked the sign-in window. Allow pop-ups for this site and try again.";
+    if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found" || code === "auth/invalid-login-credentials") return "That email and password didn't match.";
+    if (code === "auth/account-exists-with-different-credential") return "This account uses email and password. Use \u201cUse email and password instead\u201d below.";
+    return (err && err.message) || "Sign-in failed.";
+  }
+  function showSigninResult(p) {
+    els.signinMsg.textContent = "";
+    els.signinMsg.className = "form-msg";
+    p.catch(function (err) {
+      els.signinMsg.textContent = signinError(err);
+      els.signinMsg.className = "form-msg err";
     });
+  }
+  function signOut() {
+    LH.signOut().then(function () { toast("Signed out"); });
   }
 
   // ---- render ---------------------------------------------------------------
@@ -631,14 +637,23 @@
   function render() {
     renderHeader();
 
-    checkPinVerified();
-    var locked = !readOnly && !!board.adminPinHash && !pinVerified;
-    var restricted = readOnly || locked;
+    var coach = isCoach();
+    var locked = !readOnly && authKnown && !coach;
+    var restricted = readOnly || !coach;
     document.body.classList.toggle("read-only", readOnly);
     document.body.classList.toggle("locked", locked);
     els.formCard.hidden = restricted || !formOpen;
     els.addPlayerBtn.hidden = restricted || formOpen;
     els.lockCard.hidden = !locked;
+    if (locked) {
+      els.lockMsg.textContent = user
+        ? "You're signed in as " + (user.email || "another account") + ", which can't edit this leaderboard. Sign out, then sign in with the academy's coach account."
+        : "Sign in with the academy's coach account to add players and log sessions.";
+      els.googleSignInBtn.hidden = !!user;
+      els.pwSignin.hidden = !!user;
+      els.lockSignOutBtn.hidden = !user;
+    }
+    els.menuSignOutBtn.hidden = !user;
     els.menuWrap.hidden = readOnly;
     els.editBoardBtn.hidden = restricted;
     els.shareLinkBtn.hidden = readOnly;
@@ -922,10 +937,16 @@
     els.saveBoardBtn.addEventListener("click", saveBoardMeta);
     els.cancelBoardBtn.addEventListener("click", function () { els.editPanel.hidden = true; });
 
-    els.unlockBtn.addEventListener("click", attemptUnlock);
-    els.pinInput.addEventListener("keydown", function (ev) {
-      if (ev.key === "Enter") attemptUnlock();
-    });
+    els.googleSignInBtn.addEventListener("click", function () { showSigninResult(LH.signInWithGoogle()); });
+    var pwSignIn = function () {
+      showSigninResult(LH.signIn(els.signinEmail.value, els.signinPassword.value).then(function () {
+        els.signinPassword.value = "";
+      }));
+    };
+    els.pwSignInBtn.addEventListener("click", pwSignIn);
+    els.signinPassword.addEventListener("keydown", function (ev) { if (ev.key === "Enter") pwSignIn(); });
+    els.lockSignOutBtn.addEventListener("click", signOut);
+    els.menuSignOutBtn.addEventListener("click", signOut);
 
     els.boardBody.addEventListener("click", function (ev) {
       var action = ev.target.closest("[data-edit], [data-del], [data-log]");
