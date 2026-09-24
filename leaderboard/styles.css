@@ -94,8 +94,8 @@ body {
   box-shadow: var(--shadow-sm);
 }
 .prize-photo {
-  flex: none; width: 36px; height: 72px; object-fit: contain; border-radius: 6px;
-  filter: drop-shadow(0 3px 6px rgba(28, 20, 20, .18));
+  flex: none; width: 36px; height: 72px; object-fit: contain;
+  filter: drop-shadow(0 3px 5px rgba(28, 20, 20, .22)); /* transparent cut-out, so the shadow follows the paddle */
 }
 .prize-txt { min-width: 0; }
 .prize-eyebrow {
