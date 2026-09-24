@@ -71,6 +71,31 @@ Community Points, Points Behind 1st — and sorts automatically.
   can be tidied up. Tap **Done** when finished. Events are stored on the
   board doc as `events` and saved through the same coach-only transaction
   as everything else.
+- **Events from Google Calendar (optional)**: paste a *public* Google
+  Calendar's ID into "⋯" → Edit challenge details → **Events from Google
+  Calendar**, and the events card reads the next five events from that
+  calendar (Calendar API v3, read-only, refreshed every 10 minutes and
+  cached for offline) instead of the list stored on the board. Players get
+  **Subscribe in Google Calendar** / **Subscribe on iPhone / Outlook**
+  (webcal) to follow every event automatically; the admin's "Edit events"
+  becomes **Manage in Google Calendar**. A pasted share/embed link is
+  accepted and reduced to the ID. Clear the ID to go back to in-page events.
+  The type tag comes from words in the event's title or description:
+  "social" → Social Play +3, "drill"/"clinic" → Drill Training +2,
+  "ranked" → Ranked Play +1, anything else → Special event. All-day events
+  show "All day"; cancelled ones are skipped. If the calendar can't be read,
+  the admin sees why (key blocked, API off, not public/not found) and
+  players simply don't see the card.
+  **One-time Google setup** (Google Cloud console for the `lots-hub`
+  project):
+  1. In Google Calendar, create the calendar, then Settings → Access
+     permissions → **Make available to public**, and copy its **Calendar
+     ID** (Integrate calendar section).
+  2. APIs & Services → Library → **Google Calendar API** → Enable.
+  3. APIs & Services → Credentials → the "Browser key (auto created by
+     Firebase)" → API restrictions → add **Google Calendar API** → Save.
+     (Or create a separate key restricted to that API and to
+     `lots-hub.web.app/*`, and paste it in the optional key field.)
 - **How scoring works**: the formula as tiles, plus the tie-break rule.
   Collapsible; open by default on wide screens, collapsed on phones.
 

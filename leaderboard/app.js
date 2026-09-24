@@ -90,6 +90,8 @@
     endDate: null,
     snapshot: null, // { at: "YYYY-MM-DD", ranks: { playerId: rank } }, for movement arrows
     events: [], // upcoming community events, see renderEvents()
+    calendarId: null, // optional public Google Calendar that replaces `events`
+    calendarKey: null, // optional API key for it (defaults to the site's Firebase key)
   };
   // Fallback dates for a board whose doc doesn't have them saved yet; the
   // edit panel's date fields override these once saved.
@@ -300,6 +302,8 @@
       endDate: validIso(src.endDate) ? src.endDate : null,
       snapshot: src.snapshot ? JSON.parse(JSON.stringify(src.snapshot)) : null,
       events: JSON.parse(JSON.stringify(Array.isArray(src.events) ? src.events : [])),
+      calendarId: typeof src.calendarId === "string" && src.calendarId ? src.calendarId : null,
+      calendarKey: typeof src.calendarKey === "string" && src.calendarKey ? src.calendarKey : null,
     };
   }
   function commit(mutate) {
@@ -343,6 +347,8 @@
       board.endDate = data.endDate || null;
       board.snapshot = data.snapshot || null;
       board.events = Array.isArray(data.events) ? data.events : [];
+      board.calendarId = data.calendarId || null;
+      board.calendarKey = data.calendarKey || null;
       lastRemoteDoc = cleanDoc(data);
       // A write we just made ourselves can arrive with updatedAt still null
       // for one snapshot (the serverTimestamp placeholder resolves a moment
@@ -363,6 +369,7 @@
       if (fromCache && !board.entries.length) showBanner("Can't reach the leaderboard right now. Check your connection; it'll update as soon as you're back online.");
     }
     render();
+    fetchCalendar(false);
   }
 
   function connect() {
@@ -437,6 +444,7 @@
       "noScores", "moveHint", "scoringCard", "prizeMeta", "eventsCard", "eventsList",
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
+      "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
       "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
       "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
       "shareLinkBtn", "formCard", "lockCard", "menuWrap", "menuBtn", "adminMenu", "addPlayerBtn",
@@ -600,6 +608,8 @@
     els.subtitleInput.value = board.subtitle;
     els.startDateInput.value = d.start || "";
     els.endDateInput.value = d.end || "";
+    els.calendarIdInput.value = board.calendarId || "";
+    els.calendarKeyInput.value = board.calendarKey || "";
     els.editPanel.hidden = false;
   }
   function saveBoardMeta() {
@@ -607,13 +617,18 @@
     var subtitle = els.subtitleInput.value.trim();
     var start = validIso(els.startDateInput.value) ? els.startDateInput.value : null;
     var end = validIso(els.endDateInput.value) ? els.endDateInput.value : null;
+    var calId = normalizeCalendarId(els.calendarIdInput.value);
+    var calKey = els.calendarKeyInput.value.trim() || null;
     els.editPanel.hidden = true;
     commit(function (doc) {
       if (title) doc.title = title;
       if (subtitle) doc.subtitle = subtitle;
       doc.startDate = start;
       doc.endDate = end;
+      doc.calendarId = calId;
+      doc.calendarKey = calKey;
     });
+    fetchCalendar(true);
     toast("Challenge details saved");
   }
 
@@ -800,12 +815,125 @@
     return ((h + 11) % 12 + 1) + (m ? ":" + String(m).padStart(2, "0") : "") + (h < 12 ? " AM" : " PM");
   }
   function validEvent(ev) {
-    return ev && validIso(ev.date) && /^\d{2}:\d{2}$/.test(ev.start || "") && ev.title;
+    return ev && validIso(ev.date) && (ev.allDay || /^\d{2}:\d{2}$/.test(ev.start || "")) && ev.title;
+  }
+  function eventSource() {
+    return usingCalendar() ? cal.events || [] : board.events || [];
   }
   function sortedEvents() {
-    return (board.events || []).filter(validEvent)
+    return eventSource().filter(validEvent)
       .slice()
-      .sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); });
+      .sort(function (a, b) { return (a.date + (a.start || "")).localeCompare(b.date + (b.start || "")); });
+  }
+
+  // ---- Google Calendar as the events source (optional) ------------------------
+  // With a public calendar's ID saved on the board, events are read from
+  // Google Calendar (Calendar API v3, read-only, API key) instead of the
+  // board's own list, refreshed every 10 minutes. The event type (and so its
+  // points tag) comes from words in the title/description: "social",
+  // "drill"/"clinic", "ranked"; anything else shows as a special event.
+  var cal = { events: null, error: null, fetchedFor: null, at: 0 };
+  var CAL_CACHE_KEY = "lotus-leaderboard:cal:" + boardId;
+  function usingCalendar() { return !!board.calendarId; }
+  function normalizeCalendarId(raw) {
+    var v = String(raw || "").trim();
+    if (!v) return null;
+    // Accept a pasted share/embed link as well as the bare ID.
+    var m = v.match(/[?&](?:src|cid)=([^&#]+)/);
+    if (m) {
+      v = decodeURIComponent(m[1]);
+      if (!/@/.test(v)) { try { v = atob(v.replace(/-/g, "+").replace(/_/g, "/")); } catch (e) {} }
+    }
+    var ical = v.match(/calendar\/ical\/([^/]+)\//);
+    if (ical) v = decodeURIComponent(ical[1]);
+    return v || null;
+  }
+  function calendarKey() {
+    return board.calendarKey || (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey) || "";
+  }
+  function typeFromText(s) {
+    s = String(s || "").toLowerCase();
+    if (/\bsocial\b/.test(s)) return "social";
+    if (/\b(drill|drills|clinic)\b/.test(s)) return "drill";
+    if (/\branked\b/.test(s)) return "ranked";
+    return "special";
+  }
+  function localIso(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function localHm(d) {
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+  function fromGoogle(item) {
+    var s = item.start || {}, e = item.end || {};
+    var ev = {
+      id: "g_" + item.id,
+      title: item.summary || "Untitled event",
+      place: item.location || "",
+      type: typeFromText((item.summary || "") + " " + (item.description || "")),
+    };
+    if (s.dateTime) {
+      var ds = new Date(s.dateTime);
+      ev.date = localIso(ds);
+      ev.start = localHm(ds);
+      if (e.dateTime) {
+        var de = new Date(e.dateTime);
+        if (localIso(de) === ev.date) ev.end = localHm(de);
+      }
+    } else if (s.date) {
+      ev.date = s.date;
+      ev.allDay = true;
+    }
+    return ev;
+  }
+  function explainCalError(err) {
+    var reasons = [];
+    ((err && err.details) || []).forEach(function (d) { if (d.reason) reasons.push(d.reason); });
+    ((err && err.errors) || []).forEach(function (d) { if (d.reason) reasons.push(d.reason); });
+    var r = reasons.join(" ") + " " + ((err && err.message) || "");
+    if (/API_KEY_SERVICE_BLOCKED|blocked/i.test(r)) return "The site's API key isn't allowed to use Google Calendar yet. Add \u201cGoogle Calendar API\u201d to the key's API restrictions in Google Cloud (setup step 3).";
+    if (/SERVICE_DISABLED|accessNotConfigured|has not been used|is disabled/i.test(r)) return "The Google Calendar API isn't turned on for this project yet (setup step 2).";
+    if (/API_KEY_INVALID|keyInvalid|API key not valid/i.test(r)) return "That Calendar API key isn't valid. Check it in Edit challenge details.";
+    if (err && (err.code === 404 || /notFound/i.test(r))) return "Google Calendar couldn't find that calendar. Check the ID, and that the calendar is shared publicly.";
+    if (err && err.code === 403) return "Google Calendar refused access. Make sure the calendar is shared publicly (\u201cMake available to public\u201d).";
+    return "Couldn't load events from Google Calendar right now.";
+  }
+  function fetchCalendar(force) {
+    var id = board.calendarId;
+    if (!id) { cal = { events: null, error: null, fetchedFor: null, at: 0 }; return; }
+    if (!force && cal.fetchedFor === id && Date.now() - cal.at < 10 * 60 * 1000) return;
+    if (cal.fetchedFor !== id) {
+      cal = { events: null, error: null, fetchedFor: id, at: 0 };
+      try {
+        var cached = JSON.parse(localStorage.getItem(CAL_CACHE_KEY) || "null");
+        if (cached && cached.id === id && Array.isArray(cached.events)) cal.events = cached.events;
+      } catch (e) {}
+    }
+    cal.at = Date.now();
+    var from = new Date();
+    from.setHours(0, 0, 0, 0);
+    var url = "https://www.googleapis.com/calendar/v3/calendars/" + encodeURIComponent(id) +
+      "/events?singleEvents=true&orderBy=startTime&maxResults=25&timeMin=" + encodeURIComponent(from.toISOString()) +
+      "&key=" + encodeURIComponent(calendarKey());
+    fetch(url)
+      .then(function (res) {
+        return res.json().then(function (j) {
+          if (!res.ok) throw (j && j.error) || { code: res.status };
+          return j;
+        });
+      })
+      .then(function (j) {
+        if (board.calendarId !== id) return;
+        cal.events = (j.items || []).filter(function (i) { return i.status !== "cancelled"; }).map(fromGoogle).filter(validEvent);
+        cal.error = null;
+        try { localStorage.setItem(CAL_CACHE_KEY, JSON.stringify({ id: id, events: cal.events })); } catch (e) {}
+        render();
+      })
+      .catch(function (err) {
+        if (board.calendarId !== id) return;
+        cal.error = explainCalError(err);
+        render();
+      });
   }
   function upcomingEvents() {
     var today = dayNum(isoToday());
@@ -817,7 +945,7 @@
     var t = EVENT_TYPES[ev.type] || EVENT_TYPES.special;
     var away = dayNum(ev.date) - dayNum(isoToday());
     var when = away < 0 ? "Past" : away === 0 ? "Today" : away === 1 ? "Tomorrow" : d.toLocaleDateString(undefined, { weekday: "long" });
-    var time = fmtClock(ev.start) + (/^\d{2}:\d{2}$/.test(ev.end || "") ? "&ndash;" + fmtClock(ev.end) : "");
+    var time = ev.allDay ? "All day" : fmtClock(ev.start) + (/^\d{2}:\d{2}$/.test(ev.end || "") ? "&ndash;" + fmtClock(ev.end) : "");
     var tag = t.pts
       ? '<span class="ev-tag ' + esc(ev.type) + '">' + t.label + " &middot; +" + t.pts + (t.pts === 1 ? " pt" : " pts") + "</span>"
       : '<span class="ev-tag special">' + t.label + "</span>";
@@ -851,13 +979,14 @@
   // ("floating"), pinned to the viewer's time zone so Google doesn't shift them.
   function googleCalUrl(ev) {
     var stamp = function (hhmm) { return ev.date.replace(/-/g, "") + "T" + hhmm.replace(":", "") + "00"; };
+    var dates = ev.allDay ? ev.date.replace(/-/g, "") + "/" + nextDay(ev.date).replace(/-/g, "") : stamp(ev.start) + "/" + stamp(eventEnd(ev));
     var tz = "";
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
     var t = EVENT_TYPES[ev.type] || EVENT_TYPES.special;
     var params = [
       ["action", "TEMPLATE"],
       ["text", ev.title + " (Lotus Pickleball Academy)"],
-      ["dates", stamp(ev.start) + "/" + stamp(eventEnd(ev))],
+      ["dates", dates],
       ["details", t.label + (t.pts ? " \u00b7 +" + t.pts + " Community " + (t.pts === 1 ? "point" : "points") : "") + "\nLeaderboard: " + playerViewUrl()],
       ["location", ev.place || ""],
     ];
@@ -866,30 +995,46 @@
       return p[0] + "=" + encodeURIComponent(p[1]);
     }).join("&");
   }
+  function nextDay(iso) {
+    var p = iso.split("-"), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + 1));
+    return d.toISOString().slice(0, 10);
+  }
   function eventEnd(ev) {
     return /^\d{2}:\d{2}$/.test(ev.end || "") ? ev.end : String(Math.min(23, +ev.start.slice(0, 2) + 1)).padStart(2, "0") + ev.start.slice(2);
   }
   function renderEvents(canEdit) {
-    if (!canEdit) { eventsEditing = false; editingEventId = null; }
+    var gc = usingCalendar();
+    if (!canEdit || gc) { eventsEditing = false; editingEventId = null; }
     var editing = canEdit && eventsEditing;
     var list = editing ? sortedEvents() : upcomingEvents();
     els.eventsCard.hidden = !list.length && !canEdit;
-    els.eventsEditBtn.hidden = !canEdit;
+    els.eventsEditBtn.hidden = !canEdit || gc;
+    els.eventsManageLink.hidden = !canEdit || !gc;
+    els.calError.hidden = !(canEdit && gc && cal.error);
+    els.calError.textContent = cal.error || "";
+    els.eventsSubscribe.hidden = !gc || !list.length;
+    if (gc) {
+      els.subGoogle.href = "https://calendar.google.com/calendar/render?cid=" + encodeURIComponent(board.calendarId);
+      els.subApple.href = "webcal://calendar.google.com/calendar/ical/" + encodeURIComponent(board.calendarId) + "/public/basic.ics";
+    }
+    els.menuEventsBtn.lastChild.textContent = gc ? "Manage events" : "Edit events";
     els.eventsEditBtn.textContent = editing ? "Done" : "Edit events";
     els.eventsEditBtn.setAttribute("aria-expanded", String(editing));
     els.eventForm.hidden = !editing;
     els.eventsSub.hidden = editing;
-    els.eventsEmpty.hidden = !!list.length;
-    els.eventsEmpty.textContent = canEdit && !editing
-      ? "No upcoming events yet. Tap \u201cEdit events\u201d to add one; players only see this card once there's an event."
-      : "No events yet. Add the first one above.";
+    els.eventsEmpty.hidden = !!list.length || (gc && !!cal.error);
+    els.eventsEmpty.textContent = gc
+      ? (cal.events === null ? "Loading events from Google Calendar\u2026" : "No upcoming events on the Google Calendar yet. Add them there and they'll show here (players see this card once there's an event).")
+      : canEdit && !editing
+        ? "No upcoming events yet. Tap \u201cEdit events\u201d to add one; players only see this card once there's an event."
+        : "No events yet. Add the first one above.";
     var firstUpcoming = upcomingEvents()[0];
     els.eventsList.innerHTML = list.map(function (ev) {
       return eventRow(ev, { editing: editing, next: !editing && firstUpcoming && ev.id === firstUpcoming.id });
     }).join("");
   }
   function findEvent(id) {
-    return (board.events || []).find(function (e) { return e.id === id; });
+    return eventSource().find(function (e) { return e.id === id; });
   }
   function resetEventForm() {
     editingEventId = null;
@@ -970,10 +1115,10 @@
     return [
       "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Lotus Pickleball Academy//Leaderboard//EN",
       "BEGIN:VEVENT",
-      "UID:" + ev.date + "-" + ev.start.replace(":", "") + "@lotus-leaderboard",
+      "UID:" + String(ev.id).replace(/[^A-Za-z0-9_-]/g, "") + "@lotus-leaderboard",
       "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z",
-      "DTSTART:" + stamp(ev.date, ev.start),
-      "DTEND:" + stamp(ev.date, eventEnd(ev)),
+      ev.allDay ? "DTSTART;VALUE=DATE:" + ev.date.replace(/-/g, "") : "DTSTART:" + stamp(ev.date, ev.start),
+      ev.allDay ? "DTEND;VALUE=DATE:" + nextDay(ev.date).replace(/-/g, "") : "DTEND:" + stamp(ev.date, eventEnd(ev)),
       "SUMMARY:" + clean(ev.title + " (Lotus Pickleball Academy)"),
       "LOCATION:" + clean(ev.place || ""),
       "DESCRIPTION:" + clean((EVENT_TYPES[ev.type] || EVENT_TYPES.special).label + ". Leaderboard: " + playerViewUrl()),
@@ -1257,7 +1402,10 @@
       if (eventsEditing) { eventsEditing = false; resetEventForm(); render(); }
       else openEventsEditor();
     });
-    els.menuEventsBtn.addEventListener("click", openEventsEditor);
+    els.menuEventsBtn.addEventListener("click", function () {
+      if (usingCalendar()) window.open("https://calendar.google.com/calendar/r", "_blank", "noopener");
+      else openEventsEditor();
+    });
     els.evSaveBtn.addEventListener("click", saveEvent);
     els.evCancelBtn.addEventListener("click", function () { resetEventForm(); render(); });
     els.evTitle.addEventListener("keydown", function (ev) { if (ev.key === "Enter") saveEvent(); });
@@ -1417,6 +1565,7 @@
     connect();
     // Keep the "Updated N minutes ago" text fresh without a full re-render.
     setInterval(updateLastUpdatedText, 30000);
+    setInterval(function () { if (usingCalendar()) fetchCalendar(true); }, 10 * 60 * 1000);
   }
 
   document.addEventListener("DOMContentLoaded", boot);

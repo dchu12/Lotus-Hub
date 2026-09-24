@@ -380,6 +380,13 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .ev.past { opacity: .6; }
 .ev.being-edited { outline: 2px solid var(--brand); outline-offset: -1px; }
 .ev-admin { flex: none; display: flex; gap: 6px; }
+#eventsManageLink { text-decoration: none; white-space: nowrap; }
+.cal-error { border-style: solid; border-color: color-mix(in srgb, var(--danger), transparent 60%); background: color-mix(in srgb, var(--danger), transparent 94%); color: var(--danger); margin-bottom: 10px; }
+.ev-subscribe { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.ev-sub-lbl { font-size: .84rem; font-weight: 700; color: var(--ink-2); }
+.ev-sub-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.ev-sub-btns .btn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; }
+.ev-sub-btns svg { width: 16px; height: 16px; flex: none; }
 .events-card .events-head h2 { margin: 0; font-size: 1.05rem; letter-spacing: -.01em; }
 .events-sub { font-size: .82rem; color: var(--muted); font-weight: 600; }
 .events-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -492,6 +499,8 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .ev-admin { flex-direction: column; }
   .ev-cal-opts { padding-left: 0; }
   .ev-cal-opts { flex-direction: column; gap: 6px; }
+  .ev-sub-btns { flex-direction: column; width: 100%; }
+  .ev-sub-btns .btn { justify-content: center; padding: 10px 12px; }
   .ev-cal-opts .btn { justify-content: center; padding: 10px 12px; }
   /* The title wraps on a phone, so line everything up along the top edge
      instead of centring the logo and menu button against a tall block. */
