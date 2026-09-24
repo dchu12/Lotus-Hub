@@ -11,6 +11,13 @@
       "docs/**",
       "*.md"
     ],
+    "headers": [
+      { "source": "/lotus", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+      { "source": "/lotus/**", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+      { "source": "/lotusoctoberchallenge", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+      { "source": "/lotusoctoberchallenge/**", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+      { "source": "/leaderboard/**", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    ],
     "rewrites": [
       { "source": "/lotus", "destination": "/leaderboard/index.html" },
       { "source": "/lotus/**", "destination": "/leaderboard/index.html" },
