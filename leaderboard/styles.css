@@ -238,6 +238,9 @@ tbody tr.player-row { cursor: pointer; }
 tbody tr.player-row:hover td { background: color-mix(in srgb, var(--brand), transparent 96%); }
 tbody tr.open td { border-bottom-color: transparent; }
 td.total, th.total { color: var(--brand); font-weight: 800; }
+.th-short { display: none; }
+td.behind { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.behind-lead { color: var(--muted); font-weight: 600; }
 
 /* Rank medal chips — flat fills, not glossy gradients */
 .rank-badge {
@@ -302,5 +305,10 @@ tr.bd-row.bd-last td { padding-bottom: 12px; border-bottom: 1px solid var(--line
   table { min-width: 0; }
   th { white-space: normal; line-height: 1.25; letter-spacing: .02em; font-size: .64rem; }
   th.rank, td.rank { width: 30px; }
+  .name-btn { gap: 5px; }
+  .you-pill { padding: 1px 5px; }
+  .table-wrap { padding: 0 8px 14px; }
+  .th-full { display: none; }
+  .th-short { display: inline; }
   tr.bd-row td.bd-name { padding-left: 44px; box-shadow: inset 30px 0 0 var(--field), inset 32px 0 0 var(--line); }
 }

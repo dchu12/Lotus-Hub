@@ -16,13 +16,16 @@ tallies each player's **Lotus Score** automatically:
 - **Lotus Score = Skill Points + Community Points.**
 
 The table itself stays minimal — Rank, Player, Skill Points, Community Points,
-Lotus Score — sorts automatically, with gold/silver/bronze medal badges for
-the top 3.
+Lotus Score, Points Behind 1st — sorts automatically, with gold/silver/bronze
+medal badges for the top 3. "Points Behind 1st" shows "—" for the leader and
+"Tied" for anyone level with them. On phones the headers shorten to
+Skill / Comm. / Score / Behind so the whole table fits without sideways
+scrolling. The CSV export includes the same column.
 
 - **"Where do you rank?"**: the card at the top of the page. A challenger
   types their name and taps it from the matches to see their own rank ("#3
-  of 23 challengers"), their Lotus points, and how far they are from the
-  player just above them (or their lead over #2). Their row is marked "You"
+  of 23 challengers"), their Lotus points, and how far they are behind 1st place (or, for the
+  leader, their lead over #2). Their row is marked "You"
   in the table, and "See my breakdown" opens their points breakdown. The
   pick is remembered in `localStorage` on that device only, so a returning
   challenger lands straight on their rank; "Not you?" clears it.
