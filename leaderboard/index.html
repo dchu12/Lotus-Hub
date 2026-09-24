@@ -19,7 +19,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=26" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=27" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -181,6 +181,15 @@
       </div>
     </section>
 
+    <!-- Upcoming community events -->
+    <section class="card events-card" id="eventsCard" hidden aria-labelledby="eventsTitle">
+      <div class="events-head">
+        <h2 id="eventsTitle">Upcoming community events</h2>
+        <span class="events-sub">Show up, earn Community Points</span>
+      </div>
+      <ol class="events-list" id="eventsList"></ol>
+    </section>
+
     <!-- How scoring works -->
     <details class="card scoring" id="scoringCard">
       <summary class="scoring-title">How scoring works</summary>
@@ -223,6 +232,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=28"></script>
+  <script src="/leaderboard/app.js?v=29"></script>
 </body>
 </html>

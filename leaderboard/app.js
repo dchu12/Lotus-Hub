@@ -431,7 +431,7 @@
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "countdown", "editBoardBtn", "editPanel", "titleInput",
       "subtitleInput", "startDateInput", "endDateInput", "saveBoardBtn", "cancelBoardBtn",
-      "noScores", "moveHint", "scoringCard", "prizeMeta",
+      "noScores", "moveHint", "scoringCard", "prizeMeta", "eventsCard", "eventsList",
       "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
       "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
       "shareLinkBtn", "formCard", "lockCard", "menuWrap", "menuBtn", "adminMenu", "addPlayerBtn",
@@ -684,6 +684,7 @@
     var scored = anyScored(list);
 
     renderRank(list, scored);
+    renderEvents();
 
     els.playerCount.textContent = list.length ? list.length + (list.length === 1 ? " player" : " players") : "";
     els.boardEmpty.hidden = !!list.length;
@@ -773,6 +774,84 @@
         : "1st place";
     }
     return (tied ? "Tied for " + ordinal(me._rank) + " \u00b7 " : "") + pts(list[0]._c.total - me._c.total) + " behind 1st place";
+  }
+
+  // ---- Upcoming community events ------------------------------------------
+  // PLACEHOLDER schedule: swap in the real events (date "YYYY-MM-DD", 24h
+  // start/end "HH:MM", type = ranked | social | drill | special). Past events
+  // drop off on their own; the next five show.
+  var EVENTS = [
+    { date: "2026-10-03", start: "09:00", end: "11:00", title: "Social Play Mixer", type: "social", place: "Location TBD" },
+    { date: "2026-10-07", start: "18:30", end: "20:00", title: "Drill Clinic: Third-Shot Drops", type: "drill", place: "Location TBD" },
+    { date: "2026-10-10", start: "08:00", end: "11:00", title: "Ranked Round Robin", type: "ranked", place: "Location TBD" },
+    { date: "2026-10-17", start: "18:00", end: "20:30", title: "Saturday Night Social", type: "social", place: "Location TBD" },
+    { date: "2026-10-31", start: "10:00", end: "12:00", title: "Challenge Finale & Paddle Award", type: "special", place: "Location TBD" },
+  ];
+  var EVENT_TYPES = {
+    ranked: { label: "Ranked Play", pts: POINTS.ranked },
+    social: { label: "Social Play", pts: POINTS.social },
+    drill: { label: "Drill Training", pts: POINTS.drill },
+    special: { label: "Special event", pts: 0 },
+  };
+  function fmtClock(hhmm) {
+    var p = hhmm.split(":"), h = +p[0], m = +p[1];
+    return ((h + 11) % 12 + 1) + (m ? ":" + String(m).padStart(2, "0") : "") + (h < 12 ? " AM" : " PM");
+  }
+  function upcomingEvents() {
+    var today = dayNum(isoToday());
+    return EVENTS.filter(function (ev) { return dayNum(ev.date) >= today; })
+      .sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); })
+      .slice(0, 5);
+  }
+  function renderEvents() {
+    var list = upcomingEvents();
+    els.eventsCard.hidden = !list.length;
+    var today = dayNum(isoToday());
+    els.eventsList.innerHTML = list.map(function (ev, i) {
+      var p = ev.date.split("-");
+      var d = new Date(+p[0], +p[1] - 1, +p[2]);
+      var t = EVENT_TYPES[ev.type] || EVENT_TYPES.special;
+      var away = dayNum(ev.date) - today;
+      var when = away === 0 ? "Today" : away === 1 ? "Tomorrow" : d.toLocaleDateString(undefined, { weekday: "long" });
+      var tag = t.pts
+        ? '<span class="ev-tag ' + ev.type + '">' + t.label + " &middot; +" + t.pts + (t.pts === 1 ? " pt" : " pts") + "</span>"
+        : '<span class="ev-tag special">' + t.label + "</span>";
+      return (
+        '<li class="ev' + (i === 0 ? " next" : "") + '">' +
+        '<div class="ev-date" aria-hidden="true"><span class="ev-mon">' + d.toLocaleDateString(undefined, { month: "short" }) + "</span>" +
+        '<span class="ev-day">' + d.getDate() + "</span></div>" +
+        '<div class="ev-body"><div class="ev-title">' + esc(ev.title) + "</div>" +
+        '<div class="ev-meta"><span class="sr-only">' + esc(d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })) + ", </span>" +
+        '<span aria-hidden="true">' + when + " &middot; </span>" + fmtClock(ev.start) + "&ndash;" + fmtClock(ev.end) + " &middot; " + esc(ev.place) + "</div>" +
+        tag + "</div>" +
+        '<button type="button" class="btn small ghost ev-cal" data-ical="' + i + '" aria-label="Add ' + esc(ev.title) + ' to calendar">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M12 13v5M9.5 15.5h5"/></svg>' +
+        '<span class="ev-cal-txt">Add to calendar</span></button>' +
+        "</li>"
+      );
+    }).join("");
+  }
+  function icsFor(ev) {
+    var stamp = function (date, hhmm) { return date.replace(/-/g, "") + "T" + hhmm.replace(":", "") + "00"; };
+    var clean = function (s) { return String(s).replace(/([,;\\])/g, "\\$1"); };
+    return [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Lotus Pickleball Academy//Leaderboard//EN",
+      "BEGIN:VEVENT",
+      "UID:" + ev.date + "-" + ev.start.replace(":", "") + "@lotus-leaderboard",
+      "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z",
+      "DTSTART:" + stamp(ev.date, ev.start),
+      "DTEND:" + stamp(ev.date, ev.end),
+      "SUMMARY:" + clean(ev.title + " (Lotus Pickleball Academy)"),
+      "LOCATION:" + clean(ev.place),
+      "DESCRIPTION:" + clean((EVENT_TYPES[ev.type] || EVENT_TYPES.special).label + ". Leaderboard: " + playerViewUrl()),
+      "END:VEVENT", "END:VCALENDAR",
+    ].join("\r\n");
+  }
+  function addToCalendar(i) {
+    var ev = upcomingEvents()[i];
+    if (!ev) return;
+    var blob = new Blob([icsFor(ev)], { type: "text/calendar;charset=utf-8" });
+    downloadBlob(blob, ev.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") + ".ics");
   }
 
   // ---- "Share my rank" image card -------------------------------------------
@@ -1027,6 +1106,10 @@
       if (ev.key !== "Enter") return;
       var hits = els.rankMatches.querySelectorAll("[data-me]");
       if (hits.length === 1) pickMe(hits[0].getAttribute("data-me"));
+    });
+    els.eventsList.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-ical]");
+      if (b) addToCalendar(+b.getAttribute("data-ical"));
     });
     els.rankMatches.addEventListener("click", function (ev) {
       var b = ev.target.closest("[data-me]");
