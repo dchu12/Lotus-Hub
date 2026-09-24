@@ -364,7 +364,22 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .session-btn:hover { background: color-mix(in srgb, var(--brand), transparent 93%); border-color: var(--brand); }
 
 /* Upcoming community events */
-.events-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 12px; }
+.events-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px 12px; margin-bottom: 12px; }
+.events-head .events-sub { display: block; margin-top: 2px; }
+.event-form { padding: 4px 0 14px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.event-form .section-lbl { margin-top: 0; padding-top: 0; border-top: 0; }
+.event-form select, .form-row input[type="date"], .form-row input[type="time"] {
+  font: inherit; padding: 9px 10px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--field); color: var(--ink); width: 100%; min-height: 42px;
+}
+.event-form select:focus, .form-row input[type="date"]:focus, .form-row input[type="time"]:focus { border-color: var(--brand); outline: 3px solid color-mix(in srgb, var(--brand), transparent 85%); }
+.opt { font-weight: 500; color: var(--muted); }
+.form-row label.ev-type-field { flex: 1 0 250px; }
+.ev-tag { white-space: nowrap; }
+.events-empty { margin: 0 0 4px; padding: 12px; border-radius: 10px; border: 1px dashed var(--line); background: var(--field); color: var(--ink-2); font-size: .86rem; }
+.ev.past { opacity: .6; }
+.ev.being-edited { outline: 2px solid var(--brand); outline-offset: -1px; }
+.ev-admin { flex: none; display: flex; gap: 6px; }
 .events-card .events-head h2 { margin: 0; font-size: 1.05rem; letter-spacing: -.01em; }
 .events-sub { font-size: .82rem; color: var(--muted); font-weight: 600; }
 .events-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -469,6 +484,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .ev-cal { width: 40px; height: 40px; padding: 0; justify-content: center; align-self: center; }
   .ev-cal svg { width: 19px; height: 19px; }
   .ev-cal-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .ev-admin { flex-direction: column; }
   /* The title wraps on a phone, so line everything up along the top edge
      instead of centring the logo and menu button against a tall block. */
   .hd, .hd-brand { align-items: flex-start; }

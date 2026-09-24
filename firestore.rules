@@ -69,7 +69,7 @@ service cloud.firestore {
     }
     function isValidLeaderboard(d) {
       return d.keys().hasOnly(['title', 'subtitle', 'entries', 'adminPinHash', 'updatedAt', 'updatedBy', 'updatedByEmail',
-                               'startDate', 'endDate', 'snapshot'])
+                               'startDate', 'endDate', 'snapshot', 'events'])
         && d.title is string && d.title.size() <= 120
         && d.subtitle is string && d.subtitle.size() <= 120
         && d.entries is list && d.entries.size() <= 300
@@ -79,7 +79,8 @@ service cloud.firestore {
         && (d.get('updatedByEmail', null) == null || (d.updatedByEmail is string && d.updatedByEmail.size() <= 254))
         && isOptionalIsoDate(d.get('startDate', null))
         && isOptionalIsoDate(d.get('endDate', null))
-        && isValidSnapshot(d.get('snapshot', null));
+        && isValidSnapshot(d.get('snapshot', null))
+        && (d.get('events', null) == null || (d.get('events', null) is list && d.events.size() <= 60));
     }
     // "YYYY-MM-DD" or absent/null — the challenge dates behind the countdown.
     function isOptionalIsoDate(v) {

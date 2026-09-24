@@ -56,6 +56,19 @@ Community Points, Points Behind 1st — and sorts automatically.
   remembered in `localStorage` on that device only; "Not you?" clears it.
   In the admin view the same bar is "Find a player" and just jumps to that
   player's row, opened.
+- **Upcoming community events**: a card below the leaderboard listing the
+  next five events, each with a date tile, time, place, a colour-coded tag
+  showing the Community Points it earns (Social +3, Drill +2, Ranked +1, or
+  Special), and **Add to calendar**, which downloads an `.ics` file. The next
+  event is highlighted, past events drop off, and players only see the card
+  once there's at least one upcoming event.
+  **Editing:** on the admin link, signed in as the coach account, tap **Edit
+  events** on the card (or "⋯" → Edit events). That opens a form (date,
+  start, optional end, name, type, optional location) and puts Edit/Delete
+  on every event, including past ones, which stay in the admin list so they
+  can be tidied up. Tap **Done** when finished. Events are stored on the
+  board doc as `events` and saved through the same coach-only transaction
+  as everything else.
 - **How scoring works**: the formula as tiles, plus the tie-break rule.
   Collapsible; open by default on wide screens, collapsed on phones.
 
