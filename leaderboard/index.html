@@ -19,7 +19,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=17" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=18" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -32,7 +32,7 @@
                Firebase SDK downloads), so keep it matching the live board's
                title/subtitle and the defaults in app.js. -->
           <h1 id="boardTitle">October Lotus Challenge</h1>
-          <p class="hd-sub" id="boardSubtitle">October 1 – October 31</p>
+          <p class="hd-sub"><span id="boardSubtitle">October 1 – October 31</span><span class="countdown" id="countdown" hidden></span></p>
         </div>
       </div>
       <div class="hd-actions">
@@ -44,10 +44,10 @@
 
     <!-- Prize callout: the first thing a challenger sees each time they check. -->
     <section class="prize" aria-label="Challenge prize">
-      <span class="prize-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5.5a2 2 0 0 0 0 4H7"/><path d="M16 5h2.5a2 2 0 0 1 0 4H17"/><path d="M12 13v3"/><path d="M9 20h6"/><path d="M10 16h4l.8 4H9.2l.8-4Z"/></svg></span>
+      <img class="prize-photo" src="/leaderboard/prize-paddle.jpg" alt="Zocker Pro Series Control paddle" width="119" height="240" />
       <div class="prize-txt">
-        <div class="prize-eyebrow">Challenge prize</div>
-        <div class="prize-main">1st place wins a <b>Zocker Pro Series Control Paddle</b></div>
+        <div class="prize-eyebrow">1st place wins</div>
+        <div class="prize-main">Zocker Pro Series Control Paddle</div>
       </div>
     </section>
 
@@ -69,8 +69,13 @@
     <section class="card edit-panel" id="editPanel" hidden aria-label="Edit challenge details">
       <div class="form-row">
         <label>Challenge name<input type="text" id="titleInput" placeholder="October Lotus Challenge" maxlength="120" /></label>
-        <label>Dates<input type="text" id="subtitleInput" placeholder="October 1 – October 31" maxlength="120" /></label>
+        <label>Dates (shown under the title)<input type="text" id="subtitleInput" placeholder="October 1 – October 31" maxlength="120" /></label>
       </div>
+      <div class="form-row">
+        <label>Start date<input type="date" id="startDateInput" /></label>
+        <label>End date<input type="date" id="endDateInput" /></label>
+      </div>
+      <p class="hint hint-tight">Used for the countdown in the header ("12 days left").</p>
       <h3 class="section-lbl">Admin PIN</h3>
       <div class="form-row">
         <label>New PIN<input type="password" inputmode="numeric" autocomplete="off" id="newPinInput" placeholder="Leave blank to keep unchanged" /></label>
@@ -81,17 +86,6 @@
         <button type="button" class="btn primary" id="saveBoardBtn">Save</button>
         <button type="button" class="btn ghost" id="cancelBoardBtn">Cancel</button>
       </div>
-    </section>
-
-    <!-- Find your rank: the main thing a challenger opens this page for -->
-    <section class="card rank-card" id="rankCard" hidden aria-label="Find your rank">
-      <div id="rankFind">
-        <label class="rank-q" for="rankSearch">Where do you rank?</label>
-        <p class="rank-sub">Type your name to find your spot on the leaderboard.</p>
-        <input id="rankSearch" type="search" placeholder="Your name" autocomplete="off" enterkeyhint="search" />
-        <div id="rankMatches" class="rank-matches" aria-live="polite"></div>
-      </div>
-      <div id="rankMe" class="rank-me" hidden aria-live="polite"></div>
     </section>
 
     <!-- Shown instead of the add-player form when this browser hasn't entered
@@ -141,13 +135,23 @@
     <!-- Leaderboard table (desktop) / cards (mobile) -->
     <section class="card board-card" aria-label="Leaderboard">
       <div class="board-head">
-        <h2><span class="board-head-icon" aria-hidden="true"><img src="/leaderboard/logo.png" alt="" /></span>Lotus Leaderboard</h2>
+        <h2>Lotus Leaderboard</h2>
         <div class="board-head-right">
           <span class="count" id="playerCount"></span>
           <span class="last-updated" id="lastUpdatedText"></span>
           <button type="button" class="btn small ghost" id="exportCsvBtn">Export CSV</button>
         </div>
       </div>
+      <!-- Find your rank (player view) / find a player (admin view) -->
+      <div class="finder" id="rankCard" hidden>
+        <div class="finder-search" id="rankFind">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="rankSearch" type="search" placeholder="Find your name" aria-label="Find your name on the leaderboard" autocomplete="off" enterkeyhint="search" />
+        </div>
+        <div id="rankMatches" class="rank-matches" aria-live="polite"></div>
+        <div id="rankMe" class="me-strip" hidden aria-live="polite"></div>
+      </div>
+      <p id="noScores" class="no-scores" hidden></p>
       <div id="boardEmpty" class="empty" hidden>No players yet — add the first one above.</div>
       <div class="table-wrap">
         <table id="boardTable" hidden>
@@ -156,21 +160,21 @@
               <th class="rank">#</th>
               <th class="name">Player</th>
               <th class="num total"><span class="th-full">Lotus Score</span><span class="th-short">Score</span></th>
-              <th class="num"><span class="th-full">Skill Points</span><span class="th-short">Skill</span></th>
-              <th class="num"><span class="th-full">Community Points</span><span class="th-short">Comm.</span></th>
-              <th class="num behind" title="Points behind 1st place"><span class="th-full">Points Behind&nbsp;1st</span><span class="th-short">Behind</span></th>
+              <th class="num col-sub">Skill Points</th>
+              <th class="num col-sub">Community Points</th>
+              <th class="num behind" title="Points behind 1st place"><span class="th-full">Points Behind&nbsp;1st</span><span class="th-short">Behind 1st</span></th>
               <th class="actions" id="actionsHeader"></th>
             </tr>
           </thead>
           <tbody id="boardBody"></tbody>
         </table>
-        <p id="boardHint" class="board-hint" hidden>Tap a player to see how their points add up.</p>
+        <p id="boardHint" class="board-hint" hidden>Tap a player to see how their points add up.<span id="moveHint"></span></p>
       </div>
     </section>
 
     <!-- How scoring works -->
-    <section class="card scoring" aria-labelledby="scoringTitle">
-      <h2 class="scoring-title" id="scoringTitle">How scoring works</h2>
+    <details class="card scoring" id="scoringCard">
+      <summary class="scoring-title">How scoring works</summary>
       <div class="formula">
         <div class="f-tile f-total">
           <div class="f-name">Lotus Score</div>
@@ -193,7 +197,8 @@
           <div class="f-desc">Per session attended</div>
         </div>
       </div>
-    </section>
+      <p class="f-tie"><b>Tied for 1st at the end?</b> The player with more Skill Points wins.</p>
+    </details>
   </div>
 
   <div id="toast" class="toast" hidden></div>
@@ -209,6 +214,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=18"></script>
+  <script src="/leaderboard/app.js?v=19"></script>
 </body>
 </html>

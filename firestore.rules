@@ -68,14 +68,31 @@ service cloud.firestore {
     // for that would need Firebase Auth + a data model change; out of scope
     // here, same as the PIN's own documented limits (see leaderboard/README.md).
     function isValidLeaderboard(d) {
-      return d.keys().hasOnly(['title', 'subtitle', 'entries', 'adminPinHash', 'updatedAt', 'updatedBy', 'updatedByEmail'])
+      return d.keys().hasOnly(['title', 'subtitle', 'entries', 'adminPinHash', 'updatedAt', 'updatedBy', 'updatedByEmail',
+                               'startDate', 'endDate', 'snapshot'])
         && d.title is string && d.title.size() <= 120
         && d.subtitle is string && d.subtitle.size() <= 120
         && d.entries is list && d.entries.size() <= 300
         && (d.adminPinHash == null || (d.adminPinHash is string && d.adminPinHash.size() == 64))
         && d.updatedAt == request.time
         && d.updatedBy is string && d.updatedBy.size() <= 128
-        && (d.updatedByEmail == null || (d.updatedByEmail is string && d.updatedByEmail.size() <= 254));
+        && (d.updatedByEmail == null || (d.updatedByEmail is string && d.updatedByEmail.size() <= 254))
+        && isOptionalIsoDate(d.get('startDate', null))
+        && isOptionalIsoDate(d.get('endDate', null))
+        && isValidSnapshot(d.get('snapshot', null));
+    }
+    // "YYYY-MM-DD" or absent/null — the challenge dates behind the countdown.
+    function isOptionalIsoDate(v) {
+      return v == null || (v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'));
+    }
+    // Weekly rank snapshot for the movement arrows: { at: "YYYY-MM-DD",
+    // ranks: { playerId: rank } }, capped like the entries array.
+    function isValidSnapshot(v) {
+      return v == null
+        || (v is map
+            && v.keys().hasOnly(['at', 'ranks'])
+            && v.at is string && v.at.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+            && v.ranks is map && v.ranks.size() <= 300);
     }
     match /leaderboards/{boardId} {
       allow read: if true;

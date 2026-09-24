@@ -90,7 +90,14 @@
     title: "October Lotus Challenge",
     subtitle: "October 1 – October 31",
     entries: [],
+    startDate: null, // "YYYY-MM-DD", drives the header countdown
+    endDate: null,
+    snapshot: null, // { at: "YYYY-MM-DD", ranks: { playerId: rank } }, for movement arrows
   };
+  // Fallback dates for a board whose doc doesn't have them saved yet; the
+  // edit panel's date fields override these once saved.
+  var DEFAULT_DATES = { "default": ["2026-10-01", "2026-10-31"] };
+  var lastRemoteEntries = null; // entries as last synced, i.e. before a local edit
 
   var editingId = null;
   var expandedId = null;
@@ -160,23 +167,97 @@
       return (
         '<tr class="bd-row' + (i === rows.length - 1 ? " bd-last" : "") + '">' +
         '<td class="name bd-name" colspan="2"><span class="bd-label">' + r[0] + '</span><span class="bd-detail">' + r[1] + "</span></td>" +
-        '<td class="total"></td>' +
-        "<td>" + r[2] + "</td>" +
-        "<td>" + r[3] + "</td>" +
+        '<td class="total"><span class="m-only">' + (r[2] !== "" ? r[2] : r[3]) + "</span></td>" +
+        '<td class="col-sub">' + r[2] + "</td>" +
+        '<td class="col-sub">' + r[3] + "</td>" +
         '<td class="behind"></td>' +
         (restricted ? "" : '<td class="actions"></td>') +
         "</tr>"
       );
     }).join("");
   }
-  function sortedEntries() {
-    return board.entries
+  // Players level on Lotus Score share a rank (1, 1, 3, ...). Within a tie
+  // the display order is Skill Points then name, which matches the
+  // published tie-break for 1st, but the rank number stays shared.
+  function sortedEntries(entries) {
+    var list = (entries || board.entries)
       .map(function (e) {
         return Object.assign({}, e, { _c: computed(e) });
       })
       .sort(function (a, b) {
         return b._c.total - a._c.total || b._c.duprPoints - a._c.duprPoints || a.name.localeCompare(b.name);
       });
+    list.forEach(function (e, i) {
+      e._rank = i > 0 && e._c.total === list[i - 1]._c.total ? list[i - 1]._rank : i + 1;
+    });
+    return list;
+  }
+  function anyScored(list) {
+    return list.some(function (e) { return e._c.total !== 0; });
+  }
+  function ordinal(n) {
+    var s = ["th", "st", "nd", "rd"], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
+  // ---- dates / countdown ----------------------------------------------------
+  function isoToday() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function dayNum(iso) {
+    var p = String(iso).split("-");
+    return Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000;
+  }
+  function validIso(v) { return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v); }
+  function challengeDates() {
+    var fb = DEFAULT_DATES[boardId] || [];
+    return {
+      start: validIso(board.startDate) ? board.startDate : fb[0] || null,
+      end: validIso(board.endDate) ? board.endDate : fb[1] || null,
+    };
+  }
+  function fmtDay(iso) {
+    var p = iso.split("-");
+    return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+  }
+  // { text, phase: "before" | "live" | "ended" } or null when no dates are set.
+  function countdown() {
+    var d = challengeDates();
+    var today = dayNum(isoToday());
+    if (d.start && today < dayNum(d.start)) {
+      var n = dayNum(d.start) - today;
+      return { phase: "before", text: n === 1 ? "Starts tomorrow" : "Starts in " + n + " days" };
+    }
+    if (!d.end) return null;
+    var left = dayNum(d.end) - today + 1;
+    if (left < 1) return { phase: "ended", text: "Challenge ended" };
+    return { phase: "live", text: left === 1 ? "Last day!" : left + " days left" };
+  }
+
+  // ---- weekly rank snapshot (movement arrows) --------------------------------
+  // Written on an admin save at most once a week, from the rankings as they
+  // stood before that save. Skipped while nobody has points, so a week of
+  // all-zero ties can't produce a wall of arrows.
+  function snapshotForSave() {
+    var today = isoToday();
+    var snap = board.snapshot;
+    if (snap && validIso(snap.at) && dayNum(today) - dayNum(snap.at) < 7) return snap;
+    var before = sortedEntries(lastRemoteEntries || board.entries);
+    if (!anyScored(before)) return snap || null;
+    var ranks = {};
+    before.forEach(function (e) { ranks[e.id] = e._rank; });
+    return { at: today, ranks: ranks };
+  }
+  function movementHtml(e) {
+    var snap = board.snapshot;
+    if (!snap || !snap.ranks || typeof snap.ranks[e.id] !== "number") return "";
+    var diff = snap.ranks[e.id] - e._rank;
+    if (!diff) return "";
+    var up = diff > 0;
+    return '<span class="move ' + (up ? "up" : "down") + '" title="' + (up ? "Up " : "Down ") + Math.abs(diff) +
+      " since " + esc(fmtDay(snap.at)) + '"><span aria-hidden="true">' + (up ? "&#9650;" : "&#9660;") + "</span>" +
+      Math.abs(diff) + '<span class="sr-only">' + (up ? " up" : " down") + "</span></span>";
   }
 
   // ---- local cache (fallback + resilience) --------------------------------
@@ -197,9 +278,13 @@
   function persist() {
     saveLocal();
     if (window.LH && LH.ready) {
+      board.snapshot = snapshotForSave();
       LH.saveLeaderboard(boardId, {
         title: board.title, subtitle: board.subtitle, entries: board.entries,
         adminPinHash: board.adminPinHash || null,
+        startDate: validIso(board.startDate) ? board.startDate : null,
+        endDate: validIso(board.endDate) ? board.endDate : null,
+        snapshot: board.snapshot || null,
       }).catch(function (err) {
         showBanner("Couldn't save to the shared board (" + (err && err.message ? err.message : "unknown error") + "). Your change is kept on this device only.");
       });
@@ -221,6 +306,10 @@
       board.subtitle = data.subtitle || board.subtitle;
       board.entries = Array.isArray(data.entries) ? data.entries : [];
       board.adminPinHash = data.adminPinHash || null;
+      board.startDate = data.startDate || null;
+      board.endDate = data.endDate || null;
+      board.snapshot = data.snapshot || null;
+      lastRemoteEntries = JSON.parse(JSON.stringify(board.entries));
       // A write we just made ourselves can arrive with updatedAt still null
       // for one snapshot (the serverTimestamp placeholder resolves a moment
       // later) — keep whatever we last had rather than blanking it.
@@ -278,8 +367,9 @@
       "nameInput", "startDuprInput", "endDuprInput", "duprImprovementDisplay",
       "rankedInput", "socialInput", "drillInput",
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
-      "boardTitle", "boardSubtitle", "editBoardBtn", "editPanel", "titleInput",
-      "subtitleInput", "saveBoardBtn", "cancelBoardBtn",
+      "boardTitle", "boardSubtitle", "countdown", "editBoardBtn", "editPanel", "titleInput",
+      "subtitleInput", "startDateInput", "endDateInput", "saveBoardBtn", "cancelBoardBtn",
+      "noScores", "moveHint", "scoringCard",
       "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
       "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
       "shareLinkBtn", "actionsHeader", "formCard", "lockCard", "pinInput",
@@ -406,8 +496,11 @@
 
   // ---- board title/subtitle edit -----------------------------------------
   function openEditPanel() {
+    var d = challengeDates();
     els.titleInput.value = board.title;
     els.subtitleInput.value = board.subtitle;
+    els.startDateInput.value = d.start || "";
+    els.endDateInput.value = d.end || "";
     els.newPinInput.value = "";
     els.removePinInput.checked = false;
     els.editPanel.hidden = false;
@@ -415,6 +508,8 @@
   function saveBoardMeta() {
     board.title = els.titleInput.value.trim() || board.title;
     board.subtitle = els.subtitleInput.value.trim() || board.subtitle;
+    board.startDate = validIso(els.startDateInput.value) ? els.startDateInput.value : null;
+    board.endDate = validIso(els.endDateInput.value) ? els.endDateInput.value : null;
 
     var finish = function () {
       els.editPanel.hidden = true;
@@ -467,6 +562,12 @@
   function renderHeader() {
     els.boardTitle.textContent = board.title;
     els.boardSubtitle.textContent = board.subtitle;
+    var cd = countdown();
+    els.countdown.hidden = !cd;
+    if (cd) {
+      els.countdown.textContent = cd.text;
+      els.countdown.className = "countdown " + cd.phase;
+    }
   }
 
   function render() {
@@ -488,15 +589,24 @@
     updateLastUpdatedText();
 
     var list = sortedEntries();
+    var scored = anyScored(list);
 
-    renderRank(list);
+    renderRank(list, scored);
 
     els.playerCount.textContent = list.length ? list.length + (list.length === 1 ? " player" : " players") : "";
     els.boardEmpty.hidden = !!list.length;
     els.boardTable.hidden = !list.length;
     els.boardHint.hidden = !list.length;
+    var cd = countdown();
+    els.noScores.hidden = !list.length || scored;
+    els.noScores.textContent = cd && cd.phase === "before"
+      ? "The challenge starts " + fmtDay(challengeDates().start) + ". Scores update after each session."
+      : "No points on the board yet. Scores update after each session.";
+    var snap = board.snapshot;
+    var moved = scored && snap && validIso(snap.at) && list.some(function (e) { return movementHtml(e) !== ""; });
+    els.moveHint.textContent = moved ? " Arrows show rank changes since " + fmtDay(snap.at) + "." : "";
 
-    var MEDALS = ["gold", "silver", "bronze"];
+    var MEDALS = { 1: "gold", 2: "silver", 3: "bronze" };
     els.boardBody.innerHTML = list
       .map(function (e, i) {
         var actionsCell = restricted
@@ -505,19 +615,22 @@
             '<button type="button" class="btn small ghost" data-edit="' + esc(e.id) + '">Edit</button>' +
             '<button type="button" class="btn small danger" data-del="' + esc(e.id) + '">Delete</button>' +
             "</span></td>";
-        var rankBadge = '<span class="rank-badge' + (MEDALS[i] ? " " + MEDALS[i] : "") + '">' + (i + 1) + "</span>";
+        var medal = scored && MEDALS[e._rank] ? " " + MEDALS[e._rank] : "";
+        var tied = (list[i - 1] && list[i - 1]._rank === e._rank) || (list[i + 1] && list[i + 1]._rank === e._rank);
+        var rankBadge = '<span class="rank-badge' + medal + '"' + (tied ? ' title="Tied for ' + ordinal(e._rank) + '"' : "") + ">" + e._rank + "</span>";
         var open = e.id === expandedId;
-        var classes = ["player-row", i === 0 ? "leader-row" : "", i % 2 ? "zebra" : "", open ? "open" : "", e.id === meId ? "me-row" : ""].join(" ").trim();
+        var classes = ["player-row", scored && e._rank === 1 ? "leader-row" : "", i % 2 ? "zebra" : "", open ? "open" : "", e.id === meId ? "me-row" : ""].join(" ").trim();
         return (
           '<tr class="' + classes + '" data-toggle="' + esc(e.id) + '">' +
           '<td class="rank">' + rankBadge + "</td>" +
           '<td class="name"><button type="button" class="name-btn" aria-expanded="' + open + '" data-toggle="' + esc(e.id) + '">' +
           '<span class="player-name">' + esc(e.name) + "</span>" + (e.id === meId ? '<span class="you-pill">You</span>' : "") +
+          (scored ? movementHtml(e) : "") +
           '<span class="chev" aria-hidden="true"></span></button></td>' +
           '<td class="total">' + e._c.total + "</td>" +
-          "<td>" + e._c.duprPoints + "</td>" +
-          "<td>" + e._c.community + "</td>" +
-          '<td class="behind">' + behindFirst(e, i, list) + "</td>" +
+          '<td class="col-sub">' + e._c.duprPoints + "</td>" +
+          '<td class="col-sub">' + e._c.community + "</td>" +
+          '<td class="behind">' + behindFirst(e, list) + "</td>" +
           actionsCell +
           "</tr>" +
           (open ? breakdownRows(e, restricted) : "")
@@ -526,45 +639,46 @@
       .join("");
   }
 
-  function behindFirst(e, i, list) {
-    if (i === 0) return '<span class="behind-lead">&mdash;</span>';
-    var gap = list[0]._c.total - e._c.total;
-    return gap > 0 ? gap : '<span class="behind-lead">Tied</span>';
+  function behindFirst(e, list) {
+    if (e._rank === 1) return '<span class="behind-lead">&mdash;</span>';
+    return list[0]._c.total - e._c.total;
   }
   function pts(n) { return n + (n === 1 ? " pt" : " pts"); }
   function setMe(id) {
     meId = id;
     try { if (id) localStorage.setItem(ME_KEY, id); else localStorage.removeItem(ME_KEY); } catch (err) {}
   }
-  function renderRank(list) {
+  function renderRank(list, scored) {
     els.rankCard.hidden = !list.length;
     if (!list.length) return;
-    var idx = -1;
-    list.some(function (e, i) { if (e.id === meId) { idx = i; return true; } return false; });
-    els.rankFind.hidden = idx >= 0;
-    els.rankMe.hidden = idx < 0;
-    if (idx < 0) { renderMatches(list); return; }
+    els.rankSearch.placeholder = readOnly ? "Find your name" : "Find a player";
+    els.rankSearch.setAttribute("aria-label", readOnly ? "Find your name on the leaderboard" : "Find a player");
+    var me = null;
+    if (readOnly) list.some(function (e) { if (e.id === meId) { me = e; return true; } return false; });
+    els.rankFind.hidden = !!me;
+    els.rankMe.hidden = !me;
+    if (!me) { renderMatches(list); return; }
+    els.rankMatches.innerHTML = "";
 
-    var me = list[idx];
+    var sharing = list.filter(function (e) { return e._rank === me._rank; }).length > 1;
     var status;
-    if (idx === 0) {
-      var lead = list.length > 1 ? me._c.total - list[1]._c.total : null;
-      status = lead === null ? "You're in 1st place"
-        : lead > 0 ? "You're in 1st place, " + pts(lead) + " ahead of #2"
-        : "You're in 1st place, tied on points with #2";
+    if (!scored) {
+      status = "Waiting for the first scores";
+    } else if (me._rank === 1) {
+      var next = list.filter(function (e) { return e._rank > 1; })[0];
+      status = sharing ? "Tied for 1st place"
+        : next ? "1st place, " + pts(me._c.total - next._c.total) + " ahead of " + ordinal(next._rank)
+        : "1st place";
     } else {
-      var behind = list[0]._c.total - me._c.total;
-      status = behind > 0 ? pts(behind) + " behind 1st place (" + esc(list[0].name) + ")"
-        : "Tied on points with 1st place (" + esc(list[0].name) + ")";
+      status = (sharing ? "Tied for " + ordinal(me._rank) + " &middot; " : "") + pts(list[0]._c.total - me._c.total) + " behind 1st place";
     }
-    var medal = ["gold", "silver", "bronze"][idx] || "";
+    var medal = scored ? ({ 1: "gold", 2: "silver", 3: "bronze" })[me._rank] || "" : "none";
     els.rankMe.innerHTML =
-      '<div class="rank-me-top"><span class="rank-big ' + medal + '">#' + (idx + 1) + "</span>" +
-      '<div class="rank-me-txt"><div class="rank-me-name">' + esc(me.name) + "</div>" +
-      '<div class="rank-me-sub">of ' + list.length + " challengers &middot; " + me._c.total + " Lotus points</div></div></div>" +
-      '<div class="rank-status">' + status + "</div>" +
-      '<div class="rank-actions"><button type="button" class="btn small primary" data-rank="show">See my breakdown</button>' +
-      '<button type="button" class="btn small ghost" data-rank="clear">Not you?</button></div>';
+      '<span class="rank-big ' + medal + '">' + (scored ? "#" + me._rank : "&ndash;") + "</span>" +
+      '<div class="me-txt"><div class="me-name">' + esc(me.name) + ' <span class="me-pts">' + me._c.total + " pts</span></div>" +
+      '<div class="me-status">' + status + "</div></div>" +
+      '<div class="me-actions"><button type="button" class="btn small ghost" data-rank="show">Breakdown</button>' +
+      '<button type="button" class="link-btn" data-rank="clear">Not you?</button></div>';
   }
   function renderMatches(list) {
     var q = els.rankSearch.value.trim().toLowerCase();
@@ -574,15 +688,24 @@
     els.rankMatches.innerHTML = hits.length
       ? hits.slice(0, 6).map(function (h) {
           return '<button type="button" class="rank-match" data-me="' + esc(h[0].id) + '">' +
-            '<span class="rm-rank">#' + (h[1] + 1) + '</span><span class="rm-name">' + esc(h[0].name) + "</span>" +
+            '<span class="rm-rank">#' + h[0]._rank + '</span><span class="rm-name">' + esc(h[0].name) + "</span>" +
             '<span class="rm-pts">' + h[0]._c.total + " pts</span></button>";
         }).join("")
-      : '<p class="rank-none">No challenger matching &ldquo;' + esc(els.rankSearch.value.trim()) + "&rdquo; yet. Check the spelling, or ask a coach to add you.</p>";
+      : '<p class="rank-none">No ' + (readOnly ? "challenger" : "player") + " matching &ldquo;" + esc(els.rankSearch.value.trim()) + "&rdquo;" +
+        (readOnly ? " yet. Check the spelling, or ask a coach to add you." : ".") + "</p>";
   }
+  // Player view: remember "me". Admin view: just jump to that player's row
+  // with it open, which is where the session buttons live.
   function pickMe(id) {
-    setMe(id);
     els.rankSearch.value = "";
+    if (readOnly) {
+      setMe(id);
+      render();
+      return;
+    }
+    expandedId = id;
     render();
+    scrollToRow(id);
   }
   function scrollToRow(id) {
     var btn = [].find.call(els.boardBody.querySelectorAll(".name-btn"), function (b) { return b.getAttribute("data-toggle") === id; });
@@ -644,9 +767,9 @@
       "Rank", "Player", "Start DUPR", "End DUPR", "DUPR Improvement", "Skill Points",
       "Ranked Sessions", "Social Sessions", "Drill Sessions", "Community Points", "Lotus Score", "Points Behind 1st",
     ];
-    var rows = list.map(function (e, i) {
+    var rows = list.map(function (e) {
       return [
-        i + 1, e.name, e.startDupr != null ? e.startDupr : "", e.endDupr != null ? e.endDupr : "",
+        e._rank, e.name, e.startDupr != null ? e.startDupr : "", e.endDupr != null ? e.endDupr : "",
         fmtSigned(e.duprImprovement), e._c.duprPoints,
         int(e.ranked), int(e.social), int(e.drill),
         e._c.community, e._c.total, list[0]._c.total - e._c.total,
@@ -742,6 +865,8 @@
     cacheEls();
     bind();
     resetForm();
+    // Scoring explainer starts open on wider screens, collapsed on phones.
+    if (window.matchMedia && window.matchMedia("(min-width: 641px)").matches) els.scoringCard.open = true;
     render();
     connect();
     // Keep the "Updated N minutes ago" text fresh without a full re-render.
