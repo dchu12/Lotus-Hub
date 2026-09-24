@@ -805,7 +805,7 @@
   function drawShareCard(me, list, status) {
     var FONT = '"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
     var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-    return Promise.all([loadImg("/leaderboard/logo.png"), loadImg("/leaderboard/prize-paddle.png"), fontsReady]).then(function (r) {
+    return Promise.all([loadImg("/leaderboard/logo.png?v=2"), loadImg("/leaderboard/prize-paddle.png"), fontsReady]).then(function (r) {
       var logo = r[0], paddle = r[1];
       var W = 1080, H = 1350, c = document.createElement("canvas");
       c.width = W; c.height = H;

@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#b91c2b" />
   <title>Lotus Leaderboard</title>
   <meta name="description" content="Live leaderboard for the Lotus Pickleball Academy challenge — DUPR improvement + community points add up to a Lotus Score." />
-  <link rel="icon" href="/leaderboard/icon.svg" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/leaderboard/favicon-64.png?v=2" />
   <!-- PWA: installable + offline -->
   <link rel="manifest" href="/leaderboard/manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="/leaderboard/icon.svg" />
+  <link rel="apple-touch-icon" href="/leaderboard/apple-touch-icon.png?v=2" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Leaderboard" />
@@ -26,7 +26,7 @@
   <main class="wrap">
     <header class="hd">
       <div class="hd-brand">
-        <span class="hd-logo" aria-hidden="true"><img src="/leaderboard/logo.png" alt="" /></span>
+        <span class="hd-logo" aria-hidden="true"><img src="/leaderboard/logo.png?v=2" alt="" /></span>
         <div>
           <!-- Shown until app.js loads the saved title (slow on phones while the
                Firebase SDK downloads), so keep it matching the live board's
@@ -223,6 +223,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=27"></script>
+  <script src="/leaderboard/app.js?v=28"></script>
 </body>
 </html>

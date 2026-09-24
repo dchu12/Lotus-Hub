@@ -100,9 +100,11 @@ Community Points, Points Behind 1st — and sorts automatically.
   the same person. Confirming still allows it, for the rare case of two
   players who really do share a name.
 
-The header badge (top-left) and the "Lotus Leaderboard" heading both show the
-Lotus Pickleball Academy logo mark (`logo.png`, cropped from the full brand
-logo). No emoji anywhere in the UI —
+The header badge (top-left) and the share-my-rank image show the Lotus
+Pickleball Academy lotus mark (`logo.png`, transparent background). The same
+mark is the browser-tab icon (`favicon-64.png`) and the home-screen app icon
+(`apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, on the logo's cream
+background, sized for maskable icons). No emoji anywhere in the UI —
 every other icon (edit, link, the three community-point icons) is a small
 custom inline SVG defined in `index.html` (or the `ICONS` object at the top
 of `app.js`). Light theme only, by design; there's
@@ -174,7 +176,7 @@ Both clean-path forms need matching hosting rewrites in the repo's
 [`firebase.json`](../firebase.json) — already included — routing that URL to
 `/leaderboard/index.html`. Because a page can then be served at a URL that
 isn't literally under `/leaderboard/`, every asset this page loads
-(`styles.css`, `app.js`, `manifest.webmanifest`, `icon.svg`, and the service
+(`styles.css`, `app.js`, `manifest.webmanifest`, the logo and icons, and the service
 worker registration) uses an **absolute** `/leaderboard/...` path rather than
 a relative one — a relative path resolves against the *browser's URL*, not
 this file's location, so it'd 404 or load the wrong thing from a short alias
