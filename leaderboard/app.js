@@ -162,6 +162,7 @@
         "<td>" + r[2] + "</td>" +
         "<td>" + r[3] + "</td>" +
         '<td class="total"></td>' +
+        '<td class="behind"></td>' +
         (restricted ? "" : '<td class="actions"></td>') +
         "</tr>"
       );
@@ -515,6 +516,7 @@
           "<td>" + e._c.duprPoints + "</td>" +
           "<td>" + e._c.community + "</td>" +
           '<td class="total">' + e._c.total + "</td>" +
+          '<td class="behind">' + behindFirst(e, i, list) + "</td>" +
           actionsCell +
           "</tr>" +
           (open ? breakdownRows(e, restricted) : "")
@@ -523,6 +525,11 @@
       .join("");
   }
 
+  function behindFirst(e, i, list) {
+    if (i === 0) return '<span class="behind-lead">&mdash;</span>';
+    var gap = list[0]._c.total - e._c.total;
+    return gap > 0 ? gap : '<span class="behind-lead">Tied</span>';
+  }
   function pts(n) { return n + (n === 1 ? " pt" : " pts"); }
   function setMe(id) {
     meId = id;
@@ -545,9 +552,9 @@
         : lead > 0 ? "You're in 1st place, " + pts(lead) + " ahead of #2"
         : "You're in 1st place, tied on points with #2";
     } else {
-      var behind = list[idx - 1]._c.total - me._c.total;
-      status = behind > 0 ? pts(behind) + " behind #" + idx + " " + esc(list[idx - 1].name)
-        : "Tied on points with #" + idx + " " + esc(list[idx - 1].name);
+      var behind = list[0]._c.total - me._c.total;
+      status = behind > 0 ? pts(behind) + " behind 1st place (" + esc(list[0].name) + ")"
+        : "Tied on points with 1st place (" + esc(list[0].name) + ")";
     }
     var medal = ["gold", "silver", "bronze"][idx] || "";
     els.rankMe.innerHTML =
@@ -634,14 +641,14 @@
     var list = sortedEntries();
     var header = [
       "Rank", "Player", "Start DUPR", "End DUPR", "DUPR Improvement", "Skill Points",
-      "Ranked Sessions", "Social Sessions", "Drill Sessions", "Community Points", "Lotus Score",
+      "Ranked Sessions", "Social Sessions", "Drill Sessions", "Community Points", "Lotus Score", "Points Behind 1st",
     ];
     var rows = list.map(function (e, i) {
       return [
         i + 1, e.name, e.startDupr != null ? e.startDupr : "", e.endDupr != null ? e.endDupr : "",
         fmtSigned(e.duprImprovement), e._c.duprPoints,
         int(e.ranked), int(e.social), int(e.drill),
-        e._c.community, e._c.total,
+        e._c.community, e._c.total, list[0]._c.total - e._c.total,
       ];
     });
     var csv = [header].concat(rows).map(function (r) { return r.map(csvField).join(","); }).join("\r\n");
