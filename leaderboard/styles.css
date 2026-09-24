@@ -88,7 +88,8 @@ body {
 
 /* Prize callout under the header: compact, with the actual paddle */
 .prize {
-  display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 10px 18px 10px 12px;
+  display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 10px 22px 10px 12px;
+  width: fit-content; max-width: 100%; /* hugs its content instead of trailing empty space on wide screens */
   border-radius: 16px; border: 1px solid color-mix(in srgb, var(--gold), transparent 60%);
   background: linear-gradient(100deg, var(--accent-bg), #fff 85%);
   box-shadow: var(--shadow-sm);
@@ -149,7 +150,8 @@ body {
 .me-name { font-weight: 800; font-size: .98rem; letter-spacing: -.01em; }
 .me-pts { font-weight: 600; color: var(--ink-2); font-size: .86rem; }
 .me-status { color: var(--ink-2); font-size: .82rem; font-weight: 600; margin-top: 1px; }
-.me-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+.me-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; flex: none; max-width: 190px; }
+.me-actions .link-btn { flex-basis: 100%; text-align: right; }
 .link-btn {
   appearance: none; border: 0; background: none; padding: 2px 0; font: inherit; font-size: .76rem;
   font-weight: 600; color: var(--muted); text-decoration: underline; cursor: pointer;
@@ -416,6 +418,10 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .col-sub { display: none; }
   .m-only { display: inline; }
   .finder { padding: 12px 16px 2px; }
+  .me-strip { flex-wrap: wrap; }
+  .me-txt { flex: 1 1 calc(100% - 60px); }
+  .me-actions { flex-basis: 100%; max-width: none; justify-content: flex-start; }
+  .me-actions .link-btn { flex-basis: auto; margin-left: auto; }
   .no-scores { margin: 10px 16px 0; }
   .prize { padding: 8px 14px 8px 10px; gap: 12px; }
   .prize-main { font-size: .95rem; }

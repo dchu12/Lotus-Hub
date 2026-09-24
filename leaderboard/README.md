@@ -41,6 +41,14 @@ Community Points, Points Behind 1st — and sorts automatically.
   the paddle (`prize-paddle.jpg`): "1st place wins / Zocker Pro Series
   Control Paddle". It's plain markup in `index.html`
   (`<section class="prize">`); edit it when the prize changes.
+- **Share my rank**: once scores exist, the "your rank" strip has a
+  **Share** button. It draws a 1080×1350 PNG on a canvas (logo, challenge
+  name, rank medallion, name, points, standing, the prize, and the player
+  link), built in the background as soon as the strip shows, so tapping
+  Share opens the phone's share sheet straight away (iOS requires that).
+  The caption is "I'm 3rd in the October Lotus Challenge with 36 points!"
+  plus the link. On a computer without a share sheet, it downloads the image
+  and copies the caption.
 - **Find your name**: a search bar at the top of the leaderboard card. In
   the player view, a challenger picks their name to pin a "your rank" strip
   (rank, points, how far behind 1st, or tied/leading) and a "You" tag on
@@ -53,7 +61,8 @@ Community Points, Points Behind 1st — and sorts automatically.
 
 - **Admin tools** (admin link only):
   - **"⋯" menu** in the header: Copy player link, Player link QR code,
-    Edit challenge details, Export CSV.
+    Edit challenge details, Export CSV, Sign out. Keyboard: Arrow keys,
+    Home/End move through it; Escape or Tab closes it.
   - **"+ Add player"** in the leaderboard header opens the add form, which
     stays hidden otherwise. Edit also opens it; saving or Cancel closes it.
   - **Log a session**: open a player (tap their row, or use "Find a
@@ -189,6 +198,13 @@ the placeholder heading in `index.html` (and the defaults at the top of
 `app.js`) to match. On a slow phone that placeholder is what players see
 while the Firebase SDK is still downloading, so a stale one looks like the
 player link has a different title.
+
+**Accessibility:** the page has a `main` landmark, a screen-reader caption
+and `scope="col"` headers on the table, a labelled search field, and text
+contrast ≥4.5:1. It was checked with axe-core (WCAG 2.1 A/AA plus best
+practices) in the player view, the admin view (menu open, player opened,
+add form) and the sign-in card, with no violations. That's an automated
+check, not a test with a real screen reader.
 
 ## Files
 
