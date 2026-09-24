@@ -794,6 +794,7 @@
   };
   var eventsEditing = false;
   var editingEventId = null;
+  var calOpenId = null; // event whose "Add to calendar" choices are showing
   function fmtClock(hhmm) {
     var p = String(hhmm).split(":"), h = +p[0], m = +p[1];
     return ((h + 11) % 12 + 1) + (m ? ":" + String(m).padStart(2, "0") : "") + (h < 12 ? " AM" : " PM");
@@ -824,9 +825,18 @@
     var actions = opts.editing
       ? '<div class="ev-admin"><button type="button" class="btn small ghost" data-ev-edit="' + id + '">Edit</button>' +
         '<button type="button" class="btn small danger" data-ev-del="' + id + '">Delete</button></div>'
-      : '<button type="button" class="btn small ghost ev-cal" data-ical="' + id + '" aria-label="Add ' + esc(ev.title) + ' to calendar">' +
+      : '<button type="button" class="btn small ghost ev-cal" data-cal-toggle="' + id + '" aria-expanded="' + (calOpenId === ev.id) + '" aria-controls="cal-' + id + '" aria-label="Add ' + esc(ev.title) + ' to calendar">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M12 13v5M9.5 15.5h5"/></svg>' +
         '<span class="ev-cal-txt">Add to calendar</span></button>';
+    var calOpts = !opts.editing && calOpenId === ev.id
+      ? '<div class="ev-cal-opts" id="cal-' + id + '">' +
+        '<a class="btn small ghost" href="' + esc(googleCalUrl(ev)) + '" target="_blank" rel="noopener">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5" fill="#fff" stroke="#4285f4" stroke-width="2"/><path d="M3 9h18" stroke="#4285f4" stroke-width="2"/><text x="12" y="18.2" text-anchor="middle" font-size="8.5" font-weight="700" fill="#4285f4" font-family="Arial,sans-serif">31</text></svg>' +
+        "Google Calendar</a>" +
+        '<button type="button" class="btn small ghost" data-ical="' + id + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>' +
+        "Apple / Outlook (.ics)</button></div>"
+      : "";
     return (
       '<li class="ev' + (opts.next ? " next" : "") + (away < 0 ? " past" : "") + (ev.id === editingEventId ? " being-edited" : "") + '">' +
       '<div class="ev-date" aria-hidden="true"><span class="ev-mon">' + d.toLocaleDateString(undefined, { month: "short" }) + "</span>" +
@@ -834,8 +844,30 @@
       '<div class="ev-body"><div class="ev-title">' + esc(ev.title) + "</div>" +
       '<div class="ev-meta"><span class="sr-only">' + esc(d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })) + ", </span>" +
       '<span aria-hidden="true">' + when + " &middot; </span>" + time + (ev.place ? " &middot; " + esc(ev.place) : "") + "</div>" +
-      tag + "</div>" + actions + "</li>"
+      tag + "</div>" + actions + calOpts + "</li>"
     );
+  }
+  // Google Calendar's "create event" link, pre-filled. Times are local
+  // ("floating"), pinned to the viewer's time zone so Google doesn't shift them.
+  function googleCalUrl(ev) {
+    var stamp = function (hhmm) { return ev.date.replace(/-/g, "") + "T" + hhmm.replace(":", "") + "00"; };
+    var tz = "";
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+    var t = EVENT_TYPES[ev.type] || EVENT_TYPES.special;
+    var params = [
+      ["action", "TEMPLATE"],
+      ["text", ev.title + " (Lotus Pickleball Academy)"],
+      ["dates", stamp(ev.start) + "/" + stamp(eventEnd(ev))],
+      ["details", t.label + (t.pts ? " \u00b7 +" + t.pts + " Community " + (t.pts === 1 ? "point" : "points") : "") + "\nLeaderboard: " + playerViewUrl()],
+      ["location", ev.place || ""],
+    ];
+    if (tz) params.push(["ctz", tz]);
+    return "https://calendar.google.com/calendar/render?" + params.map(function (p) {
+      return p[0] + "=" + encodeURIComponent(p[1]);
+    }).join("&");
+  }
+  function eventEnd(ev) {
+    return /^\d{2}:\d{2}$/.test(ev.end || "") ? ev.end : String(Math.min(23, +ev.start.slice(0, 2) + 1)).padStart(2, "0") + ev.start.slice(2);
   }
   function renderEvents(canEdit) {
     if (!canEdit) { eventsEditing = false; editingEventId = null; }
@@ -941,7 +973,7 @@
       "UID:" + ev.date + "-" + ev.start.replace(":", "") + "@lotus-leaderboard",
       "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z",
       "DTSTART:" + stamp(ev.date, ev.start),
-      "DTEND:" + stamp(ev.date, /^\d{2}:\d{2}$/.test(ev.end || "") ? ev.end : String(Math.min(23, +ev.start.slice(0, 2) + 1)).padStart(2, "0") + ev.start.slice(2)),
+      "DTEND:" + stamp(ev.date, eventEnd(ev)),
       "SUMMARY:" + clean(ev.title + " (Lotus Pickleball Academy)"),
       "LOCATION:" + clean(ev.place || ""),
       "DESCRIPTION:" + clean((EVENT_TYPES[ev.type] || EVENT_TYPES.special).label + ". Leaderboard: " + playerViewUrl()),
@@ -1209,9 +1241,15 @@
       if (hits.length === 1) pickMe(hits[0].getAttribute("data-me"));
     });
     els.eventsList.addEventListener("click", function (ev) {
-      var b = ev.target.closest("[data-ical], [data-ev-edit], [data-ev-del]");
+      var b = ev.target.closest("[data-cal-toggle], [data-ical], [data-ev-edit], [data-ev-del]");
       if (!b) return;
-      if (b.hasAttribute("data-ical")) addToCalendar(b.getAttribute("data-ical"));
+      if (b.hasAttribute("data-cal-toggle")) {
+        var cid = b.getAttribute("data-cal-toggle");
+        calOpenId = calOpenId === cid ? null : cid;
+        render();
+        var again = els.eventsList.querySelector('[data-cal-toggle="' + cid + '"]');
+        if (again) again.focus();
+      } else if (b.hasAttribute("data-ical")) addToCalendar(b.getAttribute("data-ical"));
       else if (b.hasAttribute("data-ev-edit")) { var e = findEvent(b.getAttribute("data-ev-edit")); if (e) fillEventForm(e); }
       else deleteEvent(b.getAttribute("data-ev-del"));
     });
