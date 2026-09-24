@@ -303,7 +303,7 @@
     }
   }
 
-  function onRemote(data, err) {
+  function onRemote(data, err, fromCache) {
     if (err) {
       connected = false;
       showBanner("Couldn't reach the shared board — working from a local copy on this device. (" + err.message + ")");
@@ -331,11 +331,14 @@
       hideBanner();
       saveLocal();
     } else {
-      // Board doesn't exist yet remotely — seed it from a local copy (if any)
-      // or the current defaults, so the first save creates it.
       var localSeed = loadLocal();
       if (localSeed) board = localSeed;
-      persist();
+      // Only create the board when the *server* says it doesn't exist, and
+      // never from the player view. An empty-cache snapshot while offline
+      // isn't proof, and a seed write queued then would overwrite the real
+      // board as soon as the connection came back.
+      if (!fromCache && !readOnly) persist();
+      if (fromCache && !board.entries.length) showBanner("Can't reach the leaderboard right now. Check your connection; it'll update as soon as you're back online.");
     }
     render();
   }
@@ -942,8 +945,27 @@
     });
   }
 
+  // Hosting ignores the ?v= query, so a browser still holding an older
+  // index.html can end up running this newer app.js against markup it
+  // doesn't match. Reload once (which revalidates the page) instead of
+  // throwing on missing elements.
+  function markupIsStale() {
+    var missing = Object.keys(els).filter(function (k) { return !els[k]; });
+    if (!missing.length) return false;
+    try {
+      if (sessionStorage.getItem("lotus-leaderboard:reloaded")) return false;
+      sessionStorage.setItem("lotus-leaderboard:reloaded", "1");
+      location.reload();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function boot() {
     cacheEls();
+    if (markupIsStale()) return;
+    try { sessionStorage.removeItem("lotus-leaderboard:reloaded"); } catch (e) {}
     bind();
     resetForm();
     // Scoring explainer starts open on wider screens, collapsed on phones.
