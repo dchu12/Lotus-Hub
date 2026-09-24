@@ -73,19 +73,43 @@ body {
 }
 .card h2 { margin: 0 0 4px; font-size: 1rem; font-weight: 800; }
 
-/* Current-leader stat card — a quiet accent border, not a banner takeover */
-.leader {
-  display: flex; align-items: center; gap: 14px;
-  border-left: 3px solid var(--gold);
+/* "Where do you rank?" card: search, then the challenger's own standing */
+.rank-card { border-left: 3px solid var(--gold); }
+.rank-q { display: block; font-weight: 800; font-size: 1.02rem; letter-spacing: -.01em; }
+.rank-sub { margin: 2px 0 12px; color: var(--muted); font-size: .84rem; }
+#rankSearch {
+  font: inherit; width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--field); color: var(--ink); transition: border-color .15s;
 }
-.leader .trophy {
-  color: var(--gold); flex: none; display: grid; place-items: center;
-  width: 40px; height: 40px; border-radius: 11px; background: var(--accent-bg);
+#rankSearch:focus { border-color: var(--brand); outline: 3px solid color-mix(in srgb, var(--brand), transparent 85%); }
+.rank-matches { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.rank-matches:empty { display: none; }
+.rank-match {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; font: inherit; color: var(--ink);
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); cursor: pointer;
 }
-.leader .trophy svg { width: 20px; height: 20px; display: block; }
-.leader .leader-txt { flex: 1; min-width: 0; }
-.leader .leader-name { font-weight: 800; font-size: 1.02rem; letter-spacing: -.01em; }
-.leader .leader-score { color: var(--muted); font-size: .84rem; margin-top: 1px; }
+.rank-match:hover, .rank-match:focus-visible { border-color: var(--brand); outline: none; }
+.rank-match .rm-rank { flex: none; min-width: 30px; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; }
+.rank-match .rm-name { flex: 1; min-width: 0; font-weight: 700; }
+.rank-match .rm-pts { flex: none; color: var(--muted); font-size: .82rem; font-variant-numeric: tabular-nums; }
+.rank-none { margin: 0; color: var(--muted); font-size: .84rem; }
+.rank-me-top { display: flex; align-items: center; gap: 14px; }
+.rank-big {
+  flex: none; display: grid; place-items: center; min-width: 56px; height: 56px; padding: 0 10px;
+  border-radius: 14px; background: var(--brand); color: #fff; font-weight: 800; font-size: 1.35rem;
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+}
+.rank-big.gold { background: var(--gold); }
+.rank-big.silver { background: var(--silver); }
+.rank-big.bronze { background: var(--bronze); }
+.rank-me-txt { min-width: 0; }
+.rank-me-name { font-weight: 800; font-size: 1.08rem; letter-spacing: -.01em; }
+.rank-me-sub { color: var(--muted); font-size: .84rem; margin-top: 1px; }
+.rank-status {
+  margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--accent-bg);
+  color: var(--ink-2); font-weight: 600; font-size: .86rem;
+}
+.rank-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 
 /* Forms */
 .form-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
@@ -227,6 +251,11 @@ td.total, th.total { color: var(--brand); font-weight: 800; }
 
 tr.leader-row td { background: var(--accent-bg); font-weight: 700; }
 tr.leader-row:hover td { background: var(--accent-bg); }
+tr.me-row td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
+.you-pill {
+  flex: none; padding: 1px 7px; border-radius: 999px; background: var(--brand); color: #fff;
+  font-size: .62rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; line-height: 1.5;
+}
 td.actions, th.actions { text-align: right; }
 td.actions .row-actions { display: inline-flex; gap: 6px; }
 .player-name { font-weight: 700; }

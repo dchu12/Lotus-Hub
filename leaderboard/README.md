@@ -16,8 +16,16 @@ tallies each player's **Lotus Score** automatically:
 - **Lotus Score = Skill Points + Community Points.**
 
 The table itself stays minimal — Rank, Player, Skill Points, Community Points,
-Lotus Score — sorts automatically, and calls out the current leader (plus
-gold/silver/bronze medal badges for the top 3).
+Lotus Score — sorts automatically, with gold/silver/bronze medal badges for
+the top 3.
+
+- **"Where do you rank?"**: the card at the top of the page. A challenger
+  types their name and taps it from the matches to see their own rank ("#3
+  of 23 challengers"), their Lotus points, and how far they are from the
+  player just above them (or their lead over #2). Their row is marked "You"
+  in the table, and "See my breakdown" opens their points breakdown. The
+  pick is remembered in `localStorage` on that device only, so a returning
+  challenger lands straight on their rank; "Not you?" clears it.
 
 - **Points breakdown**: tap (or click, or press Enter on) any player to
   expand indented rows under them, one per scoring source, each number
@@ -51,9 +59,8 @@ gold/silver/bronze medal badges for the top 3).
 The header badge (top-left) shows the Lotus Pickleball Academy logo mark
 (`logo.png`, cropped from the full brand logo). No emoji anywhere in the UI —
 every other icon (edit, link, the three community-point icons) is a small
-custom inline SVG defined in `index.html`
-(and, for the one JS-generated icon — the leader-card trophy — in the
-`ICONS` object at the top of `app.js`). Light theme only, by design; there's
+custom inline SVG defined in `index.html` (or the `ICONS` object at the top
+of `app.js`). Light theme only, by design; there's
 no dark-mode toggle or `prefers-color-scheme` handling.
 
 ## How it's shared
