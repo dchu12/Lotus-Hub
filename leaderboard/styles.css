@@ -199,7 +199,7 @@ body {
 }
 .last-updated { color: var(--muted); font-size: .78rem; white-space: nowrap; }
 .empty { color: var(--muted); text-align: center; padding: 32px 18px; font-size: .92rem; }
-.table-wrap { overflow-x: auto; padding: 0 22px 20px; container-type: inline-size; }
+.table-wrap { overflow-x: auto; padding: 0 22px 20px; }
 table { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 440px; }
 th, td { padding: 12px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
 th.rank, td.rank { text-align: center; width: 40px; }
@@ -242,28 +242,15 @@ td.actions .row-actions { display: inline-flex; gap: 6px; }
 }
 tr.open .chev { transform: rotate(-135deg); margin-top: 3px; }
 
-/* Points breakdown, shown under a player's row when it's tapped */
-tr.bd-row td { padding: 0 8px 14px; text-align: left; white-space: normal; background: var(--card); }
-.bd {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; padding: 14px 16px; box-sizing: border-box;
-  max-width: calc(100cqw - 16px); /* fit the visible area even when the table itself scrolls sideways */
-  border: 1px solid var(--line); border-radius: 12px; background: var(--field); font-size: .84rem;
+/* Points breakdown: extra rows under a tapped player, in the table's own columns */
+tbody tr.bd-row td {
+  background: var(--field); padding-top: 7px; padding-bottom: 7px; border-bottom: 0; font-size: .82rem;
+  color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums;
 }
-.bd-h {
-  display: flex; justify-content: space-between; font-size: .7rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .05em; color: var(--muted); padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid var(--line);
-}
-.bd-h b { color: var(--ink); font-size: .84rem; letter-spacing: 0; }
-.bd ul { list-style: none; margin: 0; padding: 0; }
-.bd li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; color: var(--ink-2); font-weight: 500; }
-.bd li b, .bd-total b { color: var(--ink); }
-.bd li.bd-note { color: var(--muted); font-size: .78rem; }
-.bd-calc { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.bd-total {
-  grid-column: 1 / -1; display: flex; justify-content: space-between; padding-top: 10px;
-  border-top: 1px solid var(--line); font-weight: 700; color: var(--ink-2);
-}
-.bd-total b { color: var(--brand); font-weight: 800; }
+tr.bd-row td.bd-name { padding-left: 52px; box-shadow: inset 38px 0 0 var(--field), inset 40px 0 0 var(--line); }
+tr.bd-row.bd-last td { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.bd-label { display: block; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+.bd-detail { display: block; font-weight: 500; font-size: .76rem; color: var(--muted); white-space: nowrap; }
 
 .ft { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 24px; }
 
@@ -278,8 +265,13 @@ tr.bd-row td { padding: 0 8px 14px; text-align: left; white-space: normal; backg
   .form-row.counts label { min-width: calc(50% - 6px); flex: 1 1 calc(50% - 6px); }
   .board-head { padding: 14px 16px; flex-wrap: wrap; }
   .board-head-right { width: 100%; justify-content: space-between; }
-  .table-wrap { padding: 0 16px 16px; }
-  th, td { padding: 10px 6px; }
-  tr.bd-row td { padding: 0 6px 12px; }
-  .bd { grid-template-columns: 1fr; max-width: calc(100cqw - 12px); }
+  .table-wrap { padding: 0 12px 14px; }
+  th, td { padding: 10px 4px; }
+  /* Fit the player view on a phone instead of scrolling sideways: headers
+     wrap onto two lines, and the table only scrolls if the admin-only
+     Edit/Delete column genuinely needs the room. */
+  table { min-width: 0; }
+  th { white-space: normal; line-height: 1.25; letter-spacing: .02em; font-size: .64rem; }
+  th.rank, td.rank { width: 30px; }
+  tr.bd-row td.bd-name { padding-left: 44px; box-shadow: inset 30px 0 0 var(--field), inset 32px 0 0 var(--line); }
 }

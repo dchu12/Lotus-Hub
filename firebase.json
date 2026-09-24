@@ -12,6 +12,8 @@
       "*.md"
     ],
     "rewrites": [
+      { "source": "/lotus", "destination": "/leaderboard/index.html" },
+      { "source": "/lotus/**", "destination": "/leaderboard/index.html" },
       { "source": "/lotusoctoberchallenge", "destination": "/leaderboard/index.html" },
       { "source": "/lotusoctoberchallenge/**", "destination": "/leaderboard/index.html" },
       { "source": "/leaderboard/**", "destination": "/leaderboard/index.html" },
