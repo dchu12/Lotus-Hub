@@ -71,7 +71,7 @@
   // Short slugs that always open the read-only player view, so the shared
   // player link doesn't need a ?mode=view tacked on. Each needs a matching
   // rewrite in firebase.json.
-  var VIEW_SLUGS = { lotus: "default" };
+  var VIEW_SLUGS = { lotusoctoberchallenge: "default" };
   var requestedBoardId = params.get("board") || boardIdFromPath() || "default";
   var boardId = BOARD_ALIASES[requestedBoardId] || requestedBoardId;
   var LOCAL_KEY = "lotus-leaderboard:" + boardId;
