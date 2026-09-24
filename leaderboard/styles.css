@@ -13,7 +13,7 @@
   --card:       #ffffff;
   --ink:        #1c1a19;
   --ink-2:      #524c4a;
-  --muted:      #8a8380;
+  --muted:      #6f6865; /* ≥4.5:1 on white, for small helper text */
   --line:       #e7e3e1;
   --field:      #faf9f8;
   --thead-bg:   #faf9f8;
@@ -51,7 +51,13 @@ body {
 .hd h1 {
   margin: 0; font-size: 1.4rem; line-height: 1.2; font-weight: 800; letter-spacing: -.02em;
 }
-.hd-sub { margin: 3px 0 0; color: var(--muted); font-size: .88rem; }
+.hd-sub { margin: 3px 0 0; color: var(--muted); font-size: .88rem; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.countdown {
+  display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: .74rem; font-weight: 800;
+  letter-spacing: .01em; background: color-mix(in srgb, var(--brand), transparent 90%); color: var(--brand);
+}
+.countdown.before { background: var(--accent-bg); color: #8a5a06; }
+.countdown.ended { background: var(--field); color: var(--muted); border: 1px solid var(--line); }
 .hd-actions { display: flex; gap: 8px; flex: none; }
 .icon-btn {
   appearance: none; width: 40px; height: 40px; flex: none; display: grid; place-items: center;
@@ -67,24 +73,22 @@ body {
   color: var(--ink-2);
 }
 
-/* Prize callout under the header */
+/* Prize callout under the header: compact, with the actual paddle */
 .prize {
-  display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 14px 18px;
+  display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 10px 18px 10px 12px;
   border-radius: 16px; border: 1px solid color-mix(in srgb, var(--gold), transparent 60%);
   background: linear-gradient(100deg, var(--accent-bg), #fff 85%);
   box-shadow: var(--shadow-sm);
 }
-.prize-icon {
-  flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px;
-  background: var(--gold); color: #fff; box-shadow: 0 4px 12px rgba(200, 134, 13, .3);
+.prize-photo {
+  flex: none; width: 36px; height: 72px; object-fit: contain; border-radius: 6px;
+  filter: drop-shadow(0 3px 6px rgba(28, 20, 20, .18));
 }
-.prize-icon svg { width: 24px; height: 24px; display: block; }
 .prize-txt { min-width: 0; }
 .prize-eyebrow {
-  font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--gold);
+  font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: #8a5a06;
 }
-.prize-main { font-size: 1rem; font-weight: 600; color: var(--ink-2); line-height: 1.35; margin-top: 1px; }
-.prize-main b { color: var(--ink); font-weight: 800; }
+.prize-main { font-size: 1.02rem; font-weight: 800; color: var(--ink); line-height: 1.3; margin-top: 1px; letter-spacing: -.01em; }
 
 .card {
   background: var(--card); border: 1px solid var(--line); border-radius: 16px;
@@ -92,16 +96,19 @@ body {
 }
 .card h2 { margin: 0 0 4px; font-size: 1rem; font-weight: 800; }
 
-/* "Where do you rank?" card: search, then the challenger's own standing */
-.rank-card { border-left: 3px solid var(--gold); }
-.rank-q { display: block; font-weight: 800; font-size: 1.02rem; letter-spacing: -.01em; }
-.rank-sub { margin: 2px 0 12px; color: var(--muted); font-size: .84rem; }
+/* Find-your-rank search + your standing, inside the leaderboard card */
+.finder { padding: 14px 22px 4px; }
+.finder-search { position: relative; }
+.finder-search svg {
+  position: absolute; left: 12px; top: 50%; width: 17px; height: 17px; transform: translateY(-50%);
+  color: var(--muted); pointer-events: none;
+}
 #rankSearch {
-  font: inherit; width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line);
+  font: inherit; width: 100%; padding: 10px 14px 10px 38px; border-radius: 10px; border: 1px solid var(--line);
   background: var(--field); color: var(--ink); transition: border-color .15s;
 }
 #rankSearch:focus { border-color: var(--brand); outline: 3px solid color-mix(in srgb, var(--brand), transparent 85%); }
-.rank-matches { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.rank-matches { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .rank-matches:empty { display: none; }
 .rank-match {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; font: inherit; color: var(--ink);
@@ -112,23 +119,37 @@ body {
 .rank-match .rm-name { flex: 1; min-width: 0; font-weight: 700; }
 .rank-match .rm-pts { flex: none; color: var(--muted); font-size: .82rem; font-variant-numeric: tabular-nums; }
 .rank-none { margin: 0; color: var(--muted); font-size: .84rem; }
-.rank-me-top { display: flex; align-items: center; gap: 14px; }
+.me-strip {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px;
+  background: var(--accent-bg); border: 1px solid color-mix(in srgb, var(--gold), transparent 65%);
+}
 .rank-big {
-  flex: none; display: grid; place-items: center; min-width: 56px; height: 56px; padding: 0 10px;
-  border-radius: 14px; background: var(--brand); color: #fff; font-weight: 800; font-size: 1.35rem;
+  flex: none; display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 8px;
+  border-radius: 12px; background: var(--brand); color: #fff; font-weight: 800; font-size: 1.1rem;
   font-variant-numeric: tabular-nums; letter-spacing: -.02em;
 }
 .rank-big.gold { background: var(--gold); }
 .rank-big.silver { background: var(--silver); }
 .rank-big.bronze { background: var(--bronze); }
-.rank-me-txt { min-width: 0; }
-.rank-me-name { font-weight: 800; font-size: 1.08rem; letter-spacing: -.01em; }
-.rank-me-sub { color: var(--muted); font-size: .84rem; margin-top: 1px; }
-.rank-status {
-  margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--accent-bg);
-  color: var(--ink-2); font-weight: 600; font-size: .86rem;
+.rank-big.none { background: var(--card); color: var(--muted); border: 1px solid var(--line); }
+.me-txt { flex: 1; min-width: 0; }
+.me-name { font-weight: 800; font-size: .98rem; letter-spacing: -.01em; }
+.me-pts { font-weight: 600; color: var(--ink-2); font-size: .86rem; }
+.me-status { color: var(--ink-2); font-size: .82rem; font-weight: 600; margin-top: 1px; }
+.me-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+.link-btn {
+  appearance: none; border: 0; background: none; padding: 2px 0; font: inherit; font-size: .76rem;
+  font-weight: 600; color: var(--muted); text-decoration: underline; cursor: pointer;
 }
-.rank-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.link-btn:hover { color: var(--ink); }
+.no-scores {
+  margin: 12px 22px 0; padding: 10px 12px; border-radius: 10px; background: var(--field);
+  border: 1px dashed var(--line); color: var(--ink-2); font-size: .84rem;
+}
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
 
 /* Forms */
 .form-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
@@ -231,11 +252,6 @@ body {
   margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 800;
   font-size: 1.05rem; letter-spacing: -.01em; color: var(--ink);
 }
-.board-head-icon {
-  display: grid; place-items: center; width: 32px; height: 32px; overflow: hidden;
-  border-radius: 9px; background: #fff; border: 1px solid var(--line); flex: none;
-}
-.board-head-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .board-head-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .board-head .count {
   color: var(--muted); font-size: .8rem; font-weight: 600; white-space: nowrap;
@@ -261,6 +277,14 @@ td.total, th.total { color: var(--brand); font-weight: 800; }
 th.behind { white-space: normal; line-height: 1.3; }
 td.behind { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .behind-lead { color: var(--muted); font-weight: 600; }
+.m-only { display: none; }
+.move {
+  display: inline-flex; align-items: center; gap: 1px; font-size: .7rem; font-weight: 800;
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.move span[aria-hidden] { font-size: .6rem; }
+.move.up { color: #0f7b45; }
+.move.down { color: var(--danger); }
 
 /* Rank medal chips — flat fills, not glossy gradients */
 .rank-badge {
@@ -272,8 +296,8 @@ td.behind { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .rank-badge.silver { background: var(--silver); color: #fff; border: none; }
 .rank-badge.bronze { background: var(--bronze); color: #fff; border: none; }
 
-tr.leader-row td { background: var(--accent-bg); font-weight: 700; }
-tr.leader-row:hover td { background: var(--accent-bg); }
+tbody tr.leader-row td { background: var(--accent-bg); font-weight: 700; }
+tbody tr.leader-row:hover td { background: var(--accent-bg); }
 tr.me-row td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
 .you-pill {
   flex: none; padding: 1px 7px; border-radius: 999px; background: var(--brand); color: #fff;
@@ -304,12 +328,23 @@ tr.bd-row.bd-last td { padding-bottom: 12px; border-bottom: 1px solid var(--line
 .bd-label { display: block; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
 .bd-detail { display: block; font-weight: 500; font-size: .76rem; color: var(--muted); white-space: nowrap; }
 
-/* "How scoring works": the formula as three tiles, not a sentence */
+/* "How scoring works": the formula as three tiles, not a sentence.
+   A <details>, open by default on wide screens and collapsed on phones. */
 .scoring { margin-top: 4px; }
 .scoring .scoring-title {
-  margin: 0 0 14px; font-size: .72rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between; cursor: pointer; list-style: none;
+  font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2);
 }
+.scoring .scoring-title::-webkit-details-marker { display: none; }
+.scoring .scoring-title::after {
+  content: ""; width: 7px; height: 7px; margin-right: 4px; border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .15s ease;
+}
+.scoring[open] .scoring-title { margin-bottom: 14px; }
+.scoring[open] .scoring-title::after { transform: rotate(-135deg); }
+.f-tie { margin: 12px 0 0; font-size: .82rem; color: var(--ink-2); }
+.f-tie b { color: var(--ink); }
+.hint-tight { margin: -6px 0 14px; }
 .formula { display: grid; grid-template-columns: 1fr auto 1fr auto 1.25fr; align-items: stretch; gap: 10px; }
 .f-tile {
   display: flex; flex-direction: column; gap: 6px; padding: 14px 16px;
@@ -347,7 +382,14 @@ tr.bd-row.bd-last td { padding-bottom: 12px; border-bottom: 1px solid var(--line
      wrap onto two lines, and the table only scrolls if the admin-only
      Edit/Delete column genuinely needs the room. */
   table { min-width: 0; }
-  th { white-space: normal; line-height: 1.25; letter-spacing: .02em; font-size: .64rem; }
+  th { white-space: normal; line-height: 1.25; letter-spacing: .03em; font-size: .7rem; }
+  /* Phones get just Score + Behind 1st; tapping a player shows the split. */
+  .col-sub { display: none; }
+  .m-only { display: inline; }
+  .finder { padding: 12px 16px 2px; }
+  .no-scores { margin: 10px 16px 0; }
+  .prize { padding: 8px 14px 8px 10px; gap: 12px; }
+  .prize-main { font-size: .95rem; }
   th.rank, td.rank { width: 30px; }
   .name-btn { gap: 5px; }
   .you-pill { padding: 1px 5px; }

@@ -16,22 +16,40 @@ tallies each player's **Lotus Score** automatically:
 - **Lotus Score = Skill Points + Community Points.**
 
 The table itself stays minimal — Rank, Player, Lotus Score, Skill Points,
-Community Points, Points Behind 1st — sorts automatically, with gold/silver/bronze
-medal badges for the top 3. "Points Behind 1st" shows "—" for the leader and
-"Tied" for anyone level with them. On phones the headers shorten to
-Score / Skill / Comm. / Behind so the whole table fits without sideways
-scrolling. The CSV export includes the same column.
+Community Points, Points Behind 1st — and sorts automatically.
 
-- **Prize banner**: right under the header, every visit: "1st place wins a
-  Zocker Pro Series Control Paddle". It's plain markup in `index.html`
-  (`<section class="prize">`); edit the text there when the prize changes.
-- **"Where do you rank?"**: the card at the top of the page. A challenger
-  types their name and taps it from the matches to see their own rank ("#3
-  of 23 challengers"), their Lotus points, and how far they are behind 1st place (or, for the
-  leader, their lead over #2). Their row is marked "You"
-  in the table, and "See my breakdown" opens their points breakdown. The
-  pick is remembered in `localStorage` on that device only, so a returning
-  challenger lands straight on their rank; "Not you?" clears it.
+- **Ranks and ties**: players level on Lotus Score share a rank (1, 1, 3…),
+  and "Points Behind 1st" shows "—" for everyone in 1st. Gold/silver/bronze
+  medals and the highlighted leader row only appear once someone has
+  scored; before that, a note says scores update after each session (or
+  when the challenge starts). The published tie-break for 1st, shown in
+  "How scoring works", is **more Skill Points wins**, and that's also the
+  display order within a tie.
+- **Phones** show just Score and Behind 1st (tapping a player shows the
+  Skill/Community split), so the table fits without sideways scrolling.
+  The CSV export has every column.
+- **Countdown**: next to the dates in the header: "Starts in 7 days",
+  "12 days left", "Last day!", then "Challenge ended". Driven by the Start
+  date / End date fields in the edit panel (`startDate` / `endDate` on the
+  board doc); the `default` board falls back to Oct 1–31 2026
+  (`DEFAULT_DATES` in `app.js`) until dates are saved.
+- **Rank movement arrows** (▲2 / ▼1 beside a name): compared against a
+  weekly snapshot of the rankings (`snapshot` on the board doc). An admin
+  save takes a new snapshot at most once every 7 days, from the rankings
+  as they stood before that save, and never while nobody has points.
+- **Prize banner**: right under the header, every visit, with a photo of
+  the paddle (`prize-paddle.jpg`): "1st place wins / Zocker Pro Series
+  Control Paddle". It's plain markup in `index.html`
+  (`<section class="prize">`); edit it when the prize changes.
+- **Find your name**: a search bar at the top of the leaderboard card. In
+  the player view, a challenger picks their name to pin a "your rank" strip
+  (rank, points, how far behind 1st, or tied/leading) and a "You" tag on
+  their row; "Breakdown" opens their points breakdown. The pick is
+  remembered in `localStorage` on that device only; "Not you?" clears it.
+  In the admin view the same bar is "Find a player" and just jumps to that
+  player's row, opened.
+- **How scoring works**: the formula as tiles, plus the tie-break rule.
+  Collapsible; open by default on wide screens, collapsed on phones.
 
 - **Points breakdown**: tap (or click, or press Enter on) any player to
   expand indented rows under them, one per scoring source, each number
@@ -102,8 +120,11 @@ stays open to writes from anyone (no auth — same trust model as the PIN
 above, which is UI-only and not enforced here), but a write must now match
 the document shape this app actually produces: known fields only, title/
 subtitle length caps, the entries array capped at 300 players, `adminPinHash`
-either `null` or a real 64-character SHA-256 hex digest, and `updatedAt`
-required to be a genuine server timestamp (not a spoofed date). This is
+either `null` or a real 64-character SHA-256 hex digest, `startDate` /
+`endDate` either absent/`null` or `YYYY-MM-DD`, `snapshot` either
+absent/`null` or `{ at: "YYYY-MM-DD", ranks: {…} }` with at most 300 ranks,
+and `updatedAt` required to be a genuine server timestamp (not a spoofed
+date). This is
 meant to stop a write crafted directly against the Firestore SDK — bypassing
 `app.js`, and so the PIN prompt, entirely — from corrupting the board with a
 runaway array or garbage top-level data.
