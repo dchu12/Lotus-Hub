@@ -436,6 +436,14 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   /* The title wraps on a phone, so line everything up along the top edge
      instead of centring the logo and menu button against a tall block. */
   .hd, .hd-brand { align-items: flex-start; }
+  /* Keep the admin "..." button level with the middle of the logo
+     (46px logo, 36px button + 5px), and size the title so it fits on one
+     line on most phones even with the button taking room. */
+  .hd-brand { gap: 11px; }
+  .hd-logo { width: 46px; height: 46px; border-radius: 12px; }
+  .hd-actions { margin-top: 5px; }
+  .hd-actions .icon-btn { width: 36px; height: 36px; border-radius: 10px; }
+  .hd h1 { font-size: 1.16rem; }
   .prize-main { font-size: .95rem; }
   th.rank, td.rank { width: 30px; }
   .name-btn { gap: 5px; }
