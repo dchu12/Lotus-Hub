@@ -26,8 +26,6 @@
   // picks up whatever text color its container sets.
   var ICON_ATTRS = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
   var ICONS = {
-    trophy:
-      '<svg viewBox="0 0 24 24" ' + ICON_ATTRS + '><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5.5a2 2 0 0 0 0 4H7"/><path d="M16 5h2.5a2 2 0 0 1 0 4H17"/><path d="M12 13v3"/><path d="M9 20h6"/><path d="M10 16h4l.8 4H9.2l.8-4Z"/></svg>',
     qr:
       '<svg viewBox="0 0 24 24" ' + ICON_ATTRS + '><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M14 20h3"/><path d="M20 14v3"/><path d="M20 20h.01"/></svg>',
   };
@@ -76,6 +74,11 @@
   var boardId = BOARD_ALIASES[requestedBoardId] || requestedBoardId;
   var LOCAL_KEY = "lotus-leaderboard:" + boardId;
   var PIN_KEY = "lotus-leaderboard:pin:" + boardId; // must come after boardId is resolved above
+  // Which player this browser picked in "Where do you rank?", so a returning
+  // challenger sees their own rank straight away. Per-device convenience only.
+  var ME_KEY = "lotus-leaderboard:me:" + boardId;
+  var meId = null;
+  try { meId = localStorage.getItem(ME_KEY); } catch (err) {}
   // Cosmetic split, not a security boundary: the board itself is open-write
   // to anyone with the link (see firestore.rules), same as the wedding
   // tracker. ?mode=view just hides the editing controls so players get a
@@ -274,7 +277,8 @@
       "rankedInput", "socialInput", "drillInput",
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "editBoardBtn", "editPanel", "titleInput",
-      "subtitleInput", "saveBoardBtn", "cancelBoardBtn", "leaderCard",
+      "subtitleInput", "saveBoardBtn", "cancelBoardBtn",
+      "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
       "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
       "shareLinkBtn", "actionsHeader", "formCard", "lockCard", "pinInput",
       "pinMsg", "unlockBtn", "newPinInput", "removePinInput",
@@ -483,17 +487,7 @@
 
     var list = sortedEntries();
 
-    // Leader card
-    if (list.length) {
-      var lead = list[0];
-      els.leaderCard.hidden = false;
-      els.leaderCard.innerHTML =
-        '<span class="trophy" aria-hidden="true">' + ICONS.trophy + "</span>" +
-        '<div class="leader-txt"><div class="leader-name">' + esc(lead.name) + " is leading</div>" +
-        '<div class="leader-score">' + lead._c.total + " Lotus points</div></div>";
-    } else {
-      els.leaderCard.hidden = true;
-    }
+    renderRank(list);
 
     els.playerCount.textContent = list.length ? list.length + (list.length === 1 ? " player" : " players") : "";
     els.boardEmpty.hidden = !!list.length;
@@ -511,12 +505,13 @@
             "</span></td>";
         var rankBadge = '<span class="rank-badge' + (MEDALS[i] ? " " + MEDALS[i] : "") + '">' + (i + 1) + "</span>";
         var open = e.id === expandedId;
-        var classes = ["player-row", i === 0 ? "leader-row" : "", i % 2 ? "zebra" : "", open ? "open" : ""].join(" ").trim();
+        var classes = ["player-row", i === 0 ? "leader-row" : "", i % 2 ? "zebra" : "", open ? "open" : "", e.id === meId ? "me-row" : ""].join(" ").trim();
         return (
           '<tr class="' + classes + '" data-toggle="' + esc(e.id) + '">' +
           '<td class="rank">' + rankBadge + "</td>" +
           '<td class="name"><button type="button" class="name-btn" aria-expanded="' + open + '" data-toggle="' + esc(e.id) + '">' +
-          '<span class="player-name">' + esc(e.name) + '</span><span class="chev" aria-hidden="true"></span></button></td>' +
+          '<span class="player-name">' + esc(e.name) + "</span>" + (e.id === meId ? '<span class="you-pill">You</span>' : "") +
+          '<span class="chev" aria-hidden="true"></span></button></td>' +
           "<td>" + e._c.duprPoints + "</td>" +
           "<td>" + e._c.community + "</td>" +
           '<td class="total">' + e._c.total + "</td>" +
@@ -526,6 +521,64 @@
         );
       })
       .join("");
+  }
+
+  function pts(n) { return n + (n === 1 ? " pt" : " pts"); }
+  function setMe(id) {
+    meId = id;
+    try { if (id) localStorage.setItem(ME_KEY, id); else localStorage.removeItem(ME_KEY); } catch (err) {}
+  }
+  function renderRank(list) {
+    els.rankCard.hidden = !list.length;
+    if (!list.length) return;
+    var idx = -1;
+    list.some(function (e, i) { if (e.id === meId) { idx = i; return true; } return false; });
+    els.rankFind.hidden = idx >= 0;
+    els.rankMe.hidden = idx < 0;
+    if (idx < 0) { renderMatches(list); return; }
+
+    var me = list[idx];
+    var status;
+    if (idx === 0) {
+      var lead = list.length > 1 ? me._c.total - list[1]._c.total : null;
+      status = lead === null ? "You're in 1st place"
+        : lead > 0 ? "You're in 1st place, " + pts(lead) + " ahead of #2"
+        : "You're in 1st place, tied on points with #2";
+    } else {
+      var behind = list[idx - 1]._c.total - me._c.total;
+      status = behind > 0 ? pts(behind) + " behind #" + idx + " " + esc(list[idx - 1].name)
+        : "Tied on points with #" + idx + " " + esc(list[idx - 1].name);
+    }
+    var medal = ["gold", "silver", "bronze"][idx] || "";
+    els.rankMe.innerHTML =
+      '<div class="rank-me-top"><span class="rank-big ' + medal + '">#' + (idx + 1) + "</span>" +
+      '<div class="rank-me-txt"><div class="rank-me-name">' + esc(me.name) + "</div>" +
+      '<div class="rank-me-sub">of ' + list.length + " challengers &middot; " + me._c.total + " Lotus points</div></div></div>" +
+      '<div class="rank-status">' + status + "</div>" +
+      '<div class="rank-actions"><button type="button" class="btn small primary" data-rank="show">See my breakdown</button>' +
+      '<button type="button" class="btn small ghost" data-rank="clear">Not you?</button></div>';
+  }
+  function renderMatches(list) {
+    var q = els.rankSearch.value.trim().toLowerCase();
+    if (!q) { els.rankMatches.innerHTML = ""; return; }
+    var hits = [];
+    list.forEach(function (e, i) { if (e.name.toLowerCase().indexOf(q) !== -1) hits.push([e, i]); });
+    els.rankMatches.innerHTML = hits.length
+      ? hits.slice(0, 6).map(function (h) {
+          return '<button type="button" class="rank-match" data-me="' + esc(h[0].id) + '">' +
+            '<span class="rm-rank">#' + (h[1] + 1) + '</span><span class="rm-name">' + esc(h[0].name) + "</span>" +
+            '<span class="rm-pts">' + h[0]._c.total + " pts</span></button>";
+        }).join("")
+      : '<p class="rank-none">No challenger matching &ldquo;' + esc(els.rankSearch.value.trim()) + "&rdquo; yet. Check the spelling, or ask a coach to add you.</p>";
+  }
+  function pickMe(id) {
+    setMe(id);
+    els.rankSearch.value = "";
+    render();
+  }
+  function scrollToRow(id) {
+    var btn = [].find.call(els.boardBody.querySelectorAll(".name-btn"), function (b) { return b.getAttribute("data-toggle") === id; });
+    if (btn) btn.closest("tr").scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   function playerViewUrl() {
@@ -611,6 +664,29 @@
 
   // ---- wire up ------------------------------------------------------------
   function bind() {
+    els.rankSearch.addEventListener("input", function () { renderMatches(sortedEntries()); });
+    els.rankSearch.addEventListener("keydown", function (ev) {
+      if (ev.key !== "Enter") return;
+      var hits = els.rankMatches.querySelectorAll("[data-me]");
+      if (hits.length === 1) pickMe(hits[0].getAttribute("data-me"));
+    });
+    els.rankMatches.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-me]");
+      if (b) pickMe(b.getAttribute("data-me"));
+    });
+    els.rankMe.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-rank]");
+      if (!b) return;
+      if (b.getAttribute("data-rank") === "show") {
+        expandedId = meId;
+        render();
+        scrollToRow(meId);
+      } else {
+        setMe(null);
+        render();
+        els.rankSearch.focus();
+      }
+    });
     [
       "startDuprInput", "endDuprInput",
       "rankedInput", "socialInput", "drillInput",
