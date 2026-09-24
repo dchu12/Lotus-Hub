@@ -796,7 +796,7 @@
       c.width = W; c.height = H;
       var ctx = c.getContext("2d");
       var bg = ctx.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, "#fdf3df"); bg.addColorStop(0.45, "#ffffff"); bg.addColorStop(1, "#ffffff");
+      bg.addColorStop(0, "#fcebed"); bg.addColorStop(0.45, "#ffffff"); bg.addColorStop(1, "#ffffff");
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = "#b91c2b"; ctx.fillRect(0, 0, W, 18);
 
@@ -822,8 +822,8 @@
       ctx.fillStyle = "#524c4a"; fitText(ctx, status, 920, "600", 40, FONT); ctx.fillText(status, 540, 966);
 
       // Prize panel
-      ctx.fillStyle = "#fdf3df"; roundRect(ctx, 80, 1040, 920, 170, 28); ctx.fill();
-      ctx.strokeStyle = "rgba(200,134,13,.4)"; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = "#fcebed"; roundRect(ctx, 80, 1040, 920, 170, 28); ctx.fill();
+      ctx.strokeStyle = "rgba(185,28,43,.3)"; ctx.lineWidth = 3; ctx.stroke();
       var textX = 130;
       if (paddle) {
         var ph = 140, pw = paddle.width * ph / paddle.height;
@@ -833,7 +833,7 @@
         textX = 116 + pw + 34;
       }
       ctx.textAlign = "left";
-      ctx.fillStyle = "#8a5a06"; ctx.font = "800 30px " + FONT; ctx.fillText("1ST PLACE WINS", textX, 1112);
+      ctx.fillStyle = "#b91c2b"; ctx.font = "800 30px " + FONT; ctx.fillText("1ST PLACE WINS", textX, 1112);
       ctx.fillStyle = "#1c1a19"; fitText(ctx, "Zocker Pro Series Control Paddle", 1000 - textX - 40, "800", 44, FONT);
       ctx.fillText("Zocker Pro Series Control Paddle", textX, 1168);
 
