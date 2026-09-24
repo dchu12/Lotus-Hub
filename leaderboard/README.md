@@ -51,6 +51,17 @@ Community Points, Points Behind 1st — and sorts automatically.
 - **How scoring works**: the formula as tiles, plus the tie-break rule.
   Collapsible; open by default on wide screens, collapsed on phones.
 
+- **Admin tools** (admin link only):
+  - **"⋯" menu** in the header: Copy player link, Player link QR code,
+    Edit challenge details, Export CSV.
+  - **"+ Add player"** in the leaderboard header opens the add form, which
+    stays hidden otherwise. Edit also opens it; saving or Cancel closes it.
+  - **Log a session**: open a player (tap their row, or use "Find a
+    player") and tap **+1 Ranked / +1 Social / +1 Drill**. It saves
+    immediately, and the confirmation has an **Undo** for about 6 seconds.
+    Edit and Delete live in the same strip.
+  - The form's DUPR fields show example placeholders ("e.g. 3.20"), and the
+    summary line shows the calculated DUPR change and resulting points.
 - **Points breakdown**: tap (or click, or press Enter on) any player to
   expand indented rows under them, one per scoring source, each number
   sitting in its own column: DUPR (start → end and the change) under Skill
@@ -63,13 +74,13 @@ Community Points, Points Behind 1st — and sorts automatically.
   real synced timestamp from Firestore (`updatedAt`, set on every save) —
   never a made-up local time. Refreshes itself every 30s while the page is
   open.
-- **QR code** (🔲 button, next to the share-link button) — a scannable code
+- **QR code** (admin "⋯" menu → Player link QR code) — a scannable code
   for the player link, generated entirely client-side via the
   [`qrcode-generator`](https://github.com/kazuhikoarase/qrcode-generator)
   library (loaded from jsDelivr in `index.html`; nothing about the link is
   sent to any server to render it). If that script didn't load (offline, or
   blocked), the panel still shows the plain link and a copy button.
-- **Export CSV** (admin only, board-card header) — downloads every player's
+- **Export CSV** (admin "⋯" menu) — downloads every player's
   full data (start/end DUPR, session counts, computed points) as a `.csv`,
   entirely client-side (`Blob` + a throwaway `<a download>`, no server round
   trip). It's the only backup of a board's data and the easiest way to do
@@ -97,7 +108,7 @@ by not sharing the URL outside your organizers.
 
 ### Admin PIN
 
-Set an **Admin PIN** from the ✏️ edit-challenge panel to require it before
+Set an **Admin PIN** from the edit-challenge panel ("⋯" menu → Edit challenge details) to require it before
 this or any *other* browser/device can add, edit, or delete players — until
 a PIN is set, editing stays open exactly as before (opt-in, not forced). The
 board itself is still readable and writable to anyone with the link at the

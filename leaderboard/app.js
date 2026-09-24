@@ -101,6 +101,7 @@
 
   var editingId = null;
   var expandedId = null;
+  var formOpen = false; // the add/edit player form stays tucked away until needed
   var connected = false;
   var unsub = null;
   var lastUpdated = null; // Date, from Firestore's server-set updatedAt; null until we have a real one
@@ -149,6 +150,7 @@
   }
   // One row per scoring source, laid out in the main table's own columns so
   // each number sits directly under Skill Points or Community Points.
+  var SESSION_LABELS = { ranked: "Ranked", social: "Social", drill: "Drill" };
   function breakdownRows(e, restricted) {
     var improvement = num(e.duprImprovement);
     var d = Math.min(3, Math.max(2, decimals(e.startDupr), decimals(e.endDupr)));
@@ -163,18 +165,28 @@
      ["Drill Training", int(e.drill), POINTS.drill]].forEach(function (x) {
       rows.push([x[0], x[1] + " &times; " + x[2] + (x[2] === 1 ? " pt" : " pts"), "", x[1] * x[2]]);
     });
-    return rows.map(function (r, i) {
+    var html = rows.map(function (r, i) {
       return (
-        '<tr class="bd-row' + (i === rows.length - 1 ? " bd-last" : "") + '">' +
+        '<tr class="bd-row' + (restricted && i === rows.length - 1 ? " bd-last" : "") + '">' +
         '<td class="name bd-name" colspan="2"><span class="bd-label">' + r[0] + '</span><span class="bd-detail">' + r[1] + "</span></td>" +
         '<td class="total"><span class="m-only">' + (r[2] !== "" ? r[2] : r[3]) + "</span></td>" +
         '<td class="col-sub">' + r[2] + "</td>" +
         '<td class="col-sub">' + r[3] + "</td>" +
         '<td class="behind"></td>' +
-        (restricted ? "" : '<td class="actions"></td>') +
         "</tr>"
       );
     }).join("");
+    if (restricted) return html;
+    var id = esc(e.id);
+    return html +
+      '<tr class="bd-row bd-admin bd-last"><td colspan="6"><div class="admin-actions">' +
+      '<div class="aa-log"><span class="aa-label">Log a session</span>' +
+      ["ranked", "social", "drill"].map(function (f) {
+        return '<button type="button" class="btn small session-btn" data-log="' + f + '" data-id="' + id + '">+1 ' + SESSION_LABELS[f] + "</button>";
+      }).join("") +
+      '</div><div class="aa-manage"><button type="button" class="btn small ghost" data-edit="' + id + '">Edit</button>' +
+      '<button type="button" class="btn small danger" data-del="' + id + '">Delete</button></div>' +
+      "</div></td></tr>";
   }
   // Players level on Lotus Score share a rank (1, 1, 3, ...). Within a tie
   // the display order is Skill Points then name, which matches the
@@ -352,19 +364,34 @@
     document.getElementById("connBanner").hidden = true;
   }
   var toastTimer = null;
-  function toast(msg) {
+  function toast(msg, actionLabel, onAction) {
     var t = document.getElementById("toast");
-    t.textContent = msg;
+    t.textContent = "";
+    var text = document.createElement("span");
+    text.textContent = msg;
+    t.appendChild(text);
+    if (actionLabel) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "toast-action";
+      b.textContent = actionLabel;
+      b.addEventListener("click", function () {
+        clearTimeout(toastTimer);
+        t.hidden = true;
+        onAction();
+      });
+      t.appendChild(b);
+    }
     t.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.hidden = true; }, 2200);
+    toastTimer = setTimeout(function () { t.hidden = true; }, actionLabel ? 6000 : 2200);
   }
 
   // ---- form -------------------------------------------------------------
   var els = {};
   function cacheEls() {
     [
-      "nameInput", "startDuprInput", "endDuprInput", "duprImprovementDisplay",
+      "nameInput", "startDuprInput", "endDuprInput",
       "rankedInput", "socialInput", "drillInput",
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "countdown", "editBoardBtn", "editPanel", "titleInput",
@@ -372,7 +399,7 @@
       "noScores", "moveHint", "scoringCard",
       "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
       "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
-      "shareLinkBtn", "actionsHeader", "formCard", "lockCard", "pinInput",
+      "shareLinkBtn", "formCard", "lockCard", "pinInput", "menuWrap", "menuBtn", "adminMenu", "addPlayerBtn",
       "pinMsg", "unlockBtn", "newPinInput", "removePinInput",
       "lastUpdatedText", "exportCsvBtn", "qrBtn", "qrCard", "qrWrap",
       "qrUrlText", "qrCopyBtn", "qrCloseBtn",
@@ -387,7 +414,6 @@
 
   function updatePreview() {
     var improvement = currentImprovement();
-    els.duprImprovementDisplay.value = fmtSigned(improvement);
     var draft = {
       duprImprovement: improvement,
       ranked: els.rankedInput.value, social: els.socialInput.value,
@@ -395,8 +421,8 @@
     };
     var c = computed(draft);
     els.scorePreview.innerHTML =
-      "Skill points: <b>" + c.duprPoints + "</b> &nbsp;+&nbsp; Community points: <b>" + c.community +
-      "</b> &nbsp;=&nbsp; Lotus Score: <b>" + c.total + "</b>";
+      "DUPR change <b>" + fmtSigned(improvement) + "</b> &rarr; Skill <b>" + c.duprPoints + "</b> + Community <b>" + c.community +
+      "</b> = Lotus Score <b>" + c.total + "</b>";
   }
 
   function resetForm() {
@@ -408,7 +434,6 @@
     els.socialInput.value = 0;
     els.drillInput.value = 0;
     els.saveEntryBtn.textContent = "Add to leaderboard";
-    els.cancelEditBtn.hidden = true;
     els.formHeading.textContent = "Add a player";
     els.formMsg.textContent = "";
     els.formMsg.className = "form-msg";
@@ -432,12 +457,21 @@
     els.socialInput.value = e.social || 0;
     els.drillInput.value = e.drill || 0;
     els.saveEntryBtn.textContent = "Save changes";
-    els.cancelEditBtn.hidden = false;
     els.formHeading.textContent = "Edit player";
     els.formMsg.textContent = "";
     updatePreview();
-    window.scrollTo({ top: els.nameInput.closest(".form-card").offsetTop - 12, behavior: "smooth" });
-    els.nameInput.focus();
+    showForm();
+  }
+  function showForm() {
+    formOpen = true;
+    render();
+    els.formCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    els.nameInput.focus({ preventScroll: true });
+  }
+  function closeForm() {
+    resetForm();
+    formOpen = false;
+    render();
   }
 
   function saveEntry() {
@@ -472,10 +506,31 @@
     var idx = board.entries.findIndex(function (e) { return e.id === entry.id; });
     if (idx >= 0) board.entries[idx] = entry;
     else board.entries.push(entry);
+    formOpen = false;
+    resetForm();
     persist();
     render();
     toast(idx >= 0 ? "Saved " + name : "Added " + name + " to the leaderboard");
-    resetForm();
+  }
+
+  function findEntry(id) {
+    return board.entries.find(function (x) { return x.id === id; });
+  }
+  var SESSION_NAMES = { ranked: "Ranked Play", social: "Social Play", drill: "Drill Training" };
+  function logSession(id, field) {
+    var e = findEntry(id);
+    if (!e) return;
+    e[field] = int(e[field]) + 1;
+    persist();
+    render();
+    toast(e.name + ": +1 " + SESSION_NAMES[field] + " (+" + pts(POINTS[field]) + ")", "Undo", function () {
+      var cur = findEntry(id);
+      if (!cur || int(cur[field]) < 1) return;
+      cur[field] = int(cur[field]) - 1;
+      persist();
+      render();
+      toast("Undone");
+    });
   }
 
   function editEntryById(id) {
@@ -488,7 +543,7 @@
     if (!e) return;
     if (!window.confirm("Remove " + e.name + " from the leaderboard?")) return;
     board.entries = board.entries.filter(function (x) { return x.id !== id; });
-    if (editingId === id) resetForm();
+    if (editingId === id) { resetForm(); formOpen = false; }
     persist();
     render();
     toast("Removed " + e.name);
@@ -578,14 +633,15 @@
     var restricted = readOnly || locked;
     document.body.classList.toggle("read-only", readOnly);
     document.body.classList.toggle("locked", locked);
-    els.formCard.hidden = restricted;
+    els.formCard.hidden = restricted || !formOpen;
+    els.addPlayerBtn.hidden = restricted || formOpen;
     els.lockCard.hidden = !locked;
+    els.menuWrap.hidden = readOnly;
     els.editBoardBtn.hidden = restricted;
     els.shareLinkBtn.hidden = readOnly;
     els.qrBtn.hidden = readOnly;
     els.exportCsvBtn.hidden = restricted;
-    els.actionsHeader.hidden = restricted;
-    if (restricted) els.qrCard.hidden = true;
+    if (restricted) { els.qrCard.hidden = true; els.editPanel.hidden = true; }
     updateLastUpdatedText();
 
     var list = sortedEntries();
@@ -599,6 +655,7 @@
     els.boardHint.hidden = !list.length;
     var cd = countdown();
     els.noScores.hidden = !list.length || scored;
+    els.boardEmpty.textContent = restricted ? "No players yet." : "No players yet. Tap \u201c+ Add player\u201d to add the first one.";
     els.noScores.textContent = cd && cd.phase === "before"
       ? "The challenge starts " + fmtDay(challengeDates().start) + ". Scores update after each session."
       : "No points on the board yet. Scores update after each session.";
@@ -609,12 +666,6 @@
     var MEDALS = { 1: "gold", 2: "silver", 3: "bronze" };
     els.boardBody.innerHTML = list
       .map(function (e, i) {
-        var actionsCell = restricted
-          ? ""
-          : '<td class="actions"><span class="row-actions">' +
-            '<button type="button" class="btn small ghost" data-edit="' + esc(e.id) + '">Edit</button>' +
-            '<button type="button" class="btn small danger" data-del="' + esc(e.id) + '">Delete</button>' +
-            "</span></td>";
         var medal = scored && MEDALS[e._rank] ? " " + MEDALS[e._rank] : "";
         var tied = (list[i - 1] && list[i - 1]._rank === e._rank) || (list[i + 1] && list[i + 1]._rank === e._rank);
         var rankBadge = '<span class="rank-badge' + medal + '"' + (tied ? ' title="Tied for ' + ordinal(e._rank) + '"' : "") + ">" + e._rank + "</span>";
@@ -631,7 +682,6 @@
           '<td class="col-sub">' + e._c.duprPoints + "</td>" +
           '<td class="col-sub">' + e._c.community + "</td>" +
           '<td class="behind">' + behindFirst(e, list) + "</td>" +
-          actionsCell +
           "</tr>" +
           (open ? breakdownRows(e, restricted) : "")
         );
@@ -824,13 +874,42 @@
     ].forEach(function (id) { els[id].addEventListener("input", updatePreview); });
 
     els.saveEntryBtn.addEventListener("click", saveEntry);
-    els.cancelEditBtn.addEventListener("click", resetForm);
+    els.cancelEditBtn.addEventListener("click", closeForm);
+    els.addPlayerBtn.addEventListener("click", function () { resetForm(); showForm(); });
+
+    var setMenu = function (open) {
+      els.adminMenu.hidden = !open;
+      els.menuBtn.setAttribute("aria-expanded", String(open));
+    };
+    els.menuBtn.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      var opening = els.adminMenu.hidden;
+      setMenu(opening);
+      if (opening) {
+        var first = [].find.call(els.adminMenu.querySelectorAll("button"), function (b) { return !b.hidden; });
+        if (first) first.focus();
+      }
+    });
+    els.adminMenu.addEventListener("click", function (ev) {
+      if (ev.target.closest("button")) setMenu(false);
+    });
+    document.addEventListener("click", function (ev) {
+      if (!els.adminMenu.hidden && !els.menuWrap.contains(ev.target)) setMenu(false);
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && !els.adminMenu.hidden) { setMenu(false); els.menuBtn.focus(); }
+    });
     els.nameInput.addEventListener("keydown", function (ev) {
       if (ev.key === "Enter") saveEntry();
     });
 
     els.editBoardBtn.addEventListener("click", function () {
-      els.editPanel.hidden ? openEditPanel() : (els.editPanel.hidden = true);
+      if (els.editPanel.hidden) {
+        openEditPanel();
+        els.editPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        els.editPanel.hidden = true;
+      }
     });
     els.shareLinkBtn.addEventListener("click", copyPlayerLink);
     els.qrBtn.addEventListener("click", toggleQr);
@@ -846,11 +925,13 @@
     });
 
     els.boardBody.addEventListener("click", function (ev) {
-      var editId = ev.target.getAttribute("data-edit");
-      var delId = ev.target.getAttribute("data-del");
-      if (editId) editEntryById(editId);
-      if (delId) deleteEntryById(delId);
-      if (editId || delId) return;
+      var action = ev.target.closest("[data-edit], [data-del], [data-log]");
+      if (action) {
+        if (action.hasAttribute("data-edit")) editEntryById(action.getAttribute("data-edit"));
+        else if (action.hasAttribute("data-del")) deleteEntryById(action.getAttribute("data-del"));
+        else logSession(action.getAttribute("data-id"), action.getAttribute("data-log"));
+        return;
+      }
       var row = ev.target.closest("[data-toggle]");
       if (!row) return;
       var id = row.getAttribute("data-toggle");
