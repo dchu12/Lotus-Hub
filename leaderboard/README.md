@@ -19,12 +19,13 @@ The table itself stays minimal — Rank, Player, Skill Points, Community Points,
 Lotus Score — sorts automatically, and calls out the current leader (plus
 gold/silver/bronze medal badges for the top 3).
 
-- **Points breakdown** — tap (or click / Enter on) any player in the table
-  to expand a row underneath showing exactly how their score was built:
-  Start → End DUPR and the resulting skill points, each community-point
-  category as `sessions × points`, and `Skill + Community = Lotus Score`.
-  Works in both the admin and `?mode=view` player views; one player open at a
-  time, and it stays open through live Firestore updates.
+- **Points breakdown**: tap (or click, or press Enter on) any player to
+  expand indented rows under them, one per scoring source, each number
+  sitting in its own column: DUPR (start → end and the change) under Skill
+  Points, and Ranked / Social / Drill as `sessions × pts` under Community
+  Points. The player's own row above already shows the totals. Works in
+  the admin and player views, one player open at a time, and stays open
+  through live Firestore updates.
 - **"Updated N minutes ago"** next to the leaderboard header, so players can
   tell the board is current rather than stale. Only shows once there's a
   real synced timestamp from Firestore (`updatedAt`, set on every save) —
@@ -100,6 +101,14 @@ no per-element loop, and `entries` is a plain array rather than a
 subcollection, so per-entry validation isn't practically achievable without
 a data-model change. Real protection for that would need Firebase Auth —
 out of scope here, same as the PIN.
+
+**Short player link:** `https://<host>/lotus` always opens the read-only
+player view of the current challenge (the `default` board). It's what the
+share-link button and QR code hand out, instead of a long `?mode=view`
+URL. It's set up via `VIEW_SLUGS` in `app.js` and a matching `/lotus`
+rewrite in `firebase.json`. Point it at a different board next month by
+changing `VIEW_SLUGS.lotus` (and `BOARD_ALIASES.lotus`). Other boards
+still share a `?mode=view` link.
 
 Multiple boards can exist side by side, addressed either by a clean path —
 `/leaderboard/<slug>` (e.g. `/leaderboard/november-2026`) — or a `?board=<id>`

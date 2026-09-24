@@ -67,7 +67,11 @@
     if (!slug || slug === "index.html") return null;
     return decodeURIComponent(slug);
   }
-  var BOARD_ALIASES = { lotusoctoberchallenge: "default" };
+  var BOARD_ALIASES = { lotusoctoberchallenge: "default", lotus: "default" };
+  // Short slugs that always open the read-only player view, so the shared
+  // player link doesn't need a ?mode=view tacked on. Each needs a matching
+  // rewrite in firebase.json.
+  var VIEW_SLUGS = { lotus: "default" };
   var requestedBoardId = params.get("board") || boardIdFromPath() || "default";
   var boardId = BOARD_ALIASES[requestedBoardId] || requestedBoardId;
   var LOCAL_KEY = "lotus-leaderboard:" + boardId;
@@ -76,7 +80,7 @@
   // to anyone with the link (see firestore.rules), same as the wedding
   // tracker. ?mode=view just hides the editing controls so players get a
   // clean, read-only board to look at.
-  var readOnly = params.get("mode") === "view";
+  var readOnly = params.get("mode") === "view" || VIEW_SLUGS.hasOwnProperty(requestedBoardId);
 
   var board = {
     title: "October Lotus Challenge",
@@ -128,34 +132,37 @@
       int(e.drill) * POINTS.drill;
     return { duprPoints: duprPoints, community: community, total: duprPoints + community };
   }
-  function fmtDupr(v) {
-    var n = num(v);
-    var s = String(n);
-    return s.indexOf(".") === -1 || s.split(".")[1].length < 2 ? n.toFixed(2) : s;
+  function decimals(v) {
+    var m = String(num(v)).split(".")[1];
+    return m ? m.length : 0;
   }
-  function breakdownHtml(e) {
-    var c = e._c;
+  // One row per scoring source, laid out in the main table's own columns so
+  // each number sits directly under Skill Points or Community Points.
+  function breakdownRows(e, restricted) {
     var improvement = num(e.duprImprovement);
-    var duprLine = e.mode === "range"
-      ? "DUPR " + fmtDupr(e.startDupr) + " &rarr; " + fmtDupr(e.endDupr) + " = <b>" + fmtSigned(improvement) + "</b>"
-      : "DUPR improvement <b>" + fmtSigned(improvement) + "</b>";
-    var sessions = [
-      ["Ranked Play", int(e.ranked), POINTS.ranked],
-      ["Social Play", int(e.social), POINTS.social],
-      ["Drill Training", int(e.drill), POINTS.drill],
-    ].map(function (s) {
-      return '<li><span>' + s[0] + '</span><span class="bd-calc">' + s[1] + " &times; " + s[2] + " = <b>" + s[1] * s[2] + "</b></span></li>";
+    var d = Math.min(3, Math.max(2, decimals(e.startDupr), decimals(e.endDupr)));
+    var sign = improvement > 0 ? "+" : "";
+    var change = sign + improvement.toFixed(d);
+    var duprDetail = e.mode === "range"
+      ? num(e.startDupr).toFixed(d) + " &rarr; " + num(e.endDupr).toFixed(d) + '<span class="bd-detail">' + change + "</span>"
+      : change;
+    var rows = [["DUPR", duprDetail, e._c.duprPoints, ""]];
+    [["Ranked Play", int(e.ranked), POINTS.ranked],
+     ["Social Play", int(e.social), POINTS.social],
+     ["Drill Training", int(e.drill), POINTS.drill]].forEach(function (x) {
+      rows.push([x[0], x[1] + " &times; " + x[2] + (x[2] === 1 ? " pt" : " pts"), "", x[1] * x[2]]);
+    });
+    return rows.map(function (r, i) {
+      return (
+        '<tr class="bd-row' + (i === rows.length - 1 ? " bd-last" : "") + '">' +
+        '<td class="name bd-name" colspan="2"><span class="bd-label">' + r[0] + '</span><span class="bd-detail">' + r[1] + "</span></td>" +
+        "<td>" + r[2] + "</td>" +
+        "<td>" + r[3] + "</td>" +
+        '<td class="total"></td>' +
+        (restricted ? "" : '<td class="actions"></td>') +
+        "</tr>"
+      );
     }).join("");
-    return (
-      '<div class="bd">' +
-      '<div class="bd-sec"><div class="bd-h"><span>Skill Points</span><b>' + c.duprPoints + "</b></div>" +
-      '<ul><li><span>' + duprLine + "</span></li>" +
-      '<li class="bd-note"><span>Every +0.01 DUPR = 1 point</span></li></ul></div>' +
-      '<div class="bd-sec"><div class="bd-h"><span>Community Points</span><b>' + c.community + "</b></div>" +
-      "<ul>" + sessions + "</ul></div>" +
-      '<div class="bd-total"><span>Lotus Score</span><span class="bd-calc">' + c.duprPoints + " + " + c.community + " = <b>" + c.total + "</b></span></div>" +
-      "</div>"
-    );
   }
   function sortedEntries() {
     return board.entries
@@ -515,13 +522,16 @@
           '<td class="total">' + e._c.total + "</td>" +
           actionsCell +
           "</tr>" +
-          (open ? '<tr class="bd-row"><td colspan="' + (restricted ? 5 : 6) + '">' + breakdownHtml(e) + "</td></tr>" : "")
+          (open ? breakdownRows(e, restricted) : "")
         );
       })
       .join("");
   }
 
   function playerViewUrl() {
+    for (var slug in VIEW_SLUGS) {
+      if (VIEW_SLUGS[slug] === boardId) return location.origin + "/" + slug;
+    }
     var u = new URL(location.href);
     u.searchParams.set("mode", "view");
     return u.toString();
