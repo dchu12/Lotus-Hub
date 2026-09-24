@@ -40,6 +40,10 @@
   var COACH_EMAILS = ["lotuspickleballacademy@gmail.com"]; // only counts once verified
   var user = null;
   var authKnown = false;
+  // Apps' built-in browsers (Instagram, Facebook, TikTok…, Android WebViews):
+  // Google refuses OAuth sign-in inside them, so point people to a real
+  // browser instead of offering a button that can't work.
+  var IN_APP_BROWSER = /FBAN|FBAV|FB_IAB|Instagram|Line\/|Twitter|Snapchat|musical_ly|TikTok|; wv\)/i.test(navigator.userAgent || "");
   function isCoach() {
     if (!(window.LH && LH.ready)) return true; // no Firebase: local-only mode, nothing is shared
     if (!user) return false;
@@ -369,6 +373,13 @@
         authKnown = true;
         render();
       });
+      // Coming back from the redirect fallback: surface any sign-in error.
+      if (LH.redirectResult) LH.redirectResult.catch(function (err) {
+        var msg = signinError(err);
+        if (!msg) return;
+        els.signinMsg.textContent = msg;
+        els.signinMsg.className = "form-msg err";
+      });
     } else {
       authKnown = true;
       var local = loadLocal();
@@ -425,7 +436,7 @@
       "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
       "shareLinkBtn", "formCard", "lockCard", "menuWrap", "menuBtn", "adminMenu", "addPlayerBtn",
       "lockMsg", "googleSignInBtn", "lockSignOutBtn", "pwSignin", "signinEmail", "signinPassword",
-      "pwSignInBtn", "signinMsg", "menuSignOutBtn",
+      "pwSignInBtn", "signinMsg", "menuSignOutBtn", "inAppNote", "copyAdminLinkBtn",
       "lastUpdatedText", "exportCsvBtn", "qrBtn", "qrCard", "qrWrap",
       "qrUrlText", "qrCopyBtn", "qrCloseBtn",
     ].forEach(function (id) { els[id] = document.getElementById(id); });
@@ -607,6 +618,8 @@
     if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return "";
     if (code === "auth/popup-blocked") return "Your browser blocked the sign-in window. Allow pop-ups for this site and try again.";
     if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found" || code === "auth/invalid-login-credentials") return "That email and password didn't match.";
+    if (code === "auth/web-storage-unsupported") return "This browser is blocking what sign-in needs (often private browsing). Try Safari or Chrome in a normal window.";
+    if (code === "auth/unauthorized-domain") return "Sign-in isn't enabled for this web address yet.";
     if (code === "auth/account-exists-with-different-credential") return "This account uses email and password. Use \u201cUse email and password instead\u201d below.";
     return (err && err.message) || "Sign-in failed.";
   }
@@ -652,8 +665,10 @@
       els.lockMsg.textContent = user
         ? "You're signed in as " + (user.email || "another account") + ", which can't edit this leaderboard. Sign out, then sign in with the academy's coach account."
         : "Sign in with the academy's coach account to add players and log sessions.";
-      els.googleSignInBtn.hidden = !!user;
+      els.googleSignInBtn.hidden = !!user || IN_APP_BROWSER;
+      els.inAppNote.hidden = !!user || !IN_APP_BROWSER;
       els.pwSignin.hidden = !!user;
+      if (IN_APP_BROWSER && !user) els.pwSignin.open = true;
       els.lockSignOutBtn.hidden = !user;
     }
     els.menuSignOutBtn.hidden = !user;
@@ -1108,6 +1123,12 @@
     els.cancelBoardBtn.addEventListener("click", function () { els.editPanel.hidden = true; });
 
     els.googleSignInBtn.addEventListener("click", function () { showSigninResult(LH.signInWithGoogle()); });
+    els.copyAdminLinkBtn.addEventListener("click", function () {
+      var url = location.href;
+      var done = function () { toast("Link copied. Paste it into Safari or Chrome."); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { window.prompt("Copy this link:", url); });
+      else window.prompt("Copy this link:", url);
+    });
     var pwSignIn = function () {
       showSigninResult(LH.signIn(els.signinEmail.value, els.signinPassword.value).then(function () {
         els.signinPassword.value = "";
