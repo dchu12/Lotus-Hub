@@ -728,25 +728,168 @@
     if (!me) { renderMatches(list); return; }
     els.rankMatches.innerHTML = "";
 
-    var sharing = list.filter(function (e) { return e._rank === me._rank; }).length > 1;
-    var status;
-    if (!scored) {
-      status = "Waiting for the first scores";
-    } else if (me._rank === 1) {
-      var next = list.filter(function (e) { return e._rank > 1; })[0];
-      status = sharing ? "Tied for 1st place"
-        : next ? "1st place, " + pts(me._c.total - next._c.total) + " ahead of " + ordinal(next._rank)
-        : "1st place";
-    } else {
-      status = (sharing ? "Tied for " + ordinal(me._rank) + " &middot; " : "") + pts(list[0]._c.total - me._c.total) + " behind 1st place";
-    }
-    var medal = scored ? ({ 1: "gold", 2: "silver", 3: "bronze" })[me._rank] || "" : "none";
+    var status = standingText(me, list, scored);
+    var medal = scored ? MEDAL_BY_RANK[me._rank] || "" : "none";
     els.rankMe.innerHTML =
       '<span class="rank-big ' + medal + '">' + (scored ? "#" + me._rank : "&ndash;") + "</span>" +
       '<div class="me-txt"><div class="me-name">' + esc(me.name) + ' <span class="me-pts">' + me._c.total + " pts</span></div>" +
-      '<div class="me-status">' + status + "</div></div>" +
-      '<div class="me-actions"><button type="button" class="btn small ghost" data-rank="show">Breakdown</button>' +
+      '<div class="me-status">' + esc(status) + "</div></div>" +
+      '<div class="me-actions">' +
+      (scored ? '<button type="button" class="btn small primary" data-rank="share">Share</button>' : "") +
+      '<button type="button" class="btn small ghost" data-rank="show">Breakdown</button>' +
       '<button type="button" class="link-btn" data-rank="clear">Not you?</button></div>';
+    if (scored) prepareShareCard(me, list, status);
+  }
+
+  var MEDAL_BY_RANK = { 1: "gold", 2: "silver", 3: "bronze" };
+  function isTied(me, list) {
+    return list.filter(function (e) { return e._rank === me._rank; }).length > 1;
+  }
+  function standingText(me, list, scored) {
+    if (!scored) return "Waiting for the first scores";
+    var tied = isTied(me, list);
+    if (me._rank === 1) {
+      var next = list.filter(function (e) { return e._rank > 1; })[0];
+      return tied ? "Tied for 1st place"
+        : next ? "1st place, " + pts(me._c.total - next._c.total) + " ahead of " + ordinal(next._rank)
+        : "1st place";
+    }
+    return (tied ? "Tied for " + ordinal(me._rank) + " \u00b7 " : "") + pts(list[0]._c.total - me._c.total) + " behind 1st place";
+  }
+
+  // ---- "Share my rank" image card -------------------------------------------
+  // Drawn on a canvas as a 1080x1350 PNG (portrait, fits Instagram/Stories/
+  // texts). Built in the background as soon as the "your rank" strip shows,
+  // because iOS only opens the share sheet from a tap if navigator.share()
+  // is called straight away, not after an async image build.
+  var shareCard = { key: null, blob: null, pending: null };
+  function loadImg(src) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { resolve(null); };
+      img.src = src;
+    });
+  }
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function fitText(ctx, text, maxWidth, weight, size, family) {
+    var s = size;
+    do { ctx.font = weight + " " + s + "px " + family; s -= 2; } while (ctx.measureText(text).width > maxWidth && s > 20);
+  }
+  function drawShareCard(me, list, status) {
+    var FONT = '"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+    var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    return Promise.all([loadImg("/leaderboard/logo.png"), loadImg("/leaderboard/prize-paddle.jpg"), fontsReady]).then(function (r) {
+      var logo = r[0], paddle = r[1];
+      var W = 1080, H = 1350, c = document.createElement("canvas");
+      c.width = W; c.height = H;
+      var ctx = c.getContext("2d");
+      var bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "#fdf3df"); bg.addColorStop(0.45, "#ffffff"); bg.addColorStop(1, "#ffffff");
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#b91c2b"; ctx.fillRect(0, 0, W, 18);
+
+      // Header: logo + challenge name
+      ctx.fillStyle = "#ffffff"; roundRect(ctx, 80, 80, 150, 150, 32); ctx.fill();
+      ctx.strokeStyle = "#e7e3e1"; ctx.lineWidth = 3; ctx.stroke();
+      if (logo) ctx.drawImage(logo, 88, 88, 134, 134);
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#1c1a19"; fitText(ctx, board.title, 740, "800", 56, FONT); ctx.fillText(board.title, 262, 150);
+      ctx.fillStyle = "#6f6865"; fitText(ctx, board.subtitle, 740, "600", 34, FONT); ctx.fillText(board.subtitle, 262, 202);
+
+      // Rank medallion
+      var color = { 1: "#c8860d", 2: "#8b93a0", 3: "#a35d28" }[me._rank] || "#b91c2b";
+      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(540, 520, 170, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(540, 520, 148, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      fitText(ctx, "#" + me._rank, 250, "800", 150, FONT); ctx.fillText("#" + me._rank, 540, 528);
+
+      // Name, points, standing
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#1c1a19"; fitText(ctx, me.name, 920, "800", 84, FONT); ctx.fillText(me.name, 540, 820);
+      ctx.fillStyle = "#b91c2b"; ctx.font = "800 54px " + FONT; ctx.fillText(me._c.total + " Lotus points", 540, 900);
+      ctx.fillStyle = "#524c4a"; fitText(ctx, status, 920, "600", 40, FONT); ctx.fillText(status, 540, 966);
+
+      // Prize panel
+      ctx.fillStyle = "#fdf3df"; roundRect(ctx, 80, 1040, 920, 170, 28); ctx.fill();
+      ctx.strokeStyle = "rgba(200,134,13,.4)"; ctx.lineWidth = 3; ctx.stroke();
+      var textX = 130;
+      if (paddle) {
+        var ph = 140, pw = paddle.width * ph / paddle.height;
+        ctx.save(); roundRect(ctx, 116, 1055, pw, ph, 14); ctx.clip();
+        ctx.drawImage(paddle, 116, 1055, pw, ph);
+        ctx.restore();
+        textX = 116 + pw + 34;
+      }
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#8a5a06"; ctx.font = "800 30px " + FONT; ctx.fillText("1ST PLACE WINS", textX, 1112);
+      ctx.fillStyle = "#1c1a19"; fitText(ctx, "Zocker Pro Series Control Paddle", 1000 - textX - 40, "800", 44, FONT);
+      ctx.fillText("Zocker Pro Series Control Paddle", textX, 1168);
+
+      // Footer link
+      ctx.textAlign = "center"; ctx.fillStyle = "#6f6865"; ctx.font = "600 32px " + FONT;
+      ctx.fillText(playerViewUrl().replace(/^https?:\/\//, ""), 540, 1290);
+
+      return new Promise(function (resolve) { c.toBlob(resolve, "image/png"); });
+    });
+  }
+  function prepareShareCard(me, list, status) {
+    var key = [me.id, me.name, me._rank, me._c.total, status, board.title, board.subtitle].join("|");
+    if (shareCard.key === key) return;
+    shareCard = { key: key, blob: null, pending: null };
+    var mine = shareCard;
+    mine.pending = drawShareCard(me, list, status).then(function (blob) {
+      mine.blob = blob;
+      return blob;
+    });
+  }
+  function shareMessage(me, list) {
+    var place = isTied(me, list) ? "tied for " + ordinal(me._rank) : ordinal(me._rank);
+    return "I'm " + place + " in the " + board.title + " with " + me._c.total + (me._c.total === 1 ? " point" : " points") + "! See the leaderboard: " + playerViewUrl();
+  }
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+  function shareRank() {
+    var list = sortedEntries();
+    var me = list.find(function (e) { return e.id === meId; });
+    if (!me) return;
+    var text = shareMessage(me, list);
+    var onError = function (err) {
+      if (err && err.name === "AbortError") return; // user closed the share sheet
+      toast("Couldn't open sharing. Try again.");
+    };
+    var withBlob = function (blob) {
+      var file = blob && typeof File === "function" ? new File([blob], "lotus-rank.png", { type: "image/png" }) : null;
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file], text: text }).catch(onError);
+      }
+      if (navigator.share) return navigator.share({ title: board.title, text: text }).catch(onError);
+      if (blob) downloadBlob(blob, "lotus-rank.png");
+      var done = function () { toast(blob ? "Image saved, and the caption is copied" : "Caption copied"); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, done);
+      else done();
+    };
+    // Call share synchronously when the card is already built (keeps the tap's
+    // user activation, which iOS requires); otherwise wait for it.
+    if (shareCard.blob) withBlob(shareCard.blob);
+    else if (shareCard.pending) shareCard.pending.then(withBlob, function () { withBlob(null); });
+    else withBlob(null);
   }
   function renderMatches(list) {
     var q = els.rankSearch.value.trim().toLowerCase();
@@ -876,7 +1019,9 @@
     els.rankMe.addEventListener("click", function (ev) {
       var b = ev.target.closest("[data-rank]");
       if (!b) return;
-      if (b.getAttribute("data-rank") === "show") {
+      if (b.getAttribute("data-rank") === "share") {
+        shareRank();
+      } else if (b.getAttribute("data-rank") === "show") {
         expandedId = meId;
         render();
         scrollToRow(meId);
@@ -916,6 +1061,28 @@
     });
     document.addEventListener("keydown", function (ev) {
       if (ev.key === "Escape" && !els.adminMenu.hidden) { setMenu(false); els.menuBtn.focus(); }
+    });
+    // Standard menu keys: arrows/Home/End move between items, Tab leaves.
+    var menuItems = function () {
+      return [].filter.call(els.adminMenu.querySelectorAll("button"), function (b) { return !b.hidden; });
+    };
+    els.menuBtn.addEventListener("keydown", function (ev) {
+      if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") return;
+      ev.preventDefault();
+      setMenu(true);
+      var items = menuItems();
+      if (items.length) items[ev.key === "ArrowUp" ? items.length - 1 : 0].focus();
+    });
+    els.adminMenu.addEventListener("keydown", function (ev) {
+      var items = menuItems();
+      var i = items.indexOf(document.activeElement);
+      var next = null;
+      if (ev.key === "ArrowDown") next = items[(i + 1) % items.length];
+      else if (ev.key === "ArrowUp") next = items[(i - 1 + items.length) % items.length];
+      else if (ev.key === "Home") next = items[0];
+      else if (ev.key === "End") next = items[items.length - 1];
+      else if (ev.key === "Tab") { setMenu(false); return; }
+      if (next) { ev.preventDefault(); next.focus(); }
     });
     els.nameInput.addEventListener("keydown", function (ev) {
       if (ev.key === "Enter") saveEntry();

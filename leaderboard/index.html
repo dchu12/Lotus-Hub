@@ -19,11 +19,11 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=20" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=21" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
-  <div class="wrap">
+  <main class="wrap">
     <header class="hd">
       <div class="hd-brand">
         <span class="hd-logo" aria-hidden="true"><img src="/leaderboard/logo.png" alt="" /></span>
@@ -159,14 +159,15 @@
       <div id="boardEmpty" class="empty" hidden>No players yet.</div>
       <div class="table-wrap">
         <table id="boardTable" hidden>
+          <caption class="sr-only">Leaderboard rankings. Select a player to show how their points add up.</caption>
           <thead>
             <tr>
-              <th class="rank">#</th>
-              <th class="name">Player</th>
-              <th class="num total"><span class="th-full">Lotus Score</span><span class="th-short">Score</span></th>
-              <th class="num col-sub">Skill Points</th>
-              <th class="num col-sub">Community Points</th>
-              <th class="num behind" title="Points behind 1st place"><span class="th-full">Points Behind&nbsp;1st</span><span class="th-short">Behind 1st</span></th>
+              <th scope="col" class="rank">#</th>
+              <th scope="col" class="name">Player</th>
+              <th scope="col" class="num total"><span class="th-full">Lotus Score</span><span class="th-short">Score</span></th>
+              <th scope="col" class="num col-sub">Skill Points</th>
+              <th scope="col" class="num col-sub">Community Points</th>
+              <th scope="col" class="num behind" title="Points behind 1st place"><span class="th-full">Points Behind&nbsp;1st</span><span class="th-short">Behind 1st</span></th>
             </tr>
           </thead>
           <tbody id="boardBody"></tbody>
@@ -183,13 +184,13 @@
           <div class="f-name">Lotus Score</div>
           <div class="f-desc">Your total. Highest score wins.</div>
         </div>
-        <div class="f-op" aria-label="equals">=</div>
+        <div class="f-op"><span aria-hidden="true">=</span><span class="sr-only">equals</span></div>
         <div class="f-tile">
           <div class="f-name">Skill Points</div>
           <div class="f-rule"><b>+1</b> for every <b>+0.01</b> DUPR</div>
           <div class="f-desc">Start → End DUPR, calculated automatically</div>
         </div>
-        <div class="f-op" aria-label="plus">+</div>
+        <div class="f-op"><span aria-hidden="true">+</span><span class="sr-only">plus</span></div>
         <div class="f-tile">
           <div class="f-name">Community Points</div>
           <ul class="f-list">
@@ -202,7 +203,7 @@
       </div>
       <p class="f-tie"><b>Tied for 1st at the end?</b> The player with more Skill Points wins.</p>
     </details>
-  </div>
+  </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
@@ -217,6 +218,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=22"></script>
+  <script src="/leaderboard/app.js?v=23"></script>
 </body>
 </html>
