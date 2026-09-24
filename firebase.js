@@ -21,6 +21,10 @@
   var db = null;
   var fns = null;
   var ready = false;
+  // Settles once any Google redirect sign-in from signInWithGoogle's
+  // fallback has been processed: resolves with the user (or null), rejects
+  // with the sign-in error so the page can show it.
+  var redirectResult = Promise.resolve(null);
 
   function init() {
     if (!hasSDK || !configured || ready) return ready;
@@ -33,6 +37,11 @@
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
       db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
       ready = true;
+      redirectResult = auth.getRedirectResult().then(function (res) {
+        if (!res || !res.user) return null;
+        return ensureUserDoc(res.user).then(function () { return res.user; });
+      });
+      redirectResult.catch(function () {});
     } catch (e) {
       ready = false;
     }
@@ -84,11 +93,21 @@
       });
   }
 
-  function signInWithGoogle() {
+  // Pop-up first (keeps the page in place). If the browser blocks pop-ups or
+  // can't run them (some mobile and embedded browsers), fall back to a
+  // full-page redirect to Google and back; init() completes it on return.
+  function signInWithGoogle(opts) {
     if (!ready) return Promise.reject(new Error("Sign-in isn't available yet."));
     var provider = new firebase.auth.GoogleAuthProvider();
+    if (opts && opts.redirect) return auth.signInWithRedirect(provider);
     return auth.signInWithPopup(provider).then(function (res) {
       return ensureUserDoc(res.user);
+    }, function (err) {
+      var code = err && err.code;
+      if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
+        return auth.signInWithRedirect(provider);
+      }
+      throw err;
     });
   }
 
@@ -425,6 +444,9 @@
     signUp: signUp,
     signIn: signIn,
     signInWithGoogle: signInWithGoogle,
+    get redirectResult() {
+      return redirectResult;
+    },
     signOut: signOut,
     watchUser: watchUser,
     getUserOnce: getUserOnce,

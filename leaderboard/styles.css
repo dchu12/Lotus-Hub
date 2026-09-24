@@ -225,6 +225,11 @@ body {
 .lock-icon svg { width: 16px; height: 16px; display: block; }
 .lock-copy { color: var(--ink-2); font-size: .88rem; margin: 6px 0 14px; }
 .pw-signin { margin-top: 14px; }
+.inapp-note {
+  margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; background: var(--accent-bg);
+  border: 1px solid color-mix(in srgb, var(--brand), transparent 75%); font-size: .86rem; color: var(--ink-2);
+}
+.inapp-note p { margin: 0 0 10px; }
 .pw-signin summary { cursor: pointer; font-size: .84rem; font-weight: 600; color: var(--ink-2); }
 .pw-signin[open] summary { margin-bottom: 12px; }
 .form-row input[type="email"], .form-row input[type="password"] {
