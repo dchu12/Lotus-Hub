@@ -386,20 +386,26 @@
     );
   }
 
-  // Overwrite the board wholesale — simplest correct approach for a small,
-  // rarely-conflicting list edited by one organizer at a time.
-  function saveLeaderboard(id, data) {
+  // Read-modify-write in a transaction: mutate(currentData or null) returns
+  // the whole new board, computed from the server's latest copy, so
+  // concurrent edits from two devices both land instead of one overwriting
+  // the other. Firestore retries mutate if the doc changed underneath it.
+  function updateLeaderboard(id, mutate) {
     if (!ready) return Promise.reject(new Error("Not connected."));
-    var u = auth.currentUser;
-    return leaderboardDoc(id).set(
-      Object.assign({}, data, {
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy: u ? u.uid : "open",
-        updatedByEmail: u ? (u.email || null) : null,
-      }),
-      { merge: true }
-    );
+    var ref = leaderboardDoc(id);
+    return db.runTransaction(function (tx) {
+      return tx.get(ref).then(function (snap) {
+        var u = auth.currentUser;
+        var next = mutate(snap.exists ? snap.data() : null);
+        tx.set(ref, Object.assign({}, next, {
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: u ? u.uid : "open",
+          updatedByEmail: u ? (u.email || null) : null,
+        }));
+      });
+    });
   }
+
 
   window.LH = {
     get available() {
@@ -434,6 +440,6 @@
     watchTracker: watchTracker,
     saveTracker: saveTracker,
     watchLeaderboard: watchLeaderboard,
-    saveLeaderboard: saveLeaderboard,
+    updateLeaderboard: updateLeaderboard,
   };
 })();

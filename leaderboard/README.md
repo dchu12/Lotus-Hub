@@ -102,58 +102,53 @@ no dark-mode toggle or `prefers-color-scheme` handling.
 ## How it's shared
 
 The board is one document in the same **Firestore** project the rest of Lotus
-Hub uses (`firebase-config.js`), stored open (no sign-in) like the wedding
-thank-you tracker — anyone with the link can view and edit it. Keep it private
-by not sharing the URL outside your organizers.
+Hub uses (`firebase-config.js`). **Anyone can read it** (players just open the
+link, no sign-in). **Only the academy's coach account can change it.**
 
-### Admin PIN
+### Coach sign-in
 
-Set an **Admin PIN** from the edit-challenge panel ("⋯" menu → Edit challenge details) to require it before
-this or any *other* browser/device can add, edit, or delete players — until
-a PIN is set, editing stays open exactly as before (opt-in, not forced). The
-board itself is still readable and writable to anyone with the link at the
-Firestore level (see `firestore.rules`); the PIN only gates this page's UI,
-storing a SHA-256 hash of it on the board doc and a matching copy in
-`localStorage` on whichever browser(s) have unlocked it. **This deters
-accidental edits and a casually shared or screenshotted link — it is not
-real security.** Anyone who opens the browser console and calls the
-Firestore SDK directly bypasses it entirely, same as the existing
-`?mode=view` split. Real enforcement would need Firebase Auth + rewritten
-security rules, out of scope for this tool.
+The admin link shows the board read-only until you sign in with the coach
+account (**lotuspickleballacademy@gmail.com**), via "Sign in with Google" or
+"Use email and password instead". Sign-in is shared across the whole Lotus
+Hub site, so if you're already signed in to Lotus Hub on that device you're
+signed in here too. Signed in with a different account, the page says so and
+offers Sign out. Sign out is also in the "⋯" menu.
 
-To remove PIN protection, open the edit panel (once unlocked) and check
-"Remove PIN protection."
+This is enforced by Firestore, not just hidden in the page:
+`isLeaderboardCoach()` in [`firestore.rules`](../firestore.rules) only allows
+writes from that account's Firebase Auth UID, or from a session whose
+**verified** email is the academy address. `COACH_UIDS` / `COACH_EMAILS` at
+the top of `app.js` mirror it, and only decide whether to show the editing
+tools. **To add another coach:** have them sign in to Lotus Hub once, copy
+their UID from Firebase console → Authentication, and add it to both lists.
+
+(This replaced the old admin PIN, which only hid the editing tools and
+couldn't stop a direct write. Any `adminPinHash` left on an old board is
+ignored and dropped on the next save.)
+
+### Saves can't overwrite each other
+
+Every change (+1 session, add/edit/delete player, challenge details) is sent
+as a small edit that `LH.updateLeaderboard` re-applies to the **latest**
+server copy inside a Firestore transaction. Two coaches logging sessions at
+the same moment both land; the second can't silently undo the first. The
+page applies the change instantly and rolls it back with an explanation if
+the save is refused (not signed in as the coach, or offline).
 
 ### Firestore write validation
 
-The `leaderboards/{boardId}` rule in [`firestore.rules`](../firestore.rules)
-stays open to writes from anyone (no auth — same trust model as the PIN
-above, which is UI-only and not enforced here), but a write must now match
-the document shape this app actually produces: known fields only, title/
-subtitle length caps, the entries array capped at 300 players, `adminPinHash`
-either `null` or a real 64-character SHA-256 hex digest, `startDate` /
-`endDate` either absent/`null` or `YYYY-MM-DD`, `snapshot` either
-absent/`null` or `{ at: "YYYY-MM-DD", ranks: {…} }` with at most 300 ranks,
-and `updatedAt` required to be a genuine server timestamp (not a spoofed
-date). This is
-meant to stop a write crafted directly against the Firestore SDK — bypassing
-`app.js`, and so the PIN prompt, entirely — from corrupting the board with a
-runaway array or garbage top-level data.
+On top of the coach check, a write must match the document shape this app
+produces: known fields only, title/subtitle length caps, the entries array
+capped at 300 players, `startDate` / `endDate` either absent/`null` or
+`YYYY-MM-DD`, `snapshot` either absent/`null` or
+`{ at: "YYYY-MM-DD", ranks: {…} }` with at most 300 ranks, and `updatedAt`
+required to be a genuine server timestamp (not a spoofed date). Deletes are
+refused outright.
 
 **What this does *not* do:** validate the contents of individual entries
-inside that array (a garbage player name or DUPR value inside an otherwise
-well-shaped document still gets through). The Firestore rules language has
-no per-element loop, and `entries` is a plain array rather than a
-subcollection, so per-entry validation isn't practically achievable without
-a data-model change. Real protection for that would need Firebase Auth —
-out of scope here, same as the PIN.
-
-**Player and admin links:** `https://<host>/lotusoctoberchallenge` always
-opens the read-only player view of the current challenge (the `default`
-board). It's what the share-link button and QR code hand out. The short
-`https://<host>/lotus` opens the same board with the admin controls. Both
-are set up via `VIEW_SLUGS` / `BOARD_ALIASES` in `app.js` and matching
-rewrites in `firebase.json`. Other boards still share a `?mode=view` link.
+inside that array. The Firestore rules language has no per-element loop, and
+`entries` is a plain array rather than a subcollection. Since only the coach
+account can write at all, that's an accepted limit.
 
 Multiple boards can exist side by side, addressed either by a clean path —
 `/leaderboard/<slug>` (e.g. `/leaderboard/november-2026`) — or a `?board=<id>`

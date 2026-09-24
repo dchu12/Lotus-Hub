@@ -19,7 +19,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=19" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=20" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -42,6 +42,7 @@
           <button type="button" role="menuitem" id="qrBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M14 20h3"/><path d="M20 14v3"/><path d="M20 20h.01"/></svg>Player link QR code</button>
           <button type="button" role="menuitem" id="editBoardBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit challenge details</button>
           <button type="button" role="menuitem" id="exportCsvBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Export CSV</button>
+          <button type="button" role="menuitem" id="menuSignOutBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</button>
         </div>
       </div>
     </header>
@@ -69,7 +70,7 @@
       </div>
     </section>
 
-    <!-- Edit challenge title / date range / admin PIN -->
+    <!-- Edit challenge title / dates -->
     <section class="card edit-panel" id="editPanel" hidden aria-label="Edit challenge details">
       <div class="form-row">
         <label>Challenge name<input type="text" id="titleInput" placeholder="October Lotus Challenge" maxlength="120" /></label>
@@ -80,30 +81,30 @@
         <label>End date<input type="date" id="endDateInput" /></label>
       </div>
       <p class="hint hint-tight">Used for the countdown in the header ("12 days left").</p>
-      <h3 class="section-lbl">Admin PIN</h3>
-      <div class="form-row">
-        <label>New PIN<input type="password" inputmode="numeric" autocomplete="off" id="newPinInput" placeholder="Leave blank to keep unchanged" /></label>
-      </div>
-      <label class="checkbox-row"><input type="checkbox" id="removePinInput" /> Remove PIN protection (anyone with this link could edit again)</label>
-      <p class="hint">A deterrent against accidental edits or a shared link — not real security. The board's data is still open the same way it always was; see the leaderboard README.</p>
       <div class="form-actions">
         <button type="button" class="btn primary" id="saveBoardBtn">Save</button>
         <button type="button" class="btn ghost" id="cancelBoardBtn">Cancel</button>
       </div>
     </section>
 
-    <!-- Shown instead of the add-player form when this browser hasn't entered
-         the admin PIN yet for a board that has one set. -->
-    <section class="card lock-card" id="lockCard" hidden aria-label="Admin locked">
-      <h2><span class="lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Admin locked</h2>
-      <p class="lock-copy">Enter the admin PIN to add or edit players on this device.</p>
-      <div class="form-row">
-        <label class="grow">PIN<input type="password" inputmode="numeric" autocomplete="off" id="pinInput" placeholder="••••" /></label>
-      </div>
+    <!-- Admin link, not signed in as the coach account: editing tools stay
+         hidden and saves are refused by firestore.rules anyway. -->
+    <section class="card lock-card" id="lockCard" hidden aria-labelledby="lockTitle">
+      <h2 id="lockTitle"><span class="lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Coach sign-in</h2>
+      <p class="lock-copy" id="lockMsg"></p>
       <div class="form-actions">
-        <button type="button" class="btn primary" id="unlockBtn">Unlock</button>
+        <button type="button" class="btn primary" id="googleSignInBtn">Sign in with Google</button>
+        <button type="button" class="btn ghost" id="lockSignOutBtn" hidden>Sign out</button>
       </div>
-      <p class="form-msg" id="pinMsg" role="status"></p>
+      <details class="pw-signin" id="pwSignin">
+        <summary>Use email and password instead</summary>
+        <div class="form-row">
+          <label>Email<input type="email" id="signinEmail" autocomplete="username" /></label>
+          <label>Password<input type="password" id="signinPassword" autocomplete="current-password" /></label>
+        </div>
+        <button type="button" class="btn ghost" id="pwSignInBtn">Sign in</button>
+      </details>
+      <p class="form-msg" id="signinMsg" role="status"></p>
     </section>
 
     <!-- Add / edit a player -->
@@ -210,12 +211,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js?v=1"></script>
-  <script src="/firebase.js?v=35"></script>
+  <script src="/firebase.js?v=36"></script>
   <!-- QR code generator for the player-link QR panel — pure JS, generates
        client-side (no data sent anywhere to render a code). Exposes a
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=21"></script>
+  <script src="/leaderboard/app.js?v=22"></script>
 </body>
 </html>

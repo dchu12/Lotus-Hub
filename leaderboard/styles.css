@@ -219,6 +219,13 @@ body {
 }
 .lock-icon svg { width: 16px; height: 16px; display: block; }
 .lock-copy { color: var(--ink-2); font-size: .88rem; margin: 6px 0 14px; }
+.pw-signin { margin-top: 14px; }
+.pw-signin summary { cursor: pointer; font-size: .84rem; font-weight: 600; color: var(--ink-2); }
+.pw-signin[open] summary { margin-bottom: 12px; }
+.form-row input[type="email"], .form-row input[type="password"] {
+  font: inherit; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--field); color: var(--ink); width: 100%;
+}
 
 /* Player-link QR panel */
 .qr-card { border-left: 3px solid var(--accent); text-align: center; }
