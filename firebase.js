@@ -376,7 +376,9 @@
     if (!ready) return function () {};
     return leaderboardDoc(id).onSnapshot(
       function (snap) {
-        cb(snap.exists ? snap.data() : null, null);
+        // Third arg: true when this came from the local cache rather than the
+        // server, so a "missing" doc may just mean "not fetched yet".
+        cb(snap.exists ? snap.data() : null, null, !!(snap.metadata && snap.metadata.fromCache));
       },
       function (err) {
         cb(null, err);
