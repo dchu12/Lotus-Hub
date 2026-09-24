@@ -363,6 +363,51 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .session-btn { border-color: color-mix(in srgb, var(--brand), transparent 70%); color: var(--brand); background: var(--card); }
 .session-btn:hover { background: color-mix(in srgb, var(--brand), transparent 93%); border-color: var(--brand); }
 
+/* Upcoming community events */
+.events-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px 12px; margin-bottom: 12px; }
+.events-head .events-sub { display: block; margin-top: 2px; }
+.event-form { padding: 4px 0 14px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.event-form .section-lbl { margin-top: 0; padding-top: 0; border-top: 0; }
+.event-form select, .form-row input[type="date"], .form-row input[type="time"] {
+  font: inherit; padding: 9px 10px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--field); color: var(--ink); width: 100%; min-height: 42px;
+}
+.event-form select:focus, .form-row input[type="date"]:focus, .form-row input[type="time"]:focus { border-color: var(--brand); outline: 3px solid color-mix(in srgb, var(--brand), transparent 85%); }
+.opt { font-weight: 500; color: var(--muted); }
+.form-row label.ev-type-field { flex: 1 0 250px; }
+.ev-tag { white-space: nowrap; }
+.events-empty { margin: 0 0 4px; padding: 12px; border-radius: 10px; border: 1px dashed var(--line); background: var(--field); color: var(--ink-2); font-size: .86rem; }
+.ev.past { opacity: .6; }
+.ev.being-edited { outline: 2px solid var(--brand); outline-offset: -1px; }
+.ev-admin { flex: none; display: flex; gap: 6px; }
+.events-card .events-head h2 { margin: 0; font-size: 1.05rem; letter-spacing: -.01em; }
+.events-sub { font-size: .82rem; color: var(--muted); font-weight: 600; }
+.events-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ev {
+  display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--card);
+}
+.ev.next { border-color: color-mix(in srgb, var(--brand), transparent 70%); background: var(--accent-bg); }
+.ev-date {
+  flex: none; width: 52px; text-align: center; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--line); background: var(--card);
+}
+.ev-mon { display: block; background: var(--brand); color: #fff; font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 2px 0; }
+.ev-day { display: block; font-size: 1.3rem; font-weight: 800; color: var(--ink); padding: 2px 0 4px; font-variant-numeric: tabular-nums; }
+.ev-body { flex: 1; min-width: 0; }
+.ev-title { font-weight: 800; font-size: .95rem; letter-spacing: -.01em; }
+.ev-meta { font-size: .8rem; color: var(--ink-2); margin: 2px 0 6px; }
+.ev-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 800;
+  background: var(--field); border: 1px solid var(--line); color: var(--ink-2);
+}
+.ev-tag.social { color: #0f6e3f; background: #e8f6ee; border-color: #c6e9d4; }
+.ev-tag.drill { color: #1d4f91; background: #e9f0fb; border-color: #cddcf3; }
+.ev-tag.ranked { color: var(--brand); background: var(--accent-bg); border-color: color-mix(in srgb, var(--brand), transparent 75%); }
+.ev-tag.special { color: #7a4b00; background: #fdf1d8; border-color: #f0dcae; }
+.ev-cal { flex: none; display: inline-flex; align-items: center; gap: 6px; }
+.ev-cal svg { width: 16px; height: 16px; flex: none; }
+
 /* "How scoring works": the formula as three tiles, not a sentence.
    A <details>, open by default on wide screens and collapsed on phones. */
 .scoring { margin-top: 4px; }
@@ -433,6 +478,13 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .no-scores { margin: 10px 16px 0; }
   .prize { padding: 8px 14px 8px 10px; gap: 12px; }
   .prize-meta { display: none; }
+  .ev { gap: 12px; padding: 12px; }
+  .ev-date { width: 46px; }
+  .ev-day { font-size: 1.15rem; }
+  .ev-cal { width: 40px; height: 40px; padding: 0; justify-content: center; align-self: center; }
+  .ev-cal svg { width: 19px; height: 19px; }
+  .ev-cal-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .ev-admin { flex-direction: column; }
   /* The title wraps on a phone, so line everything up along the top edge
      instead of centring the logo and menu button against a tall block. */
   .hd, .hd-brand { align-items: flex-start; }

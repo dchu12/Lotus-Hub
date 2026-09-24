@@ -89,6 +89,7 @@
     startDate: null, // "YYYY-MM-DD", drives the header countdown
     endDate: null,
     snapshot: null, // { at: "YYYY-MM-DD", ranks: { playerId: rank } }, for movement arrows
+    events: [], // upcoming community events, see renderEvents()
   };
   // Fallback dates for a board whose doc doesn't have them saved yet; the
   // edit panel's date fields override these once saved.
@@ -298,6 +299,7 @@
       startDate: validIso(src.startDate) ? src.startDate : null,
       endDate: validIso(src.endDate) ? src.endDate : null,
       snapshot: src.snapshot ? JSON.parse(JSON.stringify(src.snapshot)) : null,
+      events: JSON.parse(JSON.stringify(Array.isArray(src.events) ? src.events : [])),
     };
   }
   function commit(mutate) {
@@ -340,6 +342,7 @@
       board.startDate = data.startDate || null;
       board.endDate = data.endDate || null;
       board.snapshot = data.snapshot || null;
+      board.events = Array.isArray(data.events) ? data.events : [];
       lastRemoteDoc = cleanDoc(data);
       // A write we just made ourselves can arrive with updatedAt still null
       // for one snapshot (the serverTimestamp placeholder resolves a moment
@@ -431,7 +434,9 @@
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "countdown", "editBoardBtn", "editPanel", "titleInput",
       "subtitleInput", "startDateInput", "endDateInput", "saveBoardBtn", "cancelBoardBtn",
-      "noScores", "moveHint", "scoringCard", "prizeMeta",
+      "noScores", "moveHint", "scoringCard", "prizeMeta", "eventsCard", "eventsList",
+      "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
+      "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
       "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
       "shareLinkBtn", "formCard", "lockCard", "menuWrap", "menuBtn", "adminMenu", "addPlayerBtn",
@@ -677,6 +682,7 @@
     els.shareLinkBtn.hidden = readOnly;
     els.qrBtn.hidden = readOnly;
     els.exportCsvBtn.hidden = restricted;
+    els.menuEventsBtn.hidden = restricted;
     if (restricted) { els.qrCard.hidden = true; els.editPanel.hidden = true; }
     updateLastUpdatedText();
 
@@ -684,6 +690,7 @@
     var scored = anyScored(list);
 
     renderRank(list, scored);
+    renderEvents(!restricted);
 
     els.playerCount.textContent = list.length ? list.length + (list.length === 1 ? " player" : " players") : "";
     els.boardEmpty.hidden = !!list.length;
@@ -773,6 +780,179 @@
         : "1st place";
     }
     return (tied ? "Tied for " + ordinal(me._rank) + " \u00b7 " : "") + pts(list[0]._c.total - me._c.total) + " behind 1st place";
+  }
+
+  // ---- Upcoming community events ------------------------------------------
+  // Stored on the board doc as `events` ({ id, date "YYYY-MM-DD", start/end
+  // "HH:MM" 24h, title, type, place }) and edited by the coach account from
+  // the card itself. Players see the next five upcoming; past ones drop off.
+  var EVENT_TYPES = {
+    social: { label: "Social Play", pts: POINTS.social },
+    drill: { label: "Drill Training", pts: POINTS.drill },
+    ranked: { label: "Ranked Play", pts: POINTS.ranked },
+    special: { label: "Special event", pts: 0 },
+  };
+  var eventsEditing = false;
+  var editingEventId = null;
+  function fmtClock(hhmm) {
+    var p = String(hhmm).split(":"), h = +p[0], m = +p[1];
+    return ((h + 11) % 12 + 1) + (m ? ":" + String(m).padStart(2, "0") : "") + (h < 12 ? " AM" : " PM");
+  }
+  function validEvent(ev) {
+    return ev && validIso(ev.date) && /^\d{2}:\d{2}$/.test(ev.start || "") && ev.title;
+  }
+  function sortedEvents() {
+    return (board.events || []).filter(validEvent)
+      .slice()
+      .sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); });
+  }
+  function upcomingEvents() {
+    var today = dayNum(isoToday());
+    return sortedEvents().filter(function (ev) { return dayNum(ev.date) >= today; }).slice(0, 5);
+  }
+  function eventRow(ev, opts) {
+    var p = ev.date.split("-");
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    var t = EVENT_TYPES[ev.type] || EVENT_TYPES.special;
+    var away = dayNum(ev.date) - dayNum(isoToday());
+    var when = away < 0 ? "Past" : away === 0 ? "Today" : away === 1 ? "Tomorrow" : d.toLocaleDateString(undefined, { weekday: "long" });
+    var time = fmtClock(ev.start) + (/^\d{2}:\d{2}$/.test(ev.end || "") ? "&ndash;" + fmtClock(ev.end) : "");
+    var tag = t.pts
+      ? '<span class="ev-tag ' + esc(ev.type) + '">' + t.label + " &middot; +" + t.pts + (t.pts === 1 ? " pt" : " pts") + "</span>"
+      : '<span class="ev-tag special">' + t.label + "</span>";
+    var id = esc(ev.id);
+    var actions = opts.editing
+      ? '<div class="ev-admin"><button type="button" class="btn small ghost" data-ev-edit="' + id + '">Edit</button>' +
+        '<button type="button" class="btn small danger" data-ev-del="' + id + '">Delete</button></div>'
+      : '<button type="button" class="btn small ghost ev-cal" data-ical="' + id + '" aria-label="Add ' + esc(ev.title) + ' to calendar">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M12 13v5M9.5 15.5h5"/></svg>' +
+        '<span class="ev-cal-txt">Add to calendar</span></button>';
+    return (
+      '<li class="ev' + (opts.next ? " next" : "") + (away < 0 ? " past" : "") + (ev.id === editingEventId ? " being-edited" : "") + '">' +
+      '<div class="ev-date" aria-hidden="true"><span class="ev-mon">' + d.toLocaleDateString(undefined, { month: "short" }) + "</span>" +
+      '<span class="ev-day">' + d.getDate() + "</span></div>" +
+      '<div class="ev-body"><div class="ev-title">' + esc(ev.title) + "</div>" +
+      '<div class="ev-meta"><span class="sr-only">' + esc(d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })) + ", </span>" +
+      '<span aria-hidden="true">' + when + " &middot; </span>" + time + (ev.place ? " &middot; " + esc(ev.place) : "") + "</div>" +
+      tag + "</div>" + actions + "</li>"
+    );
+  }
+  function renderEvents(canEdit) {
+    if (!canEdit) { eventsEditing = false; editingEventId = null; }
+    var editing = canEdit && eventsEditing;
+    var list = editing ? sortedEvents() : upcomingEvents();
+    els.eventsCard.hidden = !list.length && !canEdit;
+    els.eventsEditBtn.hidden = !canEdit;
+    els.eventsEditBtn.textContent = editing ? "Done" : "Edit events";
+    els.eventsEditBtn.setAttribute("aria-expanded", String(editing));
+    els.eventForm.hidden = !editing;
+    els.eventsSub.hidden = editing;
+    els.eventsEmpty.hidden = !!list.length;
+    els.eventsEmpty.textContent = canEdit && !editing
+      ? "No upcoming events yet. Tap \u201cEdit events\u201d to add one; players only see this card once there's an event."
+      : "No events yet. Add the first one above.";
+    var firstUpcoming = upcomingEvents()[0];
+    els.eventsList.innerHTML = list.map(function (ev) {
+      return eventRow(ev, { editing: editing, next: !editing && firstUpcoming && ev.id === firstUpcoming.id });
+    }).join("");
+  }
+  function findEvent(id) {
+    return (board.events || []).find(function (e) { return e.id === id; });
+  }
+  function resetEventForm() {
+    editingEventId = null;
+    els.evDate.value = "";
+    els.evStart.value = "";
+    els.evEnd.value = "";
+    els.evTitle.value = "";
+    els.evType.value = "social";
+    els.evPlace.value = "";
+    els.evSaveBtn.textContent = "Add event";
+    els.evFormTitle.textContent = "Add an event";
+    els.evCancelBtn.hidden = true;
+    els.evMsg.textContent = "";
+    els.evMsg.className = "form-msg";
+  }
+  function fillEventForm(ev) {
+    editingEventId = ev.id;
+    els.evDate.value = ev.date;
+    els.evStart.value = ev.start;
+    els.evEnd.value = ev.end || "";
+    els.evTitle.value = ev.title;
+    els.evType.value = EVENT_TYPES[ev.type] ? ev.type : "special";
+    els.evPlace.value = ev.place || "";
+    els.evSaveBtn.textContent = "Save changes";
+    els.evFormTitle.textContent = "Edit event";
+    els.evCancelBtn.hidden = false;
+    els.evMsg.textContent = "";
+    render();
+    els.eventForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    els.evTitle.focus({ preventScroll: true });
+  }
+  function saveEvent() {
+    var fail = function (msg, field) {
+      els.evMsg.textContent = msg;
+      els.evMsg.className = "form-msg err";
+      field.focus();
+    };
+    var ev = {
+      id: editingEventId || uid(),
+      date: els.evDate.value,
+      start: els.evStart.value,
+      end: els.evEnd.value || "",
+      title: els.evTitle.value.trim(),
+      type: EVENT_TYPES[els.evType.value] ? els.evType.value : "special",
+      place: els.evPlace.value.trim(),
+    };
+    if (!validIso(ev.date)) return fail("Pick a date.", els.evDate);
+    if (!/^\d{2}:\d{2}$/.test(ev.start)) return fail("Pick a start time.", els.evStart);
+    if (ev.end && ev.end <= ev.start) return fail("The end time needs to be after the start time.", els.evEnd);
+    if (!ev.title) return fail("Give the event a name.", els.evTitle);
+    var existed = !!editingEventId;
+    commit(function (doc) {
+      doc.events = (doc.events || []).filter(function (e) { return e.id !== ev.id; }).concat([JSON.parse(JSON.stringify(ev))]);
+    });
+    resetEventForm();
+    render();
+    toast(existed ? "Event updated" : "Event added");
+  }
+  function deleteEvent(id) {
+    var ev = findEvent(id);
+    if (!ev || !window.confirm("Delete \u201c" + ev.title + "\u201d?")) return;
+    if (editingEventId === id) resetEventForm();
+    commit(function (doc) {
+      doc.events = (doc.events || []).filter(function (e) { return e.id !== id; });
+    });
+    toast("Event deleted");
+  }
+  function openEventsEditor() {
+    eventsEditing = true;
+    resetEventForm();
+    render();
+    els.eventsCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    els.evDate.focus({ preventScroll: true });
+  }
+  function icsFor(ev) {
+    var stamp = function (date, hhmm) { return date.replace(/-/g, "") + "T" + hhmm.replace(":", "") + "00"; };
+    var clean = function (s) { return String(s).replace(/([,;\\])/g, "\\$1"); };
+    return [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Lotus Pickleball Academy//Leaderboard//EN",
+      "BEGIN:VEVENT",
+      "UID:" + ev.date + "-" + ev.start.replace(":", "") + "@lotus-leaderboard",
+      "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z",
+      "DTSTART:" + stamp(ev.date, ev.start),
+      "DTEND:" + stamp(ev.date, /^\d{2}:\d{2}$/.test(ev.end || "") ? ev.end : String(Math.min(23, +ev.start.slice(0, 2) + 1)).padStart(2, "0") + ev.start.slice(2)),
+      "SUMMARY:" + clean(ev.title + " (Lotus Pickleball Academy)"),
+      "LOCATION:" + clean(ev.place || ""),
+      "DESCRIPTION:" + clean((EVENT_TYPES[ev.type] || EVENT_TYPES.special).label + ". Leaderboard: " + playerViewUrl()),
+      "END:VEVENT", "END:VCALENDAR",
+    ].join("\r\n");
+  }
+  function addToCalendar(id) {
+    var ev = findEvent(id);
+    if (!ev) return;
+    var blob = new Blob([icsFor(ev)], { type: "text/calendar;charset=utf-8" });
+    downloadBlob(blob, ev.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") + ".ics");
   }
 
   // ---- "Share my rank" image card -------------------------------------------
@@ -1028,6 +1208,21 @@
       var hits = els.rankMatches.querySelectorAll("[data-me]");
       if (hits.length === 1) pickMe(hits[0].getAttribute("data-me"));
     });
+    els.eventsList.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-ical], [data-ev-edit], [data-ev-del]");
+      if (!b) return;
+      if (b.hasAttribute("data-ical")) addToCalendar(b.getAttribute("data-ical"));
+      else if (b.hasAttribute("data-ev-edit")) { var e = findEvent(b.getAttribute("data-ev-edit")); if (e) fillEventForm(e); }
+      else deleteEvent(b.getAttribute("data-ev-del"));
+    });
+    els.eventsEditBtn.addEventListener("click", function () {
+      if (eventsEditing) { eventsEditing = false; resetEventForm(); render(); }
+      else openEventsEditor();
+    });
+    els.menuEventsBtn.addEventListener("click", openEventsEditor);
+    els.evSaveBtn.addEventListener("click", saveEvent);
+    els.evCancelBtn.addEventListener("click", function () { resetEventForm(); render(); });
+    els.evTitle.addEventListener("keydown", function (ev) { if (ev.key === "Enter") saveEvent(); });
     els.rankMatches.addEventListener("click", function (ev) {
       var b = ev.target.closest("[data-me]");
       if (b) pickMe(b.getAttribute("data-me"));
