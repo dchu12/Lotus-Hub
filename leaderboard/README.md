@@ -102,13 +102,12 @@ subcollection, so per-entry validation isn't practically achievable without
 a data-model change. Real protection for that would need Firebase Auth —
 out of scope here, same as the PIN.
 
-**Short player link:** `https://<host>/lotus` always opens the read-only
-player view of the current challenge (the `default` board). It's what the
-share-link button and QR code hand out, instead of a long `?mode=view`
-URL. It's set up via `VIEW_SLUGS` in `app.js` and a matching `/lotus`
-rewrite in `firebase.json`. Point it at a different board next month by
-changing `VIEW_SLUGS.lotus` (and `BOARD_ALIASES.lotus`). Other boards
-still share a `?mode=view` link.
+**Player and admin links:** `https://<host>/lotusoctoberchallenge` always
+opens the read-only player view of the current challenge (the `default`
+board). It's what the share-link button and QR code hand out. The short
+`https://<host>/lotus` opens the same board with the admin controls. Both
+are set up via `VIEW_SLUGS` / `BOARD_ALIASES` in `app.js` and matching
+rewrites in `firebase.json`. Other boards still share a `?mode=view` link.
 
 Multiple boards can exist side by side, addressed either by a clean path —
 `/leaderboard/<slug>` (e.g. `/leaderboard/november-2026`) — or a `?board=<id>`
