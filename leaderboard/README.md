@@ -22,6 +22,9 @@ medal badges for the top 3. "Points Behind 1st" shows "—" for the leader and
 Score / Skill / Comm. / Behind so the whole table fits without sideways
 scrolling. The CSV export includes the same column.
 
+- **Prize banner**: right under the header, every visit: "1st place wins a
+  Zocker Pro Series Control Paddle". It's plain markup in `index.html`
+  (`<section class="prize">`); edit the text there when the prize changes.
 - **"Where do you rank?"**: the card at the top of the page. A challenger
   types their name and taps it from the matches to see their own rank ("#3
   of 23 challengers"), their Lotus points, and how far they are behind 1st place (or, for the
