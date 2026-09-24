@@ -59,8 +59,9 @@ scrolling. The CSV export includes the same column.
   the same person. Confirming still allows it, for the rare case of two
   players who really do share a name.
 
-The header badge (top-left) shows the Lotus Pickleball Academy logo mark
-(`logo.png`, cropped from the full brand logo). No emoji anywhere in the UI —
+The header badge (top-left) and the "Lotus Leaderboard" heading both show the
+Lotus Pickleball Academy logo mark (`logo.png`, cropped from the full brand
+logo). No emoji anywhere in the UI —
 every other icon (edit, link, the three community-point icons) is a small
 custom inline SVG defined in `index.html` (or the `ICONS` object at the top
 of `app.js`). Light theme only, by design; there's

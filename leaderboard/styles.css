@@ -213,10 +213,10 @@ body {
   font-size: 1.05rem; letter-spacing: -.01em; color: var(--ink);
 }
 .board-head-icon {
-  color: var(--brand); display: grid; place-items: center; width: 28px; height: 28px;
-  border-radius: 8px; background: var(--accent-bg); flex: none;
+  display: grid; place-items: center; width: 32px; height: 32px; overflow: hidden;
+  border-radius: 9px; background: #fff; border: 1px solid var(--line); flex: none;
 }
-.board-head-icon svg { width: 16px; height: 16px; display: block; }
+.board-head-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .board-head-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .board-head .count {
   color: var(--muted); font-size: .8rem; font-weight: 600; white-space: nowrap;
