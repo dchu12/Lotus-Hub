@@ -41,7 +41,7 @@ body {
 }
 .wrap { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 32px 16px 60px; }
 
-.hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
 .hd-brand { display: flex; align-items: center; gap: 14px; }
 .hd-logo {
   display: grid; place-items: center; width: 52px; height: 52px; flex: none; overflow: hidden;
@@ -89,7 +89,6 @@ body {
 /* Prize callout under the header: compact, with the actual paddle */
 .prize {
   display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 10px 22px 10px 12px;
-  width: fit-content; max-width: 100%; /* hugs its content instead of trailing empty space on wide screens */
   border-radius: 16px; border: 1px solid color-mix(in srgb, var(--gold), transparent 60%);
   background: linear-gradient(100deg, var(--accent-bg), #fff 85%);
   box-shadow: var(--shadow-sm);
@@ -103,6 +102,10 @@ body {
   font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: #8a5a06;
 }
 .prize-main { font-size: 1.02rem; font-weight: 800; color: var(--ink); line-height: 1.3; margin-top: 1px; letter-spacing: -.01em; }
+.prize-meta {
+  margin-left: auto; padding-left: 16px; border-left: 1px solid color-mix(in srgb, var(--gold), transparent 60%);
+  max-width: 230px; font-size: .84rem; font-weight: 600; color: var(--ink-2); line-height: 1.4; text-align: right;
+}
 
 .card {
   background: var(--card); border: 1px solid var(--line); border-radius: 16px;
@@ -424,6 +427,10 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .me-actions .link-btn { flex-basis: auto; margin-left: auto; }
   .no-scores { margin: 10px 16px 0; }
   .prize { padding: 8px 14px 8px 10px; gap: 12px; }
+  .prize-meta { display: none; }
+  /* The title wraps on a phone, so line everything up along the top edge
+     instead of centring the logo and menu button against a tall block. */
+  .hd, .hd-brand { align-items: flex-start; }
   .prize-main { font-size: .95rem; }
   th.rank, td.rank { width: 30px; }
   .name-btn { gap: 5px; }

@@ -420,7 +420,7 @@
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "countdown", "editBoardBtn", "editPanel", "titleInput",
       "subtitleInput", "startDateInput", "endDateInput", "saveBoardBtn", "cancelBoardBtn",
-      "noScores", "moveHint", "scoringCard",
+      "noScores", "moveHint", "scoringCard", "prizeMeta",
       "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
       "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
       "shareLinkBtn", "formCard", "lockCard", "menuWrap", "menuBtn", "adminMenu", "addPlayerBtn",
@@ -626,6 +626,9 @@
   function renderHeader() {
     els.boardTitle.textContent = board.title;
     els.boardSubtitle.textContent = board.subtitle;
+    var end = challengeDates().end;
+    els.prizeMeta.hidden = !end;
+    if (end) els.prizeMeta.textContent = "Awarded to the top Lotus Score on " + fmtDay(end);
     var cd = countdown();
     els.countdown.hidden = !cd;
     if (cd) {
