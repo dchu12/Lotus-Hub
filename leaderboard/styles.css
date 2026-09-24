@@ -7,8 +7,8 @@
 :root {
   --brand:      #b91c2b;
   --brand-hover:#9c1724;
-  --accent:     #c8860d;
-  --accent-bg:  #fdf3df;
+  --accent:     #b91c2b;
+  --accent-bg:  #fcebed; /* soft brand-red tint for highlights (was a cream/yellow) */
   --bg:         #f5f5f4;
   --card:       #ffffff;
   --ink:        #1c1a19;
@@ -37,7 +37,7 @@ body {
   position: fixed; inset: 0 0 auto 0; height: 280px; z-index: 0; pointer-events: none;
   background:
     radial-gradient(560px 260px at 15% -25%, rgba(185,28,43,.10), transparent 70%),
-    radial-gradient(440px 220px at 95% -15%, rgba(200,134,13,.10), transparent 70%);
+    radial-gradient(440px 220px at 95% -15%, rgba(185,28,43,.07), transparent 70%);
 }
 .wrap { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 32px 16px 60px; }
 
@@ -56,7 +56,7 @@ body {
   display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: .74rem; font-weight: 800;
   letter-spacing: .01em; background: color-mix(in srgb, var(--brand), transparent 90%); color: var(--brand);
 }
-.countdown.before { background: var(--accent-bg); color: #8a5a06; }
+.countdown.before { background: var(--accent-bg); color: var(--brand); }
 .countdown.ended { background: var(--field); color: var(--muted); border: 1px solid var(--line); }
 .hd-actions { display: flex; gap: 8px; flex: none; position: relative; }
 .menu {
@@ -89,7 +89,7 @@ body {
 /* Prize callout under the header: compact, with the actual paddle */
 .prize {
   display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 10px 22px 10px 12px;
-  border-radius: 16px; border: 1px solid color-mix(in srgb, var(--gold), transparent 60%);
+  border-radius: 16px; border: 1px solid color-mix(in srgb, var(--brand), transparent 72%);
   background: linear-gradient(100deg, var(--accent-bg), #fff 85%);
   box-shadow: var(--shadow-sm);
 }
@@ -99,11 +99,11 @@ body {
 }
 .prize-txt { min-width: 0; }
 .prize-eyebrow {
-  font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: #8a5a06;
+  font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--brand);
 }
 .prize-main { font-size: 1.02rem; font-weight: 800; color: var(--ink); line-height: 1.3; margin-top: 1px; letter-spacing: -.01em; }
 .prize-meta {
-  margin-left: auto; padding-left: 16px; border-left: 1px solid color-mix(in srgb, var(--gold), transparent 60%);
+  margin-left: auto; padding-left: 16px; border-left: 1px solid color-mix(in srgb, var(--brand), transparent 72%);
   max-width: 230px; font-size: .84rem; font-weight: 600; color: var(--ink-2); line-height: 1.4; text-align: right;
 }
 
@@ -138,7 +138,7 @@ body {
 .rank-none { margin: 0; color: var(--muted); font-size: .84rem; }
 .me-strip {
   display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px;
-  background: var(--accent-bg); border: 1px solid color-mix(in srgb, var(--gold), transparent 65%);
+  background: var(--accent-bg); border: 1px solid color-mix(in srgb, var(--brand), transparent 75%);
 }
 .rank-big {
   flex: none; display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 8px;
@@ -401,7 +401,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 }
 .toast-action {
   appearance: none; border: 0; background: none; padding: 2px 0; font: inherit; font-weight: 800;
-  color: #f5c46b; cursor: pointer; flex: none;
+  color: #ff9aa4; cursor: pointer; flex: none;
 }
 .toast-action:hover { text-decoration: underline; }
 
