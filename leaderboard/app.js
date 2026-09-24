@@ -159,9 +159,9 @@
       return (
         '<tr class="bd-row' + (i === rows.length - 1 ? " bd-last" : "") + '">' +
         '<td class="name bd-name" colspan="2"><span class="bd-label">' + r[0] + '</span><span class="bd-detail">' + r[1] + "</span></td>" +
+        '<td class="total"></td>' +
         "<td>" + r[2] + "</td>" +
         "<td>" + r[3] + "</td>" +
-        '<td class="total"></td>' +
         '<td class="behind"></td>' +
         (restricted ? "" : '<td class="actions"></td>') +
         "</tr>"
@@ -513,9 +513,9 @@
           '<td class="name"><button type="button" class="name-btn" aria-expanded="' + open + '" data-toggle="' + esc(e.id) + '">' +
           '<span class="player-name">' + esc(e.name) + "</span>" + (e.id === meId ? '<span class="you-pill">You</span>' : "") +
           '<span class="chev" aria-hidden="true"></span></button></td>' +
+          '<td class="total">' + e._c.total + "</td>" +
           "<td>" + e._c.duprPoints + "</td>" +
           "<td>" + e._c.community + "</td>" +
-          '<td class="total">' + e._c.total + "</td>" +
           '<td class="behind">' + behindFirst(e, i, list) + "</td>" +
           actionsCell +
           "</tr>" +

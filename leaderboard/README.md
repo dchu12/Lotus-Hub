@@ -15,11 +15,11 @@ tallies each player's **Lotus Score** automatically:
   - Drill Training — **+2**
 - **Lotus Score = Skill Points + Community Points.**
 
-The table itself stays minimal — Rank, Player, Skill Points, Community Points,
-Lotus Score, Points Behind 1st — sorts automatically, with gold/silver/bronze
+The table itself stays minimal — Rank, Player, Lotus Score, Skill Points,
+Community Points, Points Behind 1st — sorts automatically, with gold/silver/bronze
 medal badges for the top 3. "Points Behind 1st" shows "—" for the leader and
 "Tied" for anyone level with them. On phones the headers shorten to
-Skill / Comm. / Score / Behind so the whole table fits without sideways
+Score / Skill / Comm. / Behind so the whole table fits without sideways
 scrolling. The CSV export includes the same column.
 
 - **"Where do you rank?"**: the card at the top of the page. A challenger
