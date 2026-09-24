@@ -59,7 +59,9 @@ Community Points, Points Behind 1st — and sorts automatically.
 - **Upcoming community events**: a card below the leaderboard listing the
   next five events, each with a date tile, time, place, a colour-coded tag
   showing the Community Points it earns (Social +3, Drill +2, Ranked +1, or
-  Special), and **Add to calendar**, which downloads an `.ics` file. The next
+  Special), and **Add to calendar**, which offers **Google Calendar** (opens Google
+  Calendar's pre-filled "new event" page in the viewer's time zone) or
+  **Apple / Outlook** (downloads an `.ics` file). The next
   event is highlighted, past events drop off, and players only see the card
   once there's at least one upcoming event.
   **Editing:** on the admin link, signed in as the coach account, tap **Edit
