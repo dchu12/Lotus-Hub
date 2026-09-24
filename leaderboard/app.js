@@ -86,6 +86,7 @@
   var readOnly = params.get("mode") === "view" || VIEW_SLUGS.hasOwnProperty(requestedBoardId);
 
   var board = {
+    // Keep in sync with the placeholder heading in index.html.
     title: "October Lotus Challenge",
     subtitle: "October 1 – October 31",
     entries: [],

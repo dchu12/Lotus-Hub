@@ -153,6 +153,13 @@ setup, see the root [`README.md`](../README.md)). Until that's published, the
 app still works — it just keeps its data in this browser only (a banner says
 so) and syncs to everyone once the rules go live.
 
+**Renaming the challenge:** the title/subtitle you set in the edit panel is
+saved to the board and shown on every link once the page loads. Also update
+the placeholder heading in `index.html` (and the defaults at the top of
+`app.js`) to match. On a slow phone that placeholder is what players see
+while the Firebase SDK is still downloading, so a stale one looks like the
+player link has a different title.
+
 ## Files
 
 | File | Purpose |
