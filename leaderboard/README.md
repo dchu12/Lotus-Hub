@@ -228,7 +228,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   works" (a formula line, "Lotus Score = Skill Points + Community Points",
   then a tile for each part, then the tie-break rule as a note). The post link
   (`https://www.instagram.com/p/DdZCGGOkYlW/`) is set in `index.html`.
-  Sits between the prize and the Join the challenge button, collapsed by default (one
+  Sits under the Join the October Challenge button, collapsed by default (one
   tap to open) so the leaderboard stays near the top.
 
 - **Admin tools** (admin link only):
