@@ -115,7 +115,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   - Before launch there's no header pill: the header shows the dates and
     the countdown card shows the exact time left. Once live, the pill shows
     "X days left". The Story image, which has no countdown card, says
-    "Starts in X days". The countdown card's heading reads "Challenge Kicks Off In",
+    "Starts in X days". The countdown card's heading reads "October Challenge Kicks Off In",
     so the date isn't repeated there either.
   - Dates are always written in US style ("October 1"), whatever the phone's
     language setting.
@@ -143,7 +143,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   the countdown card before launch) that opens its Instagram post
   (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`). It shows
   on both the player and admin views.
-- **Join the challenge**: the player view shows a full-width **Join the Challenge**
+- **Join the challenge**: the player view shows a full-width **Join the October Challenge**
   button ("Message us on Instagram" underneath) under the Challenge information card that opens an
   Instagram DM to `@lotuspickleballacademy_to`
   (`https://ig.me/m/lotuspickleballacademy_to`, set in `JOIN_URL` in
@@ -219,7 +219,7 @@ Community Points, Points Behind 1st — and sorts automatically.
      Firebase)" → API restrictions → add **Google Calendar API** → Save.
      (Or create a separate key restricted to that API and to
      `lots-hub.web.app/*`, and paste it in the optional key field.)
-- **Challenge information**: a button to the full challenge post on
+- **October Challenge Information**: a button to the full challenge post on
   Instagram, then "Highest Lotus Score Wins Prize", then "How scoring
   works" (a formula line, "Lotus Score = Skill Points + Community Points",
   then a tile for each part, then the tie-break rule as a note). The post link
