@@ -426,7 +426,7 @@ tr.me-row td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
 }
 .name-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
 .chev {
-  flex: none; width: 7px; height: 7px; margin-top: -3px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+  flex: none; width: 7px; height: 7px; margin-top: -3px; border-right: 2px solid var(--brand); border-bottom: 2px solid var(--brand);
   transform: rotate(45deg); transition: transform .15s ease;
 }
 tr.open .chev { transform: rotate(-135deg); margin-top: 3px; }
@@ -636,8 +636,8 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 }
 .scoring .scoring-title::-webkit-details-marker { display: none; }
 .scoring .scoring-title::after {
-  content: ""; width: 7px; height: 7px; margin-right: 4px; border-right: 2px solid var(--muted);
-  border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .15s ease;
+  content: ""; width: 7px; height: 7px; margin-right: 4px; border-right: 2px solid var(--brand);
+  border-bottom: 2px solid var(--brand); transform: rotate(45deg); transition: transform .15s ease;
 }
 .scoring[open] .scoring-title { margin-bottom: 14px; }
 .scoring[open] .scoring-title::after { transform: rotate(-135deg); }
@@ -805,9 +805,8 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .lk-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .lk-title { font-weight: 800; font-size: 1rem; letter-spacing: -.01em; }
 .lk-sub { font-size: .78rem; font-weight: 600; color: var(--muted); margin-top: 1px; }
-.lk-arrow { flex: none; color: var(--muted); display: grid; place-items: center; }
-.lk-arrow svg { width: 18px; height: 18px; }
-.link-card:hover .lk-arrow { color: var(--brand); }
+.lk-arrow { flex: none; color: var(--brand); display: grid; place-items: center; }
+.lk-arrow svg { width: 20px; height: 20px; }
 
 /* Footer */
 .site-foot {
