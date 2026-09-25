@@ -2135,7 +2135,6 @@
     bind();
     resetForm();
     // Scoring explainer starts open on wider screens, collapsed on phones.
-    if (window.matchMedia && window.matchMedia("(min-width: 641px)").matches) els.scoringCard.open = true;
     render();
     connect();
     // Keep the "Updated N minutes ago" text fresh without a full re-render.
