@@ -637,7 +637,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
-      "winnerCard", "prizeBanner", "joinCard", "joinCopy", "launchCard", "launchDate", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "launchCard", "launchDate", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -1068,9 +1068,6 @@
   function renderJoin(list, ph) {
     var isIn = list.some(function (e) { return e.id === meId; });
     els.joinCard.hidden = !readOnly || ph === "ended" || isIn;
-    els.joinCopy.textContent = ph === "before"
-      ? "Get on the board before it kicks off. DM us on Instagram to sign up."
-      : "It's not too late. DM us on Instagram to join the challenge.";
   }
   function pts(n) { return n + (n === 1 ? " pt" : " pts"); }
   function setMe(id) {

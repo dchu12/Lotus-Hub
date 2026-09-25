@@ -122,19 +122,13 @@ body {
   max-width: 230px; font-size: .84rem; font-weight: 600; color: var(--ink-2); line-height: 1.4; text-align: right;
 }
 
-/* Join CTA (player view) — sits under the prize, so "win this" leads
-   straight into "here's how to get in". */
-.join {
-  display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; margin: 0 0 16px;
-  padding: 12px 14px 12px 18px; border-radius: 16px; background: var(--card);
-  border: 1px dashed color-mix(in srgb, var(--brand), transparent 55%);
-}
-.join-txt { flex: 1 1 180px; min-width: 0; }
-.join-title { margin: 0; font-size: .98rem; font-weight: 800; color: var(--ink); letter-spacing: -.01em; }
-.join-copy { margin: 2px 0 0; font-size: .84rem; color: var(--ink-2); line-height: 1.4; }
+/* Join CTA (player view): just the button, full width, under the
+   challenge information. */
+.join { margin: 0 0 16px; }
 .join-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  text-decoration: none; white-space: nowrap; flex: none;
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  padding: 13px 18px; border-radius: 12px; font-size: 1rem; text-decoration: none;
+  box-shadow: var(--shadow-sm);
 }
 .join-btn svg { width: 18px; height: 18px; flex: none; }
 .rank-none a { color: var(--brand); font-weight: 700; }
@@ -642,8 +636,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .no-scores { margin: 10px 16px 0; }
   .prize { padding: 8px 14px 8px 10px; gap: 12px; }
   .prize-meta { display: none; }
-  .join { padding: 12px 14px; }
-  .join-btn { flex: 1 1 100%; }
   .lc-tile { min-width: 0; flex: 1 1 0; }
   .lc-num { font-size: 1.8rem; }
   .podium { padding: 16px 12px 2px; gap: 8px; }
