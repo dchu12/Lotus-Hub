@@ -86,6 +86,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   show "All day"; cancelled ones are skipped. If the calendar can't be read,
   the admin sees why (key blocked, API off, not public/not found) and
   players simply don't see the card.
+  **Phone-friendly setup guide:** [`GOOGLE_CALENDAR_SETUP.md`](GOOGLE_CALENDAR_SETUP.md)
+  (not set up yet as of 2026-09-24).
   **One-time Google setup** (Google Cloud console for the `lots-hub`
   project):
   1. In Google Calendar, create the calendar, then Settings → Access
