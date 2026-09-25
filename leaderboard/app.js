@@ -1007,7 +1007,7 @@
     var roster = list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
     els.launchRosterCount.textContent = roster.length ? roster.length + (roster.length === 1 ? " player" : " players") : "";
     var you = readOnly
-      ? '<li class="lr-you"><a href="' + JOIN_URL + '" target="_blank" rel="noopener"><span class="lr-plus" aria-hidden="true">+</span>' +
+      ? '<li class="lr-you"><a href="' + JOIN_URL + '" target="_blank" rel="noopener"><span class="lr-plus" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></span>' +
         (roster.length ? "You?" : "Be the first") + '<span class="sr-only"> Join the challenge on Instagram</span></a></li>'
       : "";
     els.launchRoster.innerHTML = roster.length
