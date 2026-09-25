@@ -633,7 +633,7 @@
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "countdown", "editBoardBtn", "editPanel", "titleInput",
       "subtitleInput", "startDateInput", "endDateInput", "saveBoardBtn", "cancelBoardBtn",
-      "noScores", "moveHint", "scoringCard", "prizeMeta", "eventsCard", "eventsList",
+      "noScores", "moveHint", "scoringCard", "infoDates", "infoJoin", "prizeMeta", "eventsCard", "eventsList",
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
@@ -911,6 +911,8 @@
     renderWinner(list, ph === "ended" && scored);
     renderPodium(list, scored && ph !== "before");
     renderJoin(list, ph);
+    els.infoDates.textContent = board.subtitle;
+    els.infoJoin.hidden = ph === "ended";
     renderClimber(list, scored && ph === "live");
     renderStats(!restricted && !!(window.LH && LH.ready));
     // Players get the countdown + roster instead of a table of zeros; the
