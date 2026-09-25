@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=64" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=65" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -138,14 +138,6 @@
         <span class="sr-only"> (opens Instagram)</span>
       </a>
     </section>
-
-    <!-- Player view: book a private drilling session (Instagram DM) -->
-    <a class="drill-btn" id="drillBtn" hidden href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">
-      <span class="db-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span>
-      <span class="db-txt"><span class="db-title">Book Private Drilling Session</span><span class="db-pts">+2 Lotus Score</span></span>
-      <span class="db-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-      <span class="sr-only"> (opens Instagram)</span>
-    </a>
 
     <p id="connBanner" class="banner" hidden></p>
 
@@ -309,6 +301,14 @@
         <p id="boardHint" class="board-hint" hidden>Tap a player to see how their points add up.<span id="moveHint"></span></p>
       </div>
     </section>
+
+    <!-- Player view: book a private drilling session (Instagram DM) -->
+    <a class="drill-btn" id="drillBtn" hidden href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">
+      <span class="db-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span>
+      <span class="db-txt"><span class="db-title">Book Private Drilling Session</span><span class="db-pts">+2 Lotus Score</span></span>
+      <span class="db-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+      <span class="sr-only"> (opens Instagram)</span>
+    </a>
 
     <!-- Lotus Gachapon: links to its Instagram post -->
     <a class="card link-card" id="gachaCard" href="https://www.instagram.com/p/Ddk2QlsEc5f/" target="_blank" rel="noopener">

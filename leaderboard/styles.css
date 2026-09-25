@@ -771,10 +771,10 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .session-btn { padding: 9px 4px; font-size: .8rem; }
 }
 
-/* Book a private drilling session (player view): a secondary button under
-   the red Join button, same shape, white with a red outline. */
+/* Book a private drilling session (player view): a white, red-outlined
+   button just above the Lotus Gachapon card. */
 .drill-btn {
-  display: flex; align-items: center; gap: 12px; margin: -4px 0 16px; padding: 10px 12px 10px 10px; border-radius: 16px;
+  display: flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 10px 12px 10px 10px; border-radius: 16px;
   background: var(--card); border: 1.5px solid color-mix(in srgb, var(--brand), transparent 45%); color: var(--ink); text-decoration: none;
   box-shadow: var(--shadow-sm); transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
 }
