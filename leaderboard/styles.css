@@ -626,7 +626,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .info-post { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; text-decoration: none; }
 .info-post svg { width: 18px; height: 18px; flex: none; color: var(--brand); }
 .f-tie { margin: 12px 0 0; font-size: .82rem; color: var(--ink-2); }
-.f-tie b { color: var(--ink); }
+.f-tie b { display: block; color: var(--ink); }
 .hint-tight { margin: -6px 0 14px; }
 .formula { display: grid; grid-template-columns: 1fr auto 1fr auto 1.25fr; align-items: stretch; gap: 10px; }
 .f-tile {
