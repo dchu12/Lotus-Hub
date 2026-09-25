@@ -445,6 +445,8 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
+      "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
+      "storyCard", "storyImg", "storyShareBtn", "storySaveBtn", "storyCopyBtn", "storyCloseBtn",
       "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
       "boardEmpty", "boardTable", "boardBody", "boardHint", "playerCount",
       "shareLinkBtn", "formCard", "lockCard", "menuWrap", "menuBtn", "adminMenu", "addPlayerBtn",
@@ -693,6 +695,8 @@
     }
     els.menuSignOutBtn.hidden = !user;
     els.menuWrap.hidden = readOnly;
+    els.shareWrap.hidden = !readOnly; // admins share from the "..." menu
+    if (readOnly) els.storyCard.hidden = true;
     els.editBoardBtn.hidden = restricted;
     els.shareLinkBtn.hidden = readOnly;
     els.qrBtn.hidden = readOnly;
@@ -1305,6 +1309,187 @@
     return u.toString();
   }
 
+  // ---- Share the leaderboard (link) ----------------------------------------
+  function shareText() {
+    return "Who's leading the " + board.title + "? 1st place wins a Zocker Pro Series Control Paddle. See the live leaderboard:";
+  }
+  function setShareMenu(open) {
+    els.shareMenu.hidden = !open;
+    els.shareBoardBtn.setAttribute("aria-expanded", String(open));
+    if (open) {
+      els.shareWhatsApp.href = "https://wa.me/?text=" + encodeURIComponent(shareText() + " " + playerViewUrl());
+      els.shareWhatsApp.focus();
+    }
+  }
+  // Native share sheet where there is one (phones: WhatsApp, Instagram, texts
+  // all in one place); otherwise a small WhatsApp / Copy link menu, which is
+  // also what Instagram's in-app browser gets.
+  function shareBoard(fromMenu) {
+    var url = playerViewUrl();
+    var fallback = function () {
+      if (fromMenu) copyLink(url, "Leaderboard link copied");
+      else setShareMenu(true);
+    };
+    if (navigator.share) {
+      navigator.share({ title: board.title, text: shareText(), url: url }).catch(function (err) {
+        if (!err || err.name !== "AbortError") fallback();
+      });
+    } else {
+      fallback();
+    }
+  }
+  function copyLink(url, msg) {
+    var done = function () { toast(msg); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(function () { window.prompt("Copy this link:", url); });
+    } else {
+      window.prompt("Copy this link:", url);
+    }
+  }
+
+  // ---- Instagram Story image (admin) ---------------------------------------
+  // 1080x1920 PNG of the current standings (top 10, ties share a rank), the
+  // prize and the link, for posting as a Story with a Link sticker. Built on a
+  // canvas like the share-my-rank card; shown as a preview first so the
+  // Share tap below calls navigator.share straight away (iOS needs that).
+  var storyBlob = null;
+  function drawStory() {
+    var FONT = '"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+    var list = sortedEntries();
+    var scored = anyScored(list);
+    var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    return Promise.all([loadImg("/leaderboard/logo.png?v=2"), loadImg("/leaderboard/prize-paddle.png"), fontsReady]).then(function (r) {
+      var logo = r[0], paddle = r[1];
+      var W = 1080, H = 1920, X = 80, c = document.createElement("canvas");
+      c.width = W; c.height = H;
+      var ctx = c.getContext("2d");
+      var bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "#fcebed"); bg.addColorStop(0.35, "#ffffff"); bg.addColorStop(1, "#fdf5f6");
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#b91c2b"; ctx.fillRect(0, 0, W, 18);
+
+      var rows = scored ? list.slice(0, 10)
+        : list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).slice(0, 10);
+      var more = list.length - rows.length;
+      var rowH = 78, headH = 88, pY = 500;
+      var pH = headH + rows.length * rowH + (more > 0 ? 64 : 22);
+      // A short list leaves a gap at the bottom: centre the whole layout
+      // (brand row down to the link) inside the Story's safe area instead.
+      var contentEnd = pY + pH + 36 + 150 + 90 + 100;
+      ctx.save();
+      ctx.translate(0, Math.max(0, Math.floor((1760 - contentEnd) / 2)));
+
+      // Brand row
+      ctx.fillStyle = "#ffffff"; roundRect(ctx, X, 150, 130, 130, 30); ctx.fill();
+      ctx.strokeStyle = "#eadfdf"; ctx.lineWidth = 3; ctx.stroke();
+      if (logo) ctx.drawImage(logo, X + 7, 157, 116, 116);
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#b91c2b"; ctx.font = "800 30px " + FONT; ctx.fillText("LIVE LEADERBOARD", X + 160, 205);
+      ctx.fillStyle = "#524c4a"; ctx.font = "700 36px " + FONT; ctx.fillText("Lotus Pickleball Academy", X + 160, 252);
+
+      // Title, dates, countdown
+      ctx.fillStyle = "#1c1a19"; fitText(ctx, board.title, W - 2 * X, "800", 88, FONT); ctx.fillText(board.title, X, 390);
+      ctx.fillStyle = "#524c4a"; ctx.font = "700 36px " + FONT; ctx.fillText(board.subtitle, X, 450);
+      var cd = countdown();
+      if (cd) {
+        var sw = ctx.measureText(board.subtitle + "  ").width;
+        ctx.fillStyle = "#b91c2b"; ctx.font = "800 36px " + FONT; ctx.fillText("\u00b7 " + cd.text, X + sw, 450);
+      }
+
+      // Standings panel
+      ctx.fillStyle = "#ffffff"; roundRect(ctx, X - 20, pY, W - 2 * X + 40, pH, 32); ctx.fill();
+      ctx.strokeStyle = "#eadfdf"; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = "#6f6865"; ctx.font = "800 28px " + FONT;
+      ctx.fillText(scored ? "TOP " + rows.length : "WHO'S IN", X + 20, pY + 58);
+      ctx.textAlign = "right";
+      ctx.fillText(scored ? "LOTUS SCORE" : list.length + (list.length === 1 ? " PLAYER" : " PLAYERS"), W - X - 20, pY + 58);
+      ctx.fillStyle = "#b91c2b"; ctx.fillRect(X, pY + headH - 6, W - 2 * X, 4);
+      var MEDAL_FILL = { 1: "#c8860d", 2: "#8b93a0", 3: "#a35d28" };
+      rows.forEach(function (e, i) {
+        var y = pY + headH + i * rowH;
+        if (scored && e._rank === 1) { ctx.fillStyle = "#fcebed"; ctx.fillRect(X, y, W - 2 * X, rowH); }
+        if (i > 0) { ctx.fillStyle = "#efe9e8"; ctx.fillRect(X, y, W - 2 * X, 2); }
+        var cy = y + rowH / 2;
+        if (scored) {
+          var medal = MEDAL_FILL[e._rank];
+          ctx.beginPath(); ctx.arc(X + 44, cy, 27, 0, Math.PI * 2);
+          ctx.fillStyle = medal || "#f6f2f1"; ctx.fill();
+          if (!medal) { ctx.strokeStyle = "#e2dbd9"; ctx.lineWidth = 2; ctx.stroke(); }
+          ctx.fillStyle = medal ? "#ffffff" : "#524c4a"; ctx.font = "800 28px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText(String(e._rank), X + 44, cy + 1);
+        }
+        ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.fillStyle = "#1c1a19"; fitText(ctx, e.name, scored ? 560 : 800, scored && e._rank === 1 ? "800" : "700", 42, FONT);
+        ctx.fillText(e.name, scored ? X + 96 : X + 24, cy + 1);
+        if (scored) {
+          ctx.textAlign = "right"; ctx.fillStyle = "#b91c2b"; ctx.font = "800 44px " + FONT;
+          ctx.fillText(String(e._c.total), W - X - 20, cy + 1);
+        }
+        ctx.textBaseline = "alphabetic";
+      });
+      if (more > 0) {
+        ctx.textAlign = "center"; ctx.fillStyle = "#6f6865"; ctx.font = "700 30px " + FONT;
+        ctx.fillText("+ " + more + " more on the full leaderboard", W / 2, pY + headH + rows.length * rowH + 44);
+      }
+
+      // Prize strip
+      var sY = pY + pH + 36, sH = 150;
+      ctx.fillStyle = "#fcebed"; roundRect(ctx, X - 20, sY, W - 2 * X + 40, sH, 28); ctx.fill();
+      ctx.strokeStyle = "rgba(185,28,43,.3)"; ctx.lineWidth = 3; ctx.stroke();
+      var tx = X + 20;
+      if (paddle) { var ph = 122, pw = paddle.width * ph / paddle.height; ctx.drawImage(paddle, X + 14, sY + 14, pw, ph); tx = X + 14 + pw + 30; }
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#b91c2b"; ctx.font = "800 28px " + FONT; ctx.fillText("1ST PLACE WINS", tx, sY + 64);
+      ctx.fillStyle = "#1c1a19"; fitText(ctx, "Zocker Pro Series Control Paddle", W - X - tx, "800", 42, FONT);
+      ctx.fillText("Zocker Pro Series Control Paddle", tx, sY + 116);
+
+      // Link + freshness
+      var fY = sY + sH + 90;
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#524c4a"; ctx.font = "700 32px " + FONT; ctx.fillText("See the full leaderboard", W / 2, fY);
+      ctx.fillStyle = "#b91c2b"; fitText(ctx, playerViewUrl().replace(/^https?:\/\//, ""), W - 2 * X, "800", 40, FONT);
+      ctx.fillText(playerViewUrl().replace(/^https?:\/\//, ""), W / 2, fY + 52);
+      ctx.fillStyle = "#8a8380"; ctx.font = "600 26px " + FONT;
+      ctx.fillText("Updated " + new Date().toLocaleDateString(undefined, { month: "long", day: "numeric" }), W / 2, fY + 100);
+      ctx.restore();
+
+      return new Promise(function (resolve) { c.toBlob(resolve, "image/png"); });
+    });
+  }
+  function openStory() {
+    storyBlob = null;
+    els.storyImg.removeAttribute("src");
+    els.storyCard.hidden = false;
+    els.storyShareBtn.disabled = true;
+    els.storyCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    drawStory().then(function (blob) {
+      storyBlob = blob;
+      if (els.storyImg.dataset.url) URL.revokeObjectURL(els.storyImg.dataset.url);
+      var url = URL.createObjectURL(blob);
+      els.storyImg.dataset.url = url;
+      els.storyImg.src = url;
+      els.storyShareBtn.disabled = false;
+    });
+  }
+  function storyFile() {
+    return storyBlob && typeof File === "function" ? new File([storyBlob], "lotus-leaderboard-story.png", { type: "image/png" }) : null;
+  }
+  function shareStory() {
+    var file = storyFile();
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file] }).catch(function (err) {
+        if (!err || err.name !== "AbortError") saveStory();
+      });
+    } else {
+      saveStory();
+    }
+  }
+  function saveStory() {
+    if (!storyBlob) return;
+    downloadBlob(storyBlob, "lotus-leaderboard-story.png");
+    toast("Story image saved. Post it from your photos.");
+  }
+
   function copyPlayerLink() {
     var url = playerViewUrl();
     var done = function () { toast("Player view link copied"); };
@@ -1494,6 +1679,28 @@
       }
     });
     els.shareLinkBtn.addEventListener("click", copyPlayerLink);
+    els.shareBoardBtn.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      if (!els.shareMenu.hidden) { setShareMenu(false); return; }
+      shareBoard(false);
+    });
+    els.shareCopyBtn.addEventListener("click", function () {
+      setShareMenu(false);
+      copyLink(playerViewUrl(), "Leaderboard link copied");
+    });
+    els.shareWhatsApp.addEventListener("click", function () { setShareMenu(false); });
+    document.addEventListener("click", function (ev) {
+      if (!els.shareMenu.hidden && !els.shareWrap.contains(ev.target)) setShareMenu(false);
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && !els.shareMenu.hidden) { setShareMenu(false); els.shareBoardBtn.focus(); }
+    });
+    els.menuShareBtn.addEventListener("click", function () { shareBoard(true); });
+    els.storyBtn.addEventListener("click", openStory);
+    els.storyShareBtn.addEventListener("click", shareStory);
+    els.storySaveBtn.addEventListener("click", saveStory);
+    els.storyCopyBtn.addEventListener("click", function () { copyLink(playerViewUrl(), "Link copied. Paste it into the Link sticker."); });
+    els.storyCloseBtn.addEventListener("click", function () { els.storyCard.hidden = true; });
     els.qrBtn.addEventListener("click", toggleQr);
     els.qrCloseBtn.addEventListener("click", function () { els.qrCard.hidden = true; });
     els.qrCopyBtn.addEventListener("click", copyPlayerLink);

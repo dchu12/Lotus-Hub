@@ -41,6 +41,25 @@ Community Points, Points Behind 1st — and sorts automatically.
   the paddle (`prize-paddle.png`, a transparent cut-out so it sits directly on the banner): "1st place wins / Zocker Pro Series
   Control Paddle". It's plain markup in `index.html`
   (`<section class="prize">`); edit it when the prize changes.
+- **Link previews**: `index.html` carries Open Graph / Twitter tags pointing
+  at `og-image.jpg` (1200×630, logo + challenge name + prize + "See who's
+  leading"), so the link shows a branded card in WhatsApp, Instagram DMs,
+  iMessage and Facebook. Crawlers don't run JavaScript, so these are static:
+  **when the challenge name, dates or prize change, update the tags and
+  regenerate `og-image.jpg`** (bump its `?v=`). WhatsApp caches a preview
+  per link for a while.
+- **Share the leaderboard**: the player view has a **Share** button in the
+  header (share icon on phones). It opens the phone's share sheet (WhatsApp,
+  Instagram, texts…) with a short message and the player link; where there's
+  no share sheet (desktop, Instagram's in-app browser) it offers **Share on
+  WhatsApp** (`wa.me` link) and **Copy link**. On the admin link it's
+  "⋯" → **Share leaderboard**.
+- **Instagram Story image** (admin, "⋯" → Instagram Story image): draws a
+  1080×1920 image of the current standings (top 10, ties share a rank; "Who's
+  in" before anyone has scored), the countdown, the prize and the player
+  link, previews it, then **Share to Instagram** (share sheet) or **Save
+  image**. "Copy link for the sticker" copies the player link for
+  Instagram's Link sticker.
 - **Share my rank**: once scores exist, the "your rank" strip has a
   **Share** button. It draws a 1080×1350 PNG on a canvas (logo, challenge
   name, rank medallion, name, points, standing, the prize, and the player

@@ -4,8 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#b91c2b" />
-  <title>Lotus Leaderboard</title>
-  <meta name="description" content="Live leaderboard for the Lotus Pickleball Academy challenge — DUPR improvement + community points add up to a Lotus Score." />
+  <title>October Lotus Challenge · Live Leaderboard</title>
+  <meta name="description" content="See who's leading the Lotus Pickleball Academy October Challenge. DUPR gains + community points. 1st place wins a Zocker Pro Series Control Paddle." />
+  <!-- Link previews (WhatsApp, Instagram DMs, iMessage, Facebook…). Crawlers
+       don't run JavaScript, so these must be static: keep them (and
+       og-image.jpg) in step with the challenge name/prize. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Lotus Pickleball Academy" />
+  <meta property="og:title" content="October Lotus Challenge · Live Leaderboard" />
+  <meta property="og:description" content="See who's leading. DUPR gains + community points. 1st place wins a Zocker Pro Series Control Paddle." />
+  <meta property="og:url" content="https://lots-hub.web.app/lotusoctoberchallenge" />
+  <meta property="og:image" content="https://lots-hub.web.app/leaderboard/og-image.jpg?v=1" />
+  <meta property="og:image:secure_url" content="https://lots-hub.web.app/leaderboard/og-image.jpg?v=1" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="October Lotus Challenge live leaderboard. 1st place wins a Zocker Pro Series Control Paddle." />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" sizes="64x64" href="/leaderboard/favicon-64.png?v=2" />
   <!-- PWA: installable + offline -->
   <link rel="manifest" href="/leaderboard/manifest.webmanifest" />
@@ -19,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=30" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=31" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -35,15 +50,26 @@
           <p class="hd-sub"><span id="boardSubtitle">October 1 – October 31</span><span class="countdown" id="countdown" hidden></span></p>
         </div>
       </div>
-      <div class="hd-actions" id="menuWrap">
+      <div class="hd-actions">
+        <div class="share-wrap" id="shareWrap">
+          <button id="shareBoardBtn" class="icon-btn share-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="shareMenu" aria-label="Share the leaderboard" title="Share the leaderboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg><span class="share-lbl">Share</span></button>
+          <div class="menu" id="shareMenu" role="menu" hidden>
+            <a role="menuitem" id="shareWhatsApp" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.3z"/><path d="M9 8.5c0 3.5 2.5 6.5 6.5 6.5l1-1.6-2-1-1 1c-1.2-.4-2.2-1.4-2.6-2.6l1-1-1-2L9 8.5z"/></svg>Share on WhatsApp</a>
+            <button type="button" role="menuitem" id="shareCopyBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1 1"/><path d="M14 11a5 5 0 0 0-7.07 0l-2 2a5 5 0 0 0 7.07 7.07l1-1"/></svg>Copy link</button>
+          </div>
+        </div>
+        <div class="menu-wrap" id="menuWrap">
         <button id="menuBtn" class="icon-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="adminMenu" aria-label="Admin menu" title="Admin menu"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg></button>
         <div class="menu" id="adminMenu" role="menu" hidden>
           <button type="button" role="menuitem" id="shareLinkBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1 1"/><path d="M14 11a5 5 0 0 0-7.07 0l-2 2a5 5 0 0 0 7.07 7.07l1-1"/></svg>Copy player link</button>
+          <button type="button" role="menuitem" id="menuShareBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Share leaderboard</button>
+          <button type="button" role="menuitem" id="storyBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M9 7h6M9 11h6M9 15h3"/></svg>Instagram Story image</button>
           <button type="button" role="menuitem" id="qrBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M14 20h3"/><path d="M20 14v3"/><path d="M20 20h.01"/></svg>Player link QR code</button>
           <button type="button" role="menuitem" id="editBoardBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit challenge details</button>
           <button type="button" role="menuitem" id="menuEventsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Edit events</button>
           <button type="button" role="menuitem" id="exportCsvBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Export CSV</button>
           <button type="button" role="menuitem" id="menuSignOutBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</button>
+        </div>
         </div>
       </div>
     </header>
@@ -69,6 +95,19 @@
       <div class="form-actions">
         <button type="button" class="btn ghost" id="qrCopyBtn">Copy link</button>
         <button type="button" class="btn ghost" id="qrCloseBtn">Close</button>
+      </div>
+    </section>
+
+    <!-- Instagram Story image of the current standings (admin) -->
+    <section class="card story-card" id="storyCard" hidden aria-labelledby="storyTitle">
+      <h2 id="storyTitle">Instagram Story image</h2>
+      <p class="lock-copy">Post it to your Story, then add a <b>Link</b> sticker with the leaderboard link so followers can tap through.</p>
+      <div class="story-preview"><img id="storyImg" alt="Preview of the Instagram Story image with the current standings" /></div>
+      <div class="form-actions">
+        <button type="button" class="btn primary" id="storyShareBtn">Share to Instagram</button>
+        <button type="button" class="btn ghost" id="storySaveBtn">Save image</button>
+        <button type="button" class="btn ghost" id="storyCopyBtn">Copy link for the sticker</button>
+        <button type="button" class="btn ghost" id="storyCloseBtn">Close</button>
       </div>
     </section>
 
@@ -281,6 +320,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=32"></script>
+  <script src="/leaderboard/app.js?v=33"></script>
 </body>
 </html>

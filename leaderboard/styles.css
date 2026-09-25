@@ -59,6 +59,21 @@ body {
 .countdown.before { background: var(--accent-bg); color: var(--brand); }
 .countdown.ended { background: var(--field); color: var(--muted); border: 1px solid var(--line); }
 .hd-actions { display: flex; gap: 8px; flex: none; position: relative; }
+.share-wrap, .menu-wrap { position: relative; }
+.icon-btn.share-btn { width: auto; padding: 0 16px; gap: 8px; display: inline-flex; align-items: center; font: inherit; font-weight: 700; font-size: .88rem; color: var(--ink); }
+.icon-btn.share-btn svg { width: 17px; height: 17px; }
+.menu a {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px;
+  font-size: .9rem; font-weight: 600; color: var(--ink); text-decoration: none; white-space: nowrap;
+}
+.menu a svg { width: 17px; height: 17px; flex: none; color: var(--muted); }
+.menu a:hover, .menu a:focus-visible { background: var(--field); outline: none; color: var(--brand); }
+.story-card { text-align: center; }
+.story-card .lock-copy { text-align: left; }
+.story-preview { margin: 4px auto 14px; max-width: 260px; aspect-ratio: 9 / 16; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--field); box-shadow: var(--shadow); }
+.story-preview img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.story-card .form-actions { justify-content: center; }
+.btn[disabled] { opacity: .5; cursor: default; }
 .menu {
   position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 230px; padding: 6px;
   background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow);
@@ -512,6 +527,8 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .hd-logo { width: 46px; height: 46px; border-radius: 12px; }
   .hd-actions { margin-top: 5px; }
   .hd-actions .icon-btn { width: 36px; height: 36px; border-radius: 10px; }
+  .hd-actions .icon-btn.share-btn { width: 36px; padding: 0; justify-content: center; }
+  .share-lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .hd h1 { font-size: 1.16rem; }
   .prize-main { font-size: .95rem; }
   th.rank, td.rank { width: 30px; }
