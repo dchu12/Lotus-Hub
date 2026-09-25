@@ -135,7 +135,7 @@
     if (hours < 24) return hours + " hour" + (hours === 1 ? "" : "s") + " ago";
     var days = Math.round(hours / 24);
     if (days < 7) return days + " day" + (days === 1 ? "" : "s") + " ago";
-    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
   function computed(e) {
     var duprPoints = Math.round(num(e.duprImprovement) * 100);
@@ -232,15 +232,17 @@
   }
   function fmtDay(iso) {
     var p = iso.split("-");
-    return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+    return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString("en-US", { month: "long", day: "numeric" });
   }
   // { text, phase: "before" | "live" | "ended" } or null when no dates are set.
   function countdown() {
     var d = challengeDates();
     var today = dayNum(isoToday());
     if (d.start && today < dayNum(d.start)) {
+      // A date rather than a day count: the countdown card below shows the
+      // exact time left, and "in 7 days" next to "6 days 0 hours" reads as a bug.
       var n = dayNum(d.start) - today;
-      return { phase: "before", text: n === 1 ? "Starts tomorrow" : "Starts in " + n + " days" };
+      return { phase: "before", text: n === 1 ? "Starts tomorrow" : "Starts " + fmtDay(d.start) };
     }
     if (!d.end) return null;
     var left = dayNum(d.end) - today + 1;
@@ -961,13 +963,19 @@
   // ---- initials avatars ------------------------------------------------------
   // A coloured circle with a player's initials. Colour is picked from the
   // name so it stays the same everywhere; all shades keep white text ≥4.5:1.
-  var AVATAR_COLORS = ["#b91c2b", "#8a5300", "#0f6e5f", "#1d4f91", "#6b3fa0", "#2f6b1f", "#a3386b", "#5b5f97"];
+  // Ten clearly different hues, all dark enough for white initials (>= 4.5:1).
+  var AVATAR_COLORS = ["#1d4f91", "#0f6e5f", "#6b3fa0", "#b3451b", "#2f6b1f", "#a3386b", "#8a5300", "#0e6a8a", "#b91c2b", "#46606e"];
   function initials(name) {
     var parts = String(name || "").trim().split(/\s+/).filter(Boolean);
     var s = parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0] || "?").slice(0, 2);
     return s.toUpperCase();
   }
+  // Each player gets the next colour in the order they were added, so the
+  // first ten never share one; anyone not on the board falls back to a hash.
   function avatarColor(name) {
+    for (var i = 0; i < board.entries.length; i++) {
+      if (board.entries[i].name === name) return AVATAR_COLORS[i % AVATAR_COLORS.length];
+    }
     var h = 0, s = String(name || "");
     for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
     return AVATAR_COLORS[h % AVATAR_COLORS.length];
@@ -997,9 +1005,13 @@
     updateLaunchCount();
     var roster = list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
     els.launchRosterCount.textContent = roster.length ? roster.length + (roster.length === 1 ? " player" : " players") : "";
+    var you = readOnly
+      ? '<li class="lr-you"><a href="' + JOIN_URL + '" target="_blank" rel="noopener"><span class="lr-plus" aria-hidden="true">+</span>' +
+        (roster.length ? "You?" : "Be the first") + '<span class="sr-only"> Join the challenge on Instagram</span></a></li>'
+      : "";
     els.launchRoster.innerHTML = roster.length
-      ? roster.map(function (e) { return "<li>" + avatarHtml(e.name) + '<span class="lr-name">' + esc(e.name) + "</span></li>"; }).join("")
-      : '<li class="lr-empty">Be the first to sign up.</li>';
+      ? roster.map(function (e) { return "<li>" + avatarHtml(e.name) + '<span class="lr-name">' + esc(e.name) + "</span></li>"; }).join("") + you
+      : you || '<li class="lr-empty">Be the first to sign up.</li>';
   }
   function updateLaunchCount() {
     var t = startCountdownParts();
@@ -1261,7 +1273,7 @@
     var d = new Date(+p[0], +p[1] - 1, +p[2]);
     var t = EVENT_TYPES[ev.type] || EVENT_TYPES.special;
     var away = dayNum(ev.date) - dayNum(isoToday());
-    var when = away < 0 ? "Past" : away === 0 ? "Today" : away === 1 ? "Tomorrow" : d.toLocaleDateString(undefined, { weekday: "long" });
+    var when = away < 0 ? "Past" : away === 0 ? "Today" : away === 1 ? "Tomorrow" : d.toLocaleDateString("en-US", { weekday: "long" });
     var time = ev.allDay ? "All day" : fmtClock(ev.start) + (/^\d{2}:\d{2}$/.test(ev.end || "") ? "&ndash;" + fmtClock(ev.end) : "");
     var tag = t.pts
       ? '<span class="ev-tag ' + esc(ev.type) + '">' + t.label + " &middot; +" + t.pts + (t.pts === 1 ? " pt" : " pts") + "</span>"
@@ -1284,10 +1296,10 @@
       : "";
     return (
       '<li class="ev' + (opts.next ? " next" : "") + (away < 0 ? " past" : "") + (ev.id === editingEventId ? " being-edited" : "") + '">' +
-      '<div class="ev-date" aria-hidden="true"><span class="ev-mon">' + d.toLocaleDateString(undefined, { month: "short" }) + "</span>" +
+      '<div class="ev-date" aria-hidden="true"><span class="ev-mon">' + d.toLocaleDateString("en-US", { month: "short" }) + "</span>" +
       '<span class="ev-day">' + d.getDate() + "</span></div>" +
       '<div class="ev-body"><div class="ev-title">' + esc(ev.title) + "</div>" +
-      '<div class="ev-meta"><span class="sr-only">' + esc(d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })) + ", </span>" +
+      '<div class="ev-meta"><span class="sr-only">' + esc(d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })) + ", </span>" +
       '<span aria-hidden="true">' + when + " &middot; </span>" + time + (ev.place ? " &middot; " + esc(ev.place) : "") + "</div>" +
       tag + "</div>" + actions + calOpts + "</li>"
     );
@@ -1794,7 +1806,7 @@
       ctx.fillStyle = "#b91c2b"; fitText(ctx, playerViewUrl().replace(/^https?:\/\//, ""), W - 2 * X, "800", 40, FONT);
       ctx.fillText(playerViewUrl().replace(/^https?:\/\//, ""), W / 2, fY + 52);
       ctx.fillStyle = "#8a8380"; ctx.font = "600 26px " + FONT;
-      ctx.fillText("Updated " + new Date().toLocaleDateString(undefined, { month: "long", day: "numeric" }), W / 2, fY + 100);
+      ctx.fillText("Updated " + new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" }), W / 2, fY + 100);
       ctx.restore();
 
       return new Promise(function (resolve) { c.toBlob(resolve, "image/png"); });

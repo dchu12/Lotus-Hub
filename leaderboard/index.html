@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=43" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=44" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -89,7 +89,12 @@
 
     <!-- Challenge information: key facts, scoring, and the full announcement post -->
     <details class="card scoring" id="scoringCard">
-      <summary class="scoring-title"><h2 class="info-title">Challenge information</h2></summary>
+      <summary class="scoring-title">
+        <span class="info-sum">
+          <span class="info-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg></span>
+          <span class="info-txt"><h2 class="info-title">Challenge information</h2><span class="info-hint">Prize rules · How scoring works</span></span>
+        </span>
+      </summary>
       <a class="btn info-post" href="https://www.instagram.com/p/DdZCGGOkYlW/" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg>
         See the full challenge post<span class="sr-only"> on Instagram</span>
@@ -357,8 +362,14 @@
       </div>
     </section>
 
-    <!-- How scoring works -->
   </main>
+
+  <footer class="site-foot">
+    <img src="/leaderboard/logo.png?v=2" alt="" width="36" height="36" />
+    <div class="sf-name">Lotus Pickleball Academy</div>
+    <a class="sf-ig" href="https://www.instagram.com/lotuspickleballacademy_to/" target="_blank" rel="noopener">@lotuspickleballacademy_to<span class="sr-only"> on Instagram</span></a>
+    <div class="sf-live"><span class="sf-dot" aria-hidden="true"></span>Leaderboard updates live</div>
+  </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
@@ -373,6 +384,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=40"></script>
+  <script src="/leaderboard/app.js?v=41"></script>
 </body>
 </html>

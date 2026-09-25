@@ -91,6 +91,18 @@ Community Points, Points Behind 1st — and sorts automatically.
   rules let anyone add exactly 1 to a counter for an existing board, and
   only the coach can read the counters. Counts are approximate: clearing
   browser data counts a visitor again.
+- **Polish details**:
+  - Before launch the header pill reads "Starts October 1" rather than a
+    day count, so it can't disagree with the exact countdown.
+  - Dates are always written in US style ("October 1"), whatever the phone's
+    language setting.
+  - Avatar colours follow the order players were added, so the first ten
+    players all get different colours (all at least 5.5:1 contrast with
+    white).
+  - The player view's "Who's in" ends with a dashed **+ You?** bubble that
+    opens the Instagram DM.
+  - A footer shows the logo, the academy name, the Instagram handle and
+    "Leaderboard updates live".
 - **Join the challenge**: the player view shows a full-width **DM LOTUS to
   join the challenge** button under the Challenge information card that opens an
   Instagram DM to `@lotuspickleballacademy_to`
