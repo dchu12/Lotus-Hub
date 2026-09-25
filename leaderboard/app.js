@@ -639,7 +639,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
-      "winnerCard", "prizeBanner", "joinCard", "launchCard", "launchDate", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -862,7 +862,9 @@
     els.prizeMeta.hidden = !end;
     if (end) els.prizeMeta.textContent = "Awarded to the top Lotus Score on " + fmtDay(end);
     var cd = countdown();
-    els.countdown.hidden = !cd;
+    // Before launch the header already shows the dates and the countdown card
+    // shows the time left, so a "Starts ..." pill would only repeat them.
+    els.countdown.hidden = !cd || cd.phase === "before";
     if (cd) {
       els.countdown.textContent = cd.text;
       els.countdown.className = "countdown " + cd.phase;
@@ -1001,7 +1003,6 @@
   function renderLaunch(list, show) {
     els.launchCard.hidden = !show;
     if (!show) return;
-    els.launchDate.textContent = fmtDay(challengeDates().start);
     updateLaunchCount();
     var roster = list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
     els.launchRosterCount.textContent = roster.length ? roster.length + (roster.length === 1 ? " player" : " players") : "";
@@ -1726,7 +1727,10 @@
       var cd = countdown();
       if (cd) {
         var sw = ctx.measureText(board.subtitle + "  ").width;
-        ctx.fillStyle = "#b91c2b"; ctx.font = "800 36px " + FONT; ctx.fillText("\u00b7 " + cd.text, X + sw, 450);
+        // The Story has no countdown card, so before launch say how long is left.
+        var until = dayNum(challengeDates().start) - dayNum(isoToday());
+        var cdText = cd.phase === "before" ? (until === 1 ? "Starts tomorrow" : "Starts in " + until + " days") : cd.text;
+        ctx.fillStyle = "#b91c2b"; ctx.font = "800 36px " + FONT; ctx.fillText("\u00b7 " + cdText, X + sw, 450);
       }
 
       // Standings panel

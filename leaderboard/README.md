@@ -92,8 +92,11 @@ Community Points, Points Behind 1st — and sorts automatically.
   only the coach can read the counters. Counts are approximate: clearing
   browser data counts a visitor again.
 - **Polish details**:
-  - Before launch the header pill reads "Starts October 1" rather than a
-    day count, so it can't disagree with the exact countdown.
+  - Before launch there's no header pill: the header shows the dates and
+    the countdown card shows the exact time left. Once live, the pill shows
+    "X days left". The Story image, which has no countdown card, says
+    "Starts in X days". The countdown card's heading reads "Kicks off in",
+    so the date isn't repeated there either.
   - Dates are always written in US style ("October 1"), whatever the phone's
     language setting.
   - Avatar colours follow the order players were added, so the first ten

@@ -247,7 +247,7 @@
     <!-- Before the start date: countdown + who's signed up (players see this
          instead of a table of zeros) -->
     <section class="card launch-card" id="launchCard" hidden aria-labelledby="launchTitle">
-      <h2 class="launch-kicker" id="launchTitle">Kicks off <span id="launchDate"></span></h2>
+      <h2 class="launch-kicker" id="launchTitle">Kicks off in</h2>
       <div class="launch-count" id="launchCount" role="timer" aria-live="off"></div>
       <div class="launch-roster-head"><span>Who's in</span><span id="launchRosterCount"></span></div>
       <ul class="launch-roster" id="launchRoster"></ul>
@@ -384,6 +384,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=41"></script>
+  <script src="/leaderboard/app.js?v=42"></script>
 </body>
 </html>
