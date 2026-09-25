@@ -125,6 +125,7 @@ body {
 /* Join CTA (player view): just the button, full width, under the
    challenge information. */
 .join { margin: 0 0 16px; }
+.join-lbl { margin: 0 0 8px; text-align: center; font-weight: 700; font-size: .92rem; color: var(--ink-2); }
 .join-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
   padding: 13px 18px; border-radius: 12px; font-size: 1rem; text-decoration: none;
