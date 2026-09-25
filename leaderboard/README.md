@@ -91,12 +91,11 @@ Community Points, Points Behind 1st — and sorts automatically.
   rules let anyone add exactly 1 to a counter for an existing board, and
   only the coach can read the counters. Counts are approximate: clearing
   browser data counts a visitor again.
-- **Join the challenge**: the player view shows a "Want in?" card under the
-  prize with a **Join the challenge** button that opens an Instagram DM to
-  `@lotuspickleballacademy_to` (`https://ig.me/m/lotuspickleballacademy_to`,
-  set in `JOIN_URL` in `app.js` and the `#joinBtn` link in `index.html`).
-  Before the start date it reads "Get on the board before it kicks off";
-  during the challenge "It's not too late". It's hidden in the admin view,
+- **Join the challenge**: the player view shows a full-width **Join the
+  challenge** button under the Challenge information card that opens an
+  Instagram DM to `@lotuspickleballacademy_to`
+  (`https://ig.me/m/lotuspickleballacademy_to`, set in `JOIN_URL` in
+  `app.js` and the `#joinBtn` link in `index.html`). It's hidden in the admin view,
   once the challenge has ended, and once a visitor has picked their own name.
   The "Find your name" search links to the same DM when a name isn't found.
 - **Share the leaderboard**: the player view has a **Share** button in the
@@ -173,7 +172,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   scoring works" (the formula as tiles plus the tie-break rule), and a
   button to the full challenge post on Instagram
   (`https://www.instagram.com/p/DdZCGGOkYlW/`, in `index.html`).
-  Sits between the prize and the "Want in?" card, collapsed by default (one
+  Sits between the prize and the Join the challenge button, collapsed by default (one
   tap to open) so the leaderboard stays near the top.
 
 - **Admin tools** (admin link only):
