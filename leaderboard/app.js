@@ -84,7 +84,7 @@
 
   var board = {
     // Keep in sync with the placeholder heading in index.html.
-    title: "October Lotus Challenge",
+    title: "October Challenge",
     subtitle: "Oct 1 – 31",
     entries: [],
     startDate: null, // "YYYY-MM-DD", drives the header countdown
@@ -490,10 +490,15 @@
   function shortSubtitle(s) {
     return OLD_SUBTITLES.hasOwnProperty(s) ? OLD_SUBTITLES[s] : s;
   }
+  // Same for the challenge name, renamed to "October Challenge".
+  var OLD_TITLES = { "October Lotus Challenge": "October Challenge" };
+  function newTitle(s) {
+    return OLD_TITLES.hasOwnProperty(s) ? OLD_TITLES[s] : s;
+  }
   function cleanDoc(src) {
     src = src || {};
     return {
-      title: src.title || board.title,
+      title: newTitle(src.title || board.title),
       subtitle: shortSubtitle(src.subtitle || board.subtitle),
       entries: JSON.parse(JSON.stringify(Array.isArray(src.entries) ? src.entries : [])),
       startDate: validIso(src.startDate) ? src.startDate : null,
@@ -543,7 +548,7 @@
     }
     connected = true;
     if (data) {
-      board.title = data.title || board.title;
+      board.title = newTitle(data.title || board.title);
       board.subtitle = shortSubtitle(data.subtitle || board.subtitle);
       board.entries = Array.isArray(data.entries) ? data.entries : [];
       board.startDate = data.startDate || null;
@@ -868,7 +873,7 @@
 
   // ---- render ---------------------------------------------------------------
   function renderHeader() {
-    els.boardTitle.textContent = board.title;
+    els.boardTitle.textContent = newTitle(board.title);
     els.boardSubtitle.textContent = shortSubtitle(board.subtitle);
     var end = challengeDates().end;
     els.prizeMeta.hidden = !end;
