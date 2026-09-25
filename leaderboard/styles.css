@@ -126,7 +126,7 @@ body {
 }
 .prize-txt { min-width: 0; }
 .prize-origin { margin-top: 5px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
-.prize-sponsor { font-size: .72rem; font-weight: 600; color: var(--muted); line-height: 1.3; }
+.prize-sponsor { flex-basis: 100%; font-size: .72rem; font-weight: 600; color: var(--muted); line-height: 1.3; }
 .prize-sponsor b { font-weight: 800; color: var(--ink-2); }
 .vn-badge {
   display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 1px 3px; border-radius: 999px;

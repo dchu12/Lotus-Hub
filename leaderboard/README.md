@@ -46,8 +46,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   view, a slim version is pinned to the bottom of the screen. It only shows
   when the main button would (player view, not ended, visitor not on the
   board), and never on desktop.
-- **Sponsor line**: beside the flag badge, "Sponsored by: Lotus Pickleball
-  Academy" (it wraps under the badge on narrow phones).
+- **Sponsor line**: on its own line under the flag badge, "Sponsored by:
+  Lotus Pickleball Academy".
 - **Paddle name link**: "Zocker Pro Series Control Paddle" in the prize
   banner links to the paddle on zocker.ca (new tab).
 - **Paddle photo**: tapping the prize photo opens it full size in a dialog
