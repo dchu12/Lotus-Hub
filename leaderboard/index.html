@@ -14,8 +14,8 @@
   <meta property="og:title" content="October Lotus Challenge · Live Leaderboard" />
   <meta property="og:description" content="See who's leading. DUPR gains + community points. 1st place wins a Zocker Pro Series Control Paddle." />
   <meta property="og:url" content="https://lots-hub.web.app/lotusoctoberchallenge" />
-  <meta property="og:image" content="https://lots-hub.web.app/leaderboard/og-image.jpg?v=1" />
-  <meta property="og:image:secure_url" content="https://lots-hub.web.app/leaderboard/og-image.jpg?v=1" />
+  <meta property="og:image" content="https://lots-hub.web.app/leaderboard/og-image.jpg?v=2" />
+  <meta property="og:image:secure_url" content="https://lots-hub.web.app/leaderboard/og-image.jpg?v=2" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=50" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=51" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -80,7 +80,10 @@
     <section class="winner" id="winnerCard" hidden aria-live="polite"></section>
 
     <section class="prize" id="prizeBanner" aria-label="Challenge prize">
-      <img class="prize-photo" src="/leaderboard/prize-paddle.png" alt="Zocker Pro Series Control paddle" width="111" height="240" />
+      <button type="button" class="prize-zoom" id="prizeZoomBtn" aria-haspopup="dialog" aria-label="View the Zocker Pro Series Control paddle full size">
+        <img class="prize-photo" src="/leaderboard/prize-paddle.png" alt="" width="111" height="240" />
+        <span class="pz-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.2-4.2M11 8.5v5M8.5 11h5"/></svg></span>
+      </button>
       <div class="prize-txt">
         <div class="prize-top"><span class="prize-eyebrow">1st place wins</span><span class="vn-badge"><svg class="vn-flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" rx="2" fill="#da251d"/><polygon fill="#ffcd00" points="15.00,4.00 16.35,8.15 20.71,8.15 17.18,10.71 18.53,14.85 15.00,12.29 11.47,14.85 12.82,10.71 9.29,8.15 13.65,8.15"/></svg><span class="sr-only">Vietnam </span>brand</span></div>
         <div class="prize-main">Zocker Pro Series Control Paddle</div>
@@ -244,6 +247,13 @@
       <p class="form-msg" id="formMsg" role="status"></p>
     </section>
 
+    <!-- Placeholder while the board loads, so nothing pops in half-built -->
+    <section class="card skel-card" id="skelCard" aria-busy="true" aria-label="Loading the leaderboard">
+      <div class="sk sk-title"></div>
+      <div class="sk-row"><div class="sk sk-av"></div><div class="sk sk-av"></div><div class="sk sk-av"></div></div>
+      <div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line short"></div>
+    </section>
+
     <!-- Leaderboard table (desktop) / cards (mobile) -->
     <!-- Before the start date: countdown + who's signed up (players see this
          instead of a table of zeros) -->
@@ -256,12 +266,11 @@
 
     <section class="card board-card" id="boardCard" aria-label="Leaderboard">
       <div class="board-head">
-        <h2 id="boardHeading">Lotus Leaderboard</h2>
-        <div class="board-head-right">
-          <span class="count" id="playerCount"></span>
-          <span class="last-updated" id="lastUpdatedText"></span>
-          <button type="button" class="btn small primary" id="addPlayerBtn">+ Add player</button>
+        <div class="bh-title">
+          <h2 id="boardHeading">Lotus Leaderboard</h2>
+          <div class="bh-meta"><span class="count" id="playerCount"></span><span class="last-updated" id="lastUpdatedText"></span></div>
         </div>
+        <button type="button" class="btn small primary" id="addPlayerBtn">+ Add player</button>
       </div>
       <div class="podium" id="podium" hidden></div>
       <!-- Climber of the week: biggest rank jump over the last full week -->
@@ -379,6 +388,21 @@
     <div class="sf-live"><span class="sf-dot" aria-hidden="true"></span>Leaderboard updates live</div>
   </footer>
 
+  <!-- Phones: the DM button pinned to the bottom once the main one scrolls away -->
+  <a class="join-sticky" id="joinSticky" href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener" hidden>
+    <span class="js-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg></span>
+    <span class="js-txt"><b>DM LOTUS</b> to join the challenge</span>
+    <span class="sr-only"> (opens Instagram)</span>
+    <span class="js-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+  </a>
+
+  <!-- The prize, full size -->
+  <dialog class="lightbox" id="prizeDialog" aria-labelledby="prizeDialogTitle">
+    <button type="button" class="lb-close" id="prizeDialogClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <img id="prizeDialogImg" alt="Zocker Pro Series Control paddle" width="500" height="1082" />
+    <p class="lb-cap"><span class="lb-kicker">1st place wins</span><span id="prizeDialogTitle">Zocker Pro Series Control Paddle</span></p>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <!-- Firebase (shared, no sign-in required for this board — see firestore.rules) -->
@@ -392,6 +416,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=46"></script>
+  <script src="/leaderboard/app.js?v=47"></script>
 </body>
 </html>

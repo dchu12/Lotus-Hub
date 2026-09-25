@@ -37,6 +37,20 @@ Community Points, Points Behind 1st — and sorts automatically.
   weekly snapshot of the rankings (`snapshot` on the board doc). An admin
   save takes a new snapshot at most once every 7 days, from the rankings
   as they stood before that save, and never while nobody has points.
+- **Loading placeholder**: until the board first arrives from Firestore, a
+  shimmering placeholder card stands in for the countdown/leaderboard, so a
+  slow connection doesn't flash "Be the first" or an empty table. If nothing
+  arrives within 10 seconds, the page shows its normal empty state.
+- **Sticky DM bar (phones)**: once the main DM LOTUS button scrolls out of
+  view, a slim version is pinned to the bottom of the screen. It only shows
+  when the main button would (player view, not ended, visitor not on the
+  board), and never on desktop.
+- **Paddle photo**: tapping the prize photo opens it full size in a dialog
+  (`prize-paddle-lg.png`, loaded only on tap). Escape, the close button or
+  tapping the backdrop closes it.
+- **Leaderboard heading**: "Lotus Leaderboard" with "5 players · Updated N
+  minutes ago" directly under it, and the admin's + Add player button beside
+  it.
 - **Prize banner**: right under the header, every visit, with a photo of
   the paddle (`prize-paddle.png`, a transparent cut-out so it sits directly on the banner): "1st place wins / Zocker Pro Series
   Control Paddle". It's plain markup in `index.html`
@@ -64,7 +78,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   leading"), so the link shows a branded card in WhatsApp, Instagram DMs,
   iMessage and Facebook. Crawlers don't run JavaScript, so these are static:
   **when the challenge name, dates or prize change, update the tags and
-  regenerate `og-image.jpg`** (bump its `?v=`). WhatsApp caches a preview
+  regenerate `og-image.jpg`** (bump its `?v=`; now `?v=2`, with the academy
+  eyebrow, "Oct 1 – 31" and the flag badge). WhatsApp caches a preview
   per link for a while.
 - **Climber of the week**: a green card under the podium showing the
   player who climbed the most spots in the last full week (Monday to
