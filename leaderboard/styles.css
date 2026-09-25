@@ -135,6 +135,14 @@ body {
 .prize-eyebrow {
   font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--brand);
 }
+.prize-link {
+  color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand), transparent 55%);
+  text-decoration-thickness: 2px; text-underline-offset: 3px; transition: color .15s ease, text-decoration-color .15s ease;
+}
+.prize-link:hover { color: var(--brand); text-decoration-color: var(--brand); }
+.prize-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.pl-last { white-space: nowrap; }
+.pl-ext { width: .8em; height: .8em; margin-left: 4px; vertical-align: -.05em; color: var(--brand); }
 .prize-main { font-size: 1.02rem; font-weight: 800; color: var(--ink); line-height: 1.3; margin-top: 1px; letter-spacing: -.01em; }
 .prize-meta {
   margin-left: auto; padding-left: 16px; border-left: 1px solid color-mix(in srgb, var(--brand), transparent 72%);
