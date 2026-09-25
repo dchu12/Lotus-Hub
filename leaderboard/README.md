@@ -9,7 +9,7 @@ tallies each player's **Lotus Score** automatically:
   **DUPR Improvement** field, shown read-only right next to them (no manual
   override — it's always Start DUPR − End DUPR). Every **+0.01 DUPR
   improvement = +1 point**.
-- **Lotus community points**, earned per session attended:
+- **Lotus community points**, earned per session attended hosted by Lotus:
   - Ranked Play — **+1**
   - Social Play — **+3**
   - Drill Training — **+2**
