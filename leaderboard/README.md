@@ -91,8 +91,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   rules let anyone add exactly 1 to a counter for an existing board, and
   only the coach can read the counters. Counts are approximate: clearing
   browser data counts a visitor again.
-- **Join the challenge**: the player view shows "DM us Lotus on Instagram
-  to join!" above a full-width **Join the challenge** button under the Challenge information card that opens an
+- **Join the challenge**: the player view shows a full-width **DM LOTUS to
+  join the challenge** button under the Challenge information card that opens an
   Instagram DM to `@lotuspickleballacademy_to`
   (`https://ig.me/m/lotuspickleballacademy_to`, set in `JOIN_URL` in
   `app.js` and the `#joinBtn` link in `index.html`). It's hidden in the admin view,
