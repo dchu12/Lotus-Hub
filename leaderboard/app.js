@@ -106,6 +106,7 @@
   var connected = false;
   var unsub = null;
   var lastUpdated = null; // Date, from Firestore's server-set updatedAt; null until we have a real one
+  var boardLoaded = false; // false until the first real snapshot (or error): show the placeholder card
 
   // ---- helpers ------------------------------------------------------------
   function esc(s) {
@@ -529,6 +530,9 @@
   }
 
   function onRemote(data, err, fromCache) {
+    // An empty snapshot from the local cache isn't an answer yet; keep the
+    // placeholder up until the server replies (or it errors).
+    if (err || data || !fromCache) boardLoaded = true;
     if (err) {
       connected = false;
       showBanner("Couldn't reach the shared board — working from a local copy on this device. (" + err.message + ")");
@@ -593,6 +597,7 @@
       });
     } else {
       authKnown = true;
+      boardLoaded = true;
       var local = loadLocal();
       if (local) board = local;
       showBanner("Not connected to the shared board yet — working from a local copy on this device only. See the leaderboard README to finish Firebase setup.");
@@ -646,7 +651,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
-      "winnerCard", "prizeBanner", "joinCard", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -924,9 +929,16 @@
     renderJoin(list, ph);
     renderClimber(list, scored && ph === "live");
     renderStats(!restricted && !!(window.LH && LH.ready));
+    // Until the board first loads, a placeholder stands in for the countdown /
+    // leaderboard, so a slow connection doesn't flash "Be the first" or an
+    // empty table before the real players appear.
+    var loading = !boardLoaded && !board.entries.length;
+    els.skelCard.hidden = !loading;
     // Players get the countdown + roster instead of a table of zeros; the
     // coach keeps the table to add players and log sessions.
     els.boardCard.hidden = preLaunch && restricted;
+    if (loading) { els.launchCard.hidden = true; els.boardCard.hidden = true; }
+    updateSticky();
     els.boardHeading.textContent = ph === "ended" ? "Final standings" : "Lotus Leaderboard";
 
     els.playerCount.textContent = list.length ? list.length + (list.length === 1 ? " player" : " players") : "";
@@ -1940,6 +1952,36 @@
     els.lastUpdatedText.textContent = lastUpdated ? "Updated " + formatRelativeTime(lastUpdated) : "";
   }
 
+  // ---- sticky DM bar (phones) ----------------------------------------------------
+  // Shown once the main DM LOTUS button has scrolled up out of view, and only
+  // while that button itself would be shown (player view, not ended, not
+  // already on the board). CSS keeps it to phone widths.
+  var joinAbove = false;
+  function updateSticky() {
+    var show = joinAbove && !els.joinCard.hidden;
+    els.joinSticky.hidden = !show;
+    document.body.classList.toggle("sticky-on", show);
+  }
+  function watchJoinButton() {
+    if (!("IntersectionObserver" in window)) return;
+    new IntersectionObserver(function (entries) {
+      var e = entries[entries.length - 1];
+      joinAbove = !e.isIntersecting && e.boundingClientRect.bottom < 0;
+      updateSticky();
+    }).observe(els.joinBtn);
+  }
+
+  // ---- prize photo, full size ------------------------------------------------------
+  function openPrize() {
+    if (!els.prizeDialogImg.getAttribute("src")) els.prizeDialogImg.src = "/leaderboard/prize-paddle-lg.png";
+    if (typeof els.prizeDialog.showModal === "function") els.prizeDialog.showModal();
+    else els.prizeDialog.setAttribute("open", "");
+  }
+  function closePrize() {
+    if (typeof els.prizeDialog.close === "function") els.prizeDialog.close();
+    else els.prizeDialog.removeAttribute("open");
+  }
+
   // ---- wire up ------------------------------------------------------------
   function bind() {
     els.rankSearch.addEventListener("input", function () { renderMatches(sortedEntries()); });
@@ -1955,6 +1997,15 @@
       render();
       scrollToRow(expandedId);
     });
+    els.prizeZoomBtn.addEventListener("click", openPrize);
+    els.prizeDialogClose.addEventListener("click", closePrize);
+    // A tap on the dimmed backdrop (outside the dialog box) closes it too.
+    els.prizeDialog.addEventListener("click", function (ev) {
+      if (ev.target !== els.prizeDialog) return;
+      var r = els.prizeDialog.getBoundingClientRect();
+      if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closePrize();
+    });
+    watchJoinButton();
     els.climber.addEventListener("click", function () {
       expandedId = els.climber.getAttribute("data-pod");
       render();
@@ -2166,6 +2217,7 @@
     // Scoring explainer starts open on wider screens, collapsed on phones.
     render();
     connect();
+    setTimeout(function () { if (!boardLoaded) { boardLoaded = true; render(); } }, 10000);
     // Keep the "Updated N minutes ago" text fresh without a full re-render.
     setInterval(updateLastUpdatedText, 30000);
     var lastPhase = phase();
