@@ -585,7 +585,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   border: 1px solid var(--line); border-radius: 12px; background: var(--field);
 }
 .f-total { background: var(--brand); border-color: var(--brand); color: #fff; justify-content: center; }
-.f-total .f-desc { color: rgba(255, 255, 255, .8); }
 .f-name { font-weight: 800; font-size: .98rem; letter-spacing: -.01em; }
 .f-rule { font-size: .88rem; color: var(--ink-2); }
 .f-rule b { color: var(--brand); font-weight: 800; }
