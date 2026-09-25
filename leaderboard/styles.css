@@ -175,7 +175,7 @@ body {
 }
 .jb-icon svg { width: 22px; height: 22px; }
 .jb-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
-.jb-txt b { font-size: 1.08rem; font-weight: 800; letter-spacing: -.005em; }
+.jb-txt b { font-size: clamp(.94rem, 4.3vw, 1.08rem); font-weight: 800; letter-spacing: -.005em; }
 .jb-sub { font-size: .84rem; font-weight: 600; color: rgba(255, 255, 255, .86); margin-top: 1px; }
 .jb-arrow {
   flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
@@ -183,8 +183,8 @@ body {
 }
 .jb-arrow svg { width: 18px; height: 18px; }
 .join-btn:hover .jb-arrow { transform: translateX(3px); background: rgba(255, 255, 255, .24); }
-@media (max-width: 370px) {
-  .join-btn { gap: 10px; }
+@media (max-width: 420px) {
+  .join-btn { gap: 12px; }
   .jb-arrow { display: none; }
 }
 .rank-none a { color: var(--brand); font-weight: 700; }
