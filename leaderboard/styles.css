@@ -125,10 +125,9 @@ body {
 /* Join CTA (player view): just the button, full width, under the
    challenge information. */
 .join { margin: 0 0 16px; }
-.join-lbl { margin: 0 0 8px; text-align: center; font-weight: 700; font-size: .92rem; color: var(--ink-2); }
-.join-btn {
+.btn.join-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-  padding: 13px 18px; border-radius: 12px; font-size: 1rem; text-decoration: none;
+  padding: 13px 12px; border-radius: 12px; font-size: clamp(.8rem, 3.9vw, 1rem); text-align: center; text-decoration: none;
   box-shadow: var(--shadow-sm);
 }
 .join-btn svg { width: 18px; height: 18px; flex: none; }
