@@ -41,6 +41,24 @@ Community Points, Points Behind 1st — and sorts automatically.
   the paddle (`prize-paddle.png`, a transparent cut-out so it sits directly on the banner): "1st place wins / Zocker Pro Series
   Control Paddle". It's plain markup in `index.html`
   (`<section class="prize">`); edit it when the prize changes.
+- **Challenge phases** (from the start/end dates):
+  - **Before it starts** (and nobody has scored): players see a **Kicks off
+    October 1** card with a live days/hours/minutes countdown and a **Who's
+    in** roster, instead of a table of zeros. The coach still gets the table
+    so players can be added. Share text reads "starts October 1… See who's in".
+  - **During**: a **top-3 podium** (avatars, medals, points; ties share a
+    rank) sits above the table. Tapping a podium spot opens that player's
+    breakdown.
+  - **After the end date**: a **winner banner** replaces the prize banner
+    ("Congratulations, Chad Y! Winner of the Zocker Pro Series Control
+    Paddle"), the table is titled **Final standings**, and the share text and
+    Story image switch to final results. The published tie-break (more Skill
+    Points) decides a tie on Lotus Score; a tie on both says the academy will
+    announce the winner.
+  The page re-checks the phase every 30 seconds, so it flips over on its own.
+- **Initials avatars**: a coloured circle with each player's initials in the
+  table, podium, roster and winner banner. The colour comes from the name,
+  so it's stable; all colours keep white text readable.
 - **Link previews**: `index.html` carries Open Graph / Twitter tags pointing
   at `og-image.jpg` (1200×630, logo + challenge name + prize + "See who's
   leading"), so the link shows a branded card in WhatsApp, Instagram DMs,

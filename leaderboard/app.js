@@ -445,6 +445,8 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
+      "winnerCard", "prizeBanner", "launchCard", "launchDate", "launchCount", "launchRosterCount", "launchRoster",
+      "boardCard", "boardHeading", "podium",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
       "storyCard", "storyImg", "storyShareBtn", "storySaveBtn", "storyCopyBtn", "storyCloseBtn",
       "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
@@ -708,8 +710,17 @@
     var list = sortedEntries();
     var scored = anyScored(list);
 
+    var ph = phase();
+    var preLaunch = ph === "before" && !scored;
     renderRank(list, scored);
     renderEvents(!restricted);
+    renderLaunch(list, preLaunch);
+    renderWinner(list, ph === "ended" && scored);
+    renderPodium(list, scored && ph !== "before");
+    // Players get the countdown + roster instead of a table of zeros; the
+    // coach keeps the table to add players and log sessions.
+    els.boardCard.hidden = preLaunch && restricted;
+    els.boardHeading.textContent = ph === "ended" ? "Final standings" : "Lotus Leaderboard";
 
     els.playerCount.textContent = list.length ? list.length + (list.length === 1 ? " player" : " players") : "";
     els.boardEmpty.hidden = !!list.length;
@@ -737,7 +748,7 @@
           '<tr class="' + classes + '" data-toggle="' + esc(e.id) + '">' +
           '<td class="rank">' + rankBadge + "</td>" +
           '<td class="name"><button type="button" class="name-btn" aria-expanded="' + open + '" data-toggle="' + esc(e.id) + '">' +
-          '<span class="player-name">' + esc(e.name) + "</span>" + (e.id === meId ? '<span class="you-pill">You</span>' : "") +
+          avatarHtml(e.name, "av-sm") + '<span class="player-name">' + esc(e.name) + "</span>" + (e.id === meId ? '<span class="you-pill">You</span>' : "") +
           (scored ? movementHtml(e) : "") +
           '<span class="chev" aria-hidden="true"></span></button></td>' +
           '<td class="total">' + e._c.total + "</td>" +
@@ -749,6 +760,104 @@
         );
       })
       .join("");
+  }
+
+  // ---- initials avatars ------------------------------------------------------
+  // A coloured circle with a player's initials. Colour is picked from the
+  // name so it stays the same everywhere; all shades keep white text ≥4.5:1.
+  var AVATAR_COLORS = ["#b91c2b", "#8a5300", "#0f6e5f", "#1d4f91", "#6b3fa0", "#2f6b1f", "#a3386b", "#5b5f97"];
+  function initials(name) {
+    var parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    var s = parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0] || "?").slice(0, 2);
+    return s.toUpperCase();
+  }
+  function avatarColor(name) {
+    var h = 0, s = String(name || "");
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return AVATAR_COLORS[h % AVATAR_COLORS.length];
+  }
+  function avatarHtml(name, cls) {
+    return '<span class="av' + (cls ? " " + cls : "") + '" style="background:' + avatarColor(name) + '" aria-hidden="true">' + esc(initials(name)) + "</span>";
+  }
+
+  // ---- challenge phase: before / live / ended ----------------------------------
+  function phase() {
+    var cd = countdown();
+    return cd ? cd.phase : "live";
+  }
+  function startCountdownParts() {
+    var d = challengeDates();
+    if (!d.start) return null;
+    var p = d.start.split("-");
+    var ms = new Date(+p[0], +p[1] - 1, +p[2]).getTime() - Date.now();
+    if (ms <= 0) return null;
+    var mins = Math.floor(ms / 60000);
+    return { days: Math.floor(mins / 1440), hours: Math.floor(mins / 60) % 24, mins: mins % 60 };
+  }
+  function renderLaunch(list, show) {
+    els.launchCard.hidden = !show;
+    if (!show) return;
+    els.launchDate.textContent = fmtDay(challengeDates().start);
+    updateLaunchCount();
+    var roster = list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    els.launchRosterCount.textContent = roster.length ? roster.length + (roster.length === 1 ? " player" : " players") : "";
+    els.launchRoster.innerHTML = roster.length
+      ? roster.map(function (e) { return "<li>" + avatarHtml(e.name) + '<span class="lr-name">' + esc(e.name) + "</span></li>"; }).join("")
+      : '<li class="lr-empty">Be the first to sign up.</li>';
+  }
+  function updateLaunchCount() {
+    var t = startCountdownParts();
+    if (!t) { els.launchCount.innerHTML = ""; return; }
+    var tile = function (n, label) {
+      return '<div class="lc-tile"><span class="lc-num">' + String(n).padStart(2, "0") + '</span><span class="lc-lbl">' + label + "</span></div>";
+    };
+    els.launchCount.innerHTML = tile(t.days, t.days === 1 ? "day" : "days") + tile(t.hours, t.hours === 1 ? "hour" : "hours") + tile(t.mins, "min");
+    els.launchCount.setAttribute("aria-label", "Starts in " + t.days + " days, " + t.hours + " hours and " + t.mins + " minutes");
+  }
+
+  // ---- top-3 podium -----------------------------------------------------------
+  function renderPodium(list, show) {
+    els.podium.hidden = !show;
+    if (!show) return;
+    var top = list.slice(0, 3);
+    var order = top.length === 3 ? [top[1], top[0], top[2]] : top.length === 2 ? [top[1], top[0]] : [top[0]];
+    var MEDAL = { 1: "gold", 2: "silver", 3: "bronze" };
+    els.podium.innerHTML = order.map(function (e) {
+      var place = list.indexOf(e) + 1; // podium step by position; the badge shows the (possibly shared) rank
+      return (
+        '<button type="button" class="pod pod-' + place + " " + (MEDAL[e._rank] || "") + '" data-pod="' + esc(e.id) + '" aria-label="' +
+        esc(ordinal(e._rank) + " place: " + e.name + ", " + e._c.total + " points") + '">' +
+        avatarHtml(e.name, "av-lg") +
+        '<span class="pod-name">' + esc(e.name) + "</span>" +
+        '<span class="pod-pts">' + e._c.total + " pts</span>" +
+        '<span class="pod-step" aria-hidden="true">' + e._rank + "</span>" +
+        "</button>"
+      );
+    }).join("");
+  }
+
+  // ---- winner (after the end date) -----------------------------------------------
+  function renderWinner(list, show) {
+    els.winnerCard.hidden = !show;
+    els.prizeBanner.hidden = show;
+    if (!show) return;
+    var lead = list[0];
+    // Published tie-break: equal Lotus Score -> more Skill Points wins. Only a
+    // tie on both is left for the academy to call.
+    var winners = list.filter(function (e) { return e._c.total === lead._c.total && e._c.duprPoints === lead._c.duprPoints; });
+    var names = winners.map(function (e) { return e.name; });
+    var headline = winners.length === 1
+      ? "Congratulations, " + esc(lead.name) + "!"
+      : "It's a tie: " + esc(names.slice(0, -1).join(", ")) + " &amp; " + esc(names[names.length - 1]);
+    var sub = winners.length === 1
+      ? "Winner of the <b>Zocker Pro Series Control Paddle</b> with " + lead._c.total + " Lotus points"
+      : "Level on Lotus Score and Skill Points (" + lead._c.total + " pts). The academy will announce the winner.";
+    els.winnerCard.innerHTML =
+      '<div class="win-avatars">' + winners.slice(0, 3).map(function (e) { return avatarHtml(e.name, "av-xl"); }).join("") + "</div>" +
+      '<div class="win-txt"><div class="win-kicker">Final results</div>' +
+      '<div class="win-head">' + headline + "</div>" +
+      '<div class="win-sub">' + sub + "</div></div>" +
+      '<img class="win-paddle" src="/leaderboard/prize-paddle.png" alt="" width="111" height="240" />';
   }
 
   function behindFirst(e, list) {
@@ -790,7 +899,8 @@
     return list.filter(function (e) { return e._rank === me._rank; }).length > 1;
   }
   function standingText(me, list, scored) {
-    if (!scored) return "Waiting for the first scores";
+    if (!scored) return phase() === "before" ? "You're in. The challenge starts " + fmtDay(challengeDates().start) : "Waiting for the first scores";
+    if (phase() === "ended") return "Final result: " + (isTied(me, list) ? "tied for " : "") + ordinal(me._rank) + " place";
     var tied = isTied(me, list);
     if (me._rank === 1) {
       var next = list.filter(function (e) { return e._rank > 1; })[0];
@@ -1311,6 +1421,9 @@
 
   // ---- Share the leaderboard (link) ----------------------------------------
   function shareText() {
+    var ph = phase();
+    if (ph === "ended") return "The " + board.title + " results are in! See the final standings:";
+    if (ph === "before") return "The " + board.title + " starts " + fmtDay(challengeDates().start) + ". 1st place wins a Zocker Pro Series Control Paddle. See who's in:";
     return "Who's leading the " + board.title + "? 1st place wins a Zocker Pro Series Control Paddle. See the live leaderboard:";
   }
   function setShareMenu(open) {
@@ -1384,7 +1497,7 @@
       ctx.strokeStyle = "#eadfdf"; ctx.lineWidth = 3; ctx.stroke();
       if (logo) ctx.drawImage(logo, X + 7, 157, 116, 116);
       ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-      ctx.fillStyle = "#b91c2b"; ctx.font = "800 30px " + FONT; ctx.fillText("LIVE LEADERBOARD", X + 160, 205);
+      ctx.fillStyle = "#b91c2b"; ctx.font = "800 30px " + FONT; ctx.fillText(phase() === "ended" ? "FINAL RESULTS" : "LIVE LEADERBOARD", X + 160, 205);
       ctx.fillStyle = "#524c4a"; ctx.font = "700 36px " + FONT; ctx.fillText("Lotus Pickleball Academy", X + 160, 252);
 
       // Title, dates, countdown
@@ -1400,7 +1513,7 @@
       ctx.fillStyle = "#ffffff"; roundRect(ctx, X - 20, pY, W - 2 * X + 40, pH, 32); ctx.fill();
       ctx.strokeStyle = "#eadfdf"; ctx.lineWidth = 3; ctx.stroke();
       ctx.fillStyle = "#6f6865"; ctx.font = "800 28px " + FONT;
-      ctx.fillText(scored ? "TOP " + rows.length : "WHO'S IN", X + 20, pY + 58);
+      ctx.fillText(scored ? (phase() === "ended" ? "FINAL STANDINGS" : "TOP " + rows.length) : "WHO'S IN", X + 20, pY + 58);
       ctx.textAlign = "right";
       ctx.fillText(scored ? "LOTUS SCORE" : list.length + (list.length === 1 ? " PLAYER" : " PLAYERS"), W - X - 20, pY + 58);
       ctx.fillStyle = "#b91c2b"; ctx.fillRect(X, pY + headH - 6, W - 2 * X, 4);
@@ -1569,6 +1682,13 @@
       if (ev.key !== "Enter") return;
       var hits = els.rankMatches.querySelectorAll("[data-me]");
       if (hits.length === 1) pickMe(hits[0].getAttribute("data-me"));
+    });
+    els.podium.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-pod]");
+      if (!b) return;
+      expandedId = b.getAttribute("data-pod");
+      render();
+      scrollToRow(expandedId);
     });
     els.eventsList.addEventListener("click", function (ev) {
       var b = ev.target.closest("[data-cal-toggle], [data-ical], [data-ev-edit], [data-ev-del]");
@@ -1772,6 +1892,12 @@
     connect();
     // Keep the "Updated N minutes ago" text fresh without a full re-render.
     setInterval(updateLastUpdatedText, 30000);
+    var lastPhase = phase();
+    setInterval(function () {
+      var now = phase();
+      if (now !== lastPhase) { lastPhase = now; render(); }
+      else if (!els.launchCard.hidden) updateLaunchCount();
+    }, 30000);
     setInterval(function () { if (usingCalendar()) fetchCalendar(true); }, 10 * 60 * 1000);
   }
 

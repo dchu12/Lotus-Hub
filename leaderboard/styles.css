@@ -378,6 +378,68 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .session-btn { border-color: color-mix(in srgb, var(--brand), transparent 70%); color: var(--brand); background: var(--card); }
 .session-btn:hover { background: color-mix(in srgb, var(--brand), transparent 93%); border-color: var(--brand); }
 
+/* Initials avatars */
+.av {
+  flex: none; display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+  color: #fff; font-weight: 800; font-size: .78rem; letter-spacing: .02em; line-height: 1;
+}
+.av-sm { width: 28px; height: 28px; font-size: .68rem; }
+.av-lg { width: 52px; height: 52px; font-size: 1.05rem; }
+.av-xl { width: 64px; height: 64px; font-size: 1.3rem; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(28,20,20,.15); }
+
+/* Pre-launch: countdown + who's in */
+.launch-card { text-align: center; border-top: 3px solid var(--brand); }
+.launch-card .launch-kicker { margin: 0 0 12px; font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--brand); }
+.launch-count { display: flex; justify-content: center; gap: 10px; margin-bottom: 18px; }
+.lc-tile { min-width: 84px; padding: 12px 10px 10px; border-radius: 14px; background: var(--accent-bg); border: 1px solid color-mix(in srgb, var(--brand), transparent 78%); }
+.lc-num { display: block; font-size: 2.1rem; font-weight: 800; line-height: 1; color: var(--brand); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.lc-lbl { display: block; margin-top: 6px; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.launch-roster-head { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 2px 8px; border-top: 1px solid var(--line); font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.launch-roster { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.launch-roster li { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; background: var(--field); border: 1px solid var(--line); font-weight: 700; font-size: .9rem; }
+.launch-roster .av { width: 30px; height: 30px; font-size: .7rem; }
+.launch-roster .lr-empty { padding: 8px 12px; color: var(--muted); font-weight: 600; }
+
+/* Top-3 podium */
+.podium { display: flex; justify-content: center; align-items: flex-end; gap: 10px; padding: 18px 22px 4px; }
+.pod {
+  appearance: none; border: 0; background: none; font: inherit; color: inherit; cursor: pointer;
+  flex: 1 1 0; max-width: 170px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0;
+}
+.pod .av { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--line); margin-bottom: 4px; }
+.pod.gold .av { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--gold); }
+.pod.silver .av { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--silver); }
+.pod.bronze .av { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--bronze); }
+.pod-name { max-width: 100%; font-weight: 800; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pod-pts { font-weight: 800; font-size: .82rem; color: var(--brand); font-variant-numeric: tabular-nums; }
+.pod-step {
+  width: 100%; margin-top: 6px; display: grid; place-items: center; border-radius: 12px 12px 0 0;
+  color: #fff; font-weight: 800; font-size: 1.35rem; background: var(--muted);
+}
+.pod.gold .pod-step { background: var(--gold); }
+.pod.silver .pod-step { background: var(--silver); }
+.pod.bronze .pod-step { background: var(--bronze); }
+.pod-1 .pod-step { height: 76px; }
+.pod-2 .pod-step { height: 54px; }
+.pod-3 .pod-step { height: 40px; }
+.pod:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; border-radius: 12px; }
+.pod:hover .pod-name { color: var(--brand); }
+
+/* Winner banner (after the end date) */
+.winner {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 16px 18px; border-radius: 16px;
+  background: linear-gradient(110deg, #fff4dc, #fcebed 60%, #fff); border: 1px solid color-mix(in srgb, var(--gold), transparent 50%);
+  box-shadow: var(--shadow-sm);
+}
+.win-avatars { display: flex; flex: none; }
+.win-avatars .av + .av { margin-left: -16px; }
+.win-txt { flex: 1; min-width: 0; }
+.win-kicker { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: #8a5300; }
+.win-head { font-size: 1.2rem; font-weight: 800; letter-spacing: -.01em; margin-top: 2px; }
+.win-sub { font-size: .88rem; color: var(--ink-2); margin-top: 2px; }
+.win-sub b { color: var(--ink); }
+.win-paddle { flex: none; width: 34px; height: 72px; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(28,20,20,.22)); }
+
 /* Upcoming community events */
 .events-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px 12px; margin-bottom: 12px; }
 .events-head .events-sub { display: block; margin-top: 2px; }
@@ -505,6 +567,14 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .no-scores { margin: 10px 16px 0; }
   .prize { padding: 8px 14px 8px 10px; gap: 12px; }
   .prize-meta { display: none; }
+  .lc-tile { min-width: 0; flex: 1 1 0; }
+  .lc-num { font-size: 1.8rem; }
+  .podium { padding: 16px 12px 2px; gap: 8px; }
+  .av-lg { width: 46px; height: 46px; font-size: .95rem; }
+  .winner { padding: 14px; gap: 12px; }
+  .av-xl { width: 52px; height: 52px; font-size: 1.05rem; }
+  .win-head { font-size: 1.05rem; }
+  .win-paddle { display: none; }
   .ev { gap: 12px; padding: 12px; }
   .ev-date { width: 46px; }
   .ev-day { font-size: 1.15rem; }
