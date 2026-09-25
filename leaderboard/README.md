@@ -101,7 +101,9 @@ Community Points, Points Behind 1st — and sorts automatically.
     language setting.
   - Avatar colours follow the order players were added, so the first ten
     players all get different colours (all at least 5.5:1 contrast with
-    white).
+    white). Specific players can be given a fixed colour in `AVATAR_PICKS`
+    in `app.js` (Durian D is yellow and Lumpia L orange, both with dark
+    initials).
   - The player view's "Who's in" ends with a dashed **+ You?** bubble that
     opens the Instagram DM.
   - A footer shows the logo, the academy name, the Instagram handle and
