@@ -873,3 +873,17 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .sk { animation: none; }
   .join-sticky { animation: none; }
 }
+
+/* One outline system: every card and button on the page gets the red
+   outline the drilling button introduced; boxes inside a card get a softer
+   tint of the same red, so the cards still frame what's inside them. */
+:root {
+  --outline: color-mix(in srgb, var(--brand), transparent 45%);
+  --outline-soft: color-mix(in srgb, var(--brand), transparent 74%);
+}
+.card, .prize { border-width: 1.5px; border-style: solid; border-color: var(--outline); }
+.launch-card { border-top: 3px solid var(--brand); }
+.btn:not(.primary):not(.danger), .icon-btn, .rank-match, .lb-close { border-color: var(--outline); }
+.btn:not(.primary):not(.danger):hover, .icon-btn:hover, .rank-match:hover { border-color: var(--brand); }
+.f-tile, .f-eq, .f-tie, .lc-tile, .stats-link-list li, .ev { border-color: var(--outline-soft); }
+.link-card:hover { border-color: var(--brand); }
