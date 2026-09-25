@@ -106,6 +106,11 @@ Community Points, Points Behind 1st — and sorts automatically.
     opens the Instagram DM.
   - A footer shows the logo, the academy name, the Instagram handle and
     "Leaderboard updates live".
+- **Header**: three lines: "Lotus Pickleball Academy" (small red eyebrow,
+  fixed in `index.html`), then the challenge name, then the dates line. The
+  name and the dates line come from **Edit challenge details** in the admin
+  menu, which saves them to the board doc. The default dates line is
+  "Oct 1 – 31".
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
   the countdown card before launch) that opens its Instagram post
   (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`). It shows

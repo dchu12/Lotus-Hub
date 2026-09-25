@@ -85,7 +85,7 @@
   var board = {
     // Keep in sync with the placeholder heading in index.html.
     title: "October Lotus Challenge",
-    subtitle: "October 1 – October 31",
+    subtitle: "Oct 1 – 31",
     entries: [],
     startDate: null, // "YYYY-MM-DD", drives the header countdown
     endDate: null,
