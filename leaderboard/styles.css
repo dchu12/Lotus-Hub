@@ -723,6 +723,23 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .session-btn { padding: 9px 4px; font-size: .8rem; }
 }
 
+/* Link card (Lotus Gachapon): a tappable row like the Challenge
+   information header, opening a post in a new tab. */
+.link-card {
+  display: flex; align-items: center; gap: 12px; padding: 14px 18px; text-decoration: none; color: var(--ink);
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.link-card:hover { border-color: color-mix(in srgb, var(--brand), transparent 60%); transform: translateY(-1px); box-shadow: var(--shadow); }
+.link-card:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.lk-ico { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-bg); color: var(--brand); }
+.lk-ico svg { width: 22px; height: 22px; }
+.lk-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.lk-title { font-weight: 800; font-size: 1rem; letter-spacing: -.01em; }
+.lk-sub { font-size: .78rem; font-weight: 600; color: var(--muted); margin-top: 1px; }
+.lk-arrow { flex: none; color: var(--muted); display: grid; place-items: center; }
+.lk-arrow svg { width: 18px; height: 18px; }
+.link-card:hover .lk-arrow { color: var(--brand); }
+
 /* Footer */
 .site-foot {
   display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
