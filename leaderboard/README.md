@@ -66,6 +66,14 @@ Community Points, Points Behind 1st — and sorts automatically.
   **when the challenge name, dates or prize change, update the tags and
   regenerate `og-image.jpg`** (bump its `?v=`). WhatsApp caches a preview
   per link for a while.
+- **Join the challenge**: the player view shows a "Want in?" card under the
+  prize with a **Join the challenge** button that opens an Instagram DM to
+  `@lotuspickleballacademy_to` (`https://ig.me/m/lotuspickleballacademy_to`,
+  set in `JOIN_URL` in `app.js` and the `#joinBtn` link in `index.html`).
+  Before the start date it reads "Get on the board before it kicks off";
+  during the challenge "It's not too late". It's hidden in the admin view,
+  once the challenge has ended, and once a visitor has picked their own name.
+  The "Find your name" search links to the same DM when a name isn't found.
 - **Share the leaderboard**: the player view has a **Share** button in the
   header (share icon on phones). It opens the phone's share sheet (WhatsApp,
   Instagram, texts…) with a short message and the player link; where there's

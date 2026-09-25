@@ -72,6 +72,7 @@
   var LOCAL_KEY = "lotus-leaderboard:" + boardId;
   // Which player this browser picked in "Where do you rank?", so a returning
   // challenger sees their own rank straight away. Per-device convenience only.
+  var JOIN_URL = "https://ig.me/m/lotuspickleballacademy_to"; // Instagram DM
   var ME_KEY = "lotus-leaderboard:me:" + boardId;
   var meId = null;
   try { meId = localStorage.getItem(ME_KEY); } catch (err) {}
@@ -445,7 +446,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
-      "winnerCard", "prizeBanner", "launchCard", "launchDate", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "joinCopy", "launchCard", "launchDate", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
       "storyCard", "storyImg", "storyShareBtn", "storySaveBtn", "storyCopyBtn", "storyCloseBtn",
@@ -717,6 +718,7 @@
     renderLaunch(list, preLaunch);
     renderWinner(list, ph === "ended" && scored);
     renderPodium(list, scored && ph !== "before");
+    renderJoin(list, ph);
     // Players get the countdown + roster instead of a table of zeros; the
     // coach keeps the table to add players and log sessions.
     els.boardCard.hidden = preLaunch && restricted;
@@ -863,6 +865,16 @@
   function behindFirst(e, list) {
     if (e._rank === 1) return '<span class="behind-lead">&mdash;</span>';
     return list[0]._c.total - e._c.total;
+  }
+  // Player view: the Instagram sign-up button for visitors. Hidden in the
+  // admin view, once the challenge is over, and once a visitor has picked
+  // their own name (they're already in).
+  function renderJoin(list, ph) {
+    var isIn = list.some(function (e) { return e.id === meId; });
+    els.joinCard.hidden = !readOnly || ph === "ended" || isIn;
+    els.joinCopy.textContent = ph === "before"
+      ? "Get on the board before it kicks off. DM us on Instagram to sign up."
+      : "It's not too late. DM us on Instagram to join the challenge.";
   }
   function pts(n) { return n + (n === 1 ? " pt" : " pts"); }
   function setMe(id) {
@@ -1390,7 +1402,7 @@
             '<span class="rm-pts">' + h[0]._c.total + " pts</span></button>";
         }).join("")
       : '<p class="rank-none">No ' + (readOnly ? "challenger" : "player") + " matching &ldquo;" + esc(els.rankSearch.value.trim()) + "&rdquo;" +
-        (readOnly ? " yet. Check the spelling, or ask a coach to add you." : ".") + "</p>";
+        (readOnly ? ' yet. Check the spelling, or <a href="' + JOIN_URL + '" target="_blank" rel="noopener">DM us on Instagram</a> to join.' : ".") + "</p>";
   }
   // Player view: remember "me". Admin view: just jump to that player's row
   // with it open, which is where the session buttons live.
