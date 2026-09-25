@@ -442,6 +442,50 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .pod:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; border-radius: 12px; }
 .pod:hover .pod-name { color: var(--brand); }
 
+/* Climber of the week (inside the board card, under the podium) */
+.climber {
+  appearance: none; font: inherit; color: inherit; cursor: pointer; text-align: left;
+  display: flex; align-items: center; gap: 12px; width: calc(100% - 44px); margin: 14px 22px 0; padding: 10px 14px 10px 10px;
+  border-radius: 14px; border: 1px solid color-mix(in srgb, #0f7b45, transparent 70%);
+  background: linear-gradient(100deg, #e9f6ee, #fff 80%);
+}
+.climber:hover { border-color: #0f7b45; }
+.climber:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.climber .av { width: 44px; height: 44px; font-size: .9rem; flex: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0f7b45; }
+.cl-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cl-eyebrow { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: #0f7b45; }
+.cl-name { font-weight: 800; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cl-when { font-size: .76rem; color: var(--muted); font-weight: 600; }
+.cl-stats { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-variant-numeric: tabular-nums; }
+.cl-up { font-weight: 800; color: #0f7b45; font-size: .95rem; white-space: nowrap; }
+.cl-pts { font-weight: 800; color: var(--brand); font-size: .85rem; white-space: nowrap; }
+
+/* Page visits (admin) */
+.stats-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.stats-sub { margin: 0; font-size: .82rem; color: var(--muted); }
+.stats-total { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 14px 0 12px; }
+.st-num { font-size: 2rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.st-lbl { font-weight: 700; color: var(--ink-2); font-size: .9rem; }
+.st-delta { font-size: .78rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--field); color: var(--muted); }
+.st-delta.up { background: #e9f6ee; color: #0f7b45; }
+.st-delta.down { background: var(--accent-bg); color: var(--brand); }
+.st-all { flex-basis: 100%; font-size: .8rem; color: var(--muted); font-weight: 600; }
+.stats-bars { list-style: none; margin: 0 0 4px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.stats-bars li { display: grid; grid-template-columns: minmax(0, 9.5rem) 1fr 2.5rem; align-items: center; gap: 10px; font-size: .86rem; }
+.sb-lbl { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-track { height: 10px; border-radius: 999px; background: var(--field); border: 1px solid var(--line); overflow: hidden; }
+.sb-fill { display: block; height: 100%; border-radius: 999px; background: var(--brand); min-width: 4px; }
+.sb-n { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+.stats-bars .sb-empty { display: block; color: var(--muted); font-weight: 600; }
+.stats-links { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.stats-links-head { margin: 0; font-size: .9rem; font-weight: 800; }
+.stats-hint { margin: 2px 0 10px; font-size: .8rem; color: var(--muted); }
+.stats-link-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.stats-link-list li { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 12px; border-radius: 10px; background: var(--field); border: 1px solid var(--line); }
+.sl-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sl-lbl { font-weight: 800; font-size: .86rem; }
+.sl-url { font-size: .76rem; color: var(--muted); word-break: break-all; }
+
 /* Winner banner (after the end date) */
 .winner {
   display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 16px 18px; border-radius: 16px;
@@ -589,6 +633,8 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .lc-tile { min-width: 0; flex: 1 1 0; }
   .lc-num { font-size: 1.8rem; }
   .podium { padding: 16px 12px 2px; gap: 8px; }
+  .climber { width: calc(100% - 24px); margin: 12px 12px 0; }
+  .stats-bars li { grid-template-columns: minmax(0, 9.2rem) 1fr 2rem; gap: 8px; }
   .av-lg { width: 46px; height: 46px; font-size: .95rem; }
   .winner { padding: 14px; gap: 12px; }
   .av-xl { width: 52px; height: 52px; font-size: 1.05rem; }

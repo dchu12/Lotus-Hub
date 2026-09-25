@@ -90,6 +90,7 @@
     startDate: null, // "YYYY-MM-DD", drives the header countdown
     endDate: null,
     snapshot: null, // { at: "YYYY-MM-DD", ranks: { playerId: rank } }, for movement arrows
+    weeks: null, // { "YYYY-MM-DD" (a Monday): { r: { id: rank }, t: { id: total } } }, for Climber of the week
     events: [], // upcoming community events, see renderEvents()
     calendarId: null, // optional public Google Calendar that replaces `events`
     calendarKey: null, // optional API key for it (defaults to the site's Firebase key)
@@ -272,6 +273,192 @@
       Math.abs(diff) + '<span class="sr-only">' + (up ? " up" : " down") + "</span></span>";
   }
 
+  // ---- Climber of the week ------------------------------------------------------
+  // Weeks run Monday to Sunday. The first admin save of each week records the
+  // standings as they were before that save, which (since only saves change
+  // the board) is exactly where everyone stood when the week began. Comparing
+  // one week's record with the next gives that week's movement.
+  function isoFromDayNum(n) {
+    var d = new Date(n * 86400000);
+    return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
+  }
+  function weekStartIso(iso) {
+    var n = dayNum(iso);
+    return isoFromDayNum(n - ((n + 3) % 7)); // day 0 (1970-01-01) was a Thursday
+  }
+  function standingsMap(list) {
+    var m = { r: {}, t: {} };
+    list.forEach(function (e) { m.r[e.id] = e._rank; m.t[e.id] = e._c.total; });
+    return m;
+  }
+  function weeksBefore(doc) {
+    var wk = weekStartIso(isoToday());
+    var weeks = doc.weeks && typeof doc.weeks === "object" ? doc.weeks : {};
+    if (weeks[wk]) return doc.weeks;
+    var before = sortedEntries(doc.entries);
+    if (!before.length) return doc.weeks || null;
+    var next = {};
+    Object.keys(weeks).filter(validIso).sort().slice(-7).forEach(function (k) { next[k] = weeks[k]; });
+    next[wk] = standingsMap(before);
+    return next;
+  }
+  // The player who climbed the most spots between two standings, then most
+  // points gained. Only players who were on the board at the start and have
+  // gained points since count, so being added mid-week isn't a "climb".
+  function bestClimber(base, end, byId) {
+    var picks = [];
+    Object.keys(end.t || {}).forEach(function (id) {
+      var e = byId[id];
+      if (!e || typeof base.t[id] !== "number" || typeof base.r[id] !== "number") return; // removed since, or added mid-week
+      var pts = end.t[id] - base.t[id];
+      if (pts <= 0) return;
+      var up = base.r[id] - end.r[id];
+      picks.push({ e: e, up: up, pts: pts, rank: end.r[id] });
+    });
+    picks.sort(function (a, b) { return b.up - a.up || b.pts - a.pts || a.rank - b.rank || a.e.name.localeCompare(b.e.name); });
+    return picks[0] || null;
+  }
+  // Last full week's climber, which stays up all week (ready for a weekly
+  // post); in the first week, before there is one, the climber so far.
+  function climberOfWeek(list) {
+    var weeks = board.weeks;
+    if (!weeks || typeof weeks !== "object") return null;
+    var keys = Object.keys(weeks).filter(validIso).sort();
+    if (!keys.length) return null;
+    var byId = {};
+    list.forEach(function (e) { byId[e.id] = e; });
+    var now = standingsMap(list);
+    var cur = weekStartIso(isoToday());
+    var i = keys.indexOf(cur);
+    // Every change between one record and the next happened in the earlier
+    // record's week, even if weeks with no saves sit in between.
+    var from = i > 0 ? keys[i - 1] : i === -1 && keys[keys.length - 1] < cur ? keys[keys.length - 1] : null;
+    if (from) {
+      var pick = bestClimber(weeks[from], i > 0 ? weeks[cur] : now, byId);
+      if (pick) { pick.when = "Week of " + fmtDay(from); return pick; }
+    }
+    if (i !== -1) {
+      var live = bestClimber(weeks[cur], now, byId);
+      if (live) { live.when = "So far this week"; return live; }
+    }
+    return null;
+  }
+  function climberStats(c) {
+    return { up: c.up > 0 ? "\u25B2" + c.up + (c.up === 1 ? " spot" : " spots") : "", pts: "+" + c.pts + (c.pts === 1 ? " pt" : " pts") };
+  }
+  function renderClimber(list, show) {
+    var c = show ? climberOfWeek(list) : null;
+    els.climber.hidden = !c;
+    if (!c) return;
+    var st = climberStats(c);
+    els.climber.setAttribute("data-pod", c.e.id);
+    els.climber.setAttribute("aria-label", "Climber of the week (" + c.when + "): " + c.e.name +
+      (c.up > 0 ? ", up " + c.up + (c.up === 1 ? " spot" : " spots") : "") + ", " + c.pts + (c.pts === 1 ? " point" : " points") + " gained. Show how their points add up.");
+    els.climber.innerHTML =
+      avatarHtml(c.e.name) +
+      '<span class="cl-txt"><span class="cl-eyebrow">Climber of the week</span><span class="cl-name">' + esc(c.e.name) + '</span><span class="cl-when">' + esc(c.when) + "</span></span>" +
+      '<span class="cl-stats">' + (st.up ? '<span class="cl-up">' + st.up + "</span>" : "") + '<span class="cl-pts">' + st.pts + "</span></span>";
+  }
+
+  // ---- Page visits (player link), by source ----------------------------------------
+  // Each place the link is posted gets its own ?src= so the admin page can
+  // show which channel brings people in. The tag is dropped from the address
+  // bar once read, so a link copied from there isn't credited twice.
+  var VISIT_SOURCES = {
+    bio: "Instagram bio", story: "Instagram Stories", wa: "WhatsApp", qr: "QR code",
+    share: "Shared by players", ig: "Instagram (other)", direct: "Direct / other",
+  };
+  var TRACKING_LINKS = ["bio", "story", "wa", "qr"];
+  var visitSrc = (function () {
+    var s = String(params.get("src") || "").toLowerCase();
+    if (VISIT_SOURCES.hasOwnProperty(s)) return s;
+    var ua = navigator.userAgent || "", ref = document.referrer || "";
+    if (/Instagram/i.test(ua) || /instagram\.com/i.test(ref)) return "ig";
+    if (/whatsapp/i.test(ref)) return "wa";
+    return "direct";
+  })();
+  if (params.has("src") && window.history && history.replaceState) {
+    try {
+      var cleanUrl = new URL(location.href);
+      cleanUrl.searchParams.delete("src");
+      history.replaceState(history.state, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+    } catch (err) {}
+  }
+  var visitLogged = false;
+  // Player view only, once per browser per day, never for the coach.
+  function logVisit() {
+    if (visitLogged || !readOnly || !(window.LH && LH.ready && LH.logLeaderboardVisit)) return;
+    visitLogged = true;
+    if (isCoach()) return;
+    var today = isoToday(), key = "lotus-leaderboard:visit:" + boardId;
+    try {
+      if (localStorage.getItem(key) === today) return;
+      localStorage.setItem(key, today);
+    } catch (err) {}
+    LH.logLeaderboardVisit(boardId, today, visitSrc).catch(function () {});
+  }
+
+  var visits = null; // [{ id: "YYYY-MM-DD_src", n }] once loaded
+  var visitsState = "idle"; // idle | loading | error
+  function loadVisits() {
+    if (!(window.LH && LH.ready && LH.getLeaderboardVisits) || visitsState === "loading") return;
+    visitsState = "loading";
+    renderStatsBody();
+    LH.getLeaderboardVisits(boardId).then(function (rows) {
+      visits = rows;
+      visitsState = "idle";
+      renderStatsBody();
+    }, function () {
+      visitsState = "error";
+      renderStatsBody();
+    });
+  }
+  function renderStats(show) {
+    els.statsCard.hidden = !show;
+    if (!show) return;
+    if (!els.statsLinks.children.length) {
+      els.statsLinks.innerHTML = TRACKING_LINKS.map(function (src) {
+        var url = playerViewUrl(src);
+        return '<li><span class="sl-txt"><span class="sl-lbl">' + VISIT_SOURCES[src] + '</span><span class="sl-url">' + esc(url.replace(/^https?:\/\//, "")) + "</span></span>" +
+          '<button type="button" class="btn small" data-copy-src="' + src + '" aria-label="Copy the ' + VISIT_SOURCES[src] + ' link">Copy</button></li>';
+      }).join("");
+    }
+    if (visits === null && visitsState === "idle") loadVisits();
+    else renderStatsBody();
+  }
+  function renderStatsBody() {
+    if (visits === null) {
+      els.statsTotal.innerHTML = '<span class="st-all">' + (visitsState === "error" ? "Couldn't load visits. Check your connection, then tap Refresh." : "Loading visits\u2026") + "</span>";
+      els.statsBars.innerHTML = "";
+      return;
+    }
+    var today = dayNum(isoToday());
+    var week = {}, thisWeek = 0, lastWeek = 0, all = 0;
+    visits.forEach(function (v) {
+      var m = /^(\d{4}-\d{2}-\d{2})_(\w+)$/.exec(v.id);
+      if (!m) return;
+      var age = today - dayNum(m[1]);
+      all += v.n;
+      if (age >= 0 && age < 7) { thisWeek += v.n; week[m[2]] = (week[m[2]] || 0) + v.n; }
+      else if (age >= 7 && age < 14) lastWeek += v.n;
+    });
+    var diff = thisWeek - lastWeek;
+    var delta = lastWeek || thisWeek
+      ? '<span class="st-delta ' + (diff > 0 ? "up" : diff < 0 ? "down" : "") + '">' + (diff > 0 ? "\u25B2 " : diff < 0 ? "\u25BC " : "") + Math.abs(diff) + " vs previous 7 days</span>"
+      : "";
+    els.statsTotal.innerHTML =
+      '<span class="st-num">' + thisWeek + '</span><span class="st-lbl">' + (thisWeek === 1 ? "visit" : "visits") + " in the last 7 days</span>" + delta +
+      '<span class="st-all">' + all + (all === 1 ? " visit" : " visits") + " since tracking began</span>";
+    var srcs = Object.keys(week).sort(function (a, b) { return week[b] - week[a]; });
+    var max = srcs.length ? week[srcs[0]] : 0;
+    els.statsBars.innerHTML = srcs.length
+      ? srcs.map(function (src) {
+          return '<li><span class="sb-lbl">' + esc(VISIT_SOURCES[src] || src) + '</span><span class="sb-track" aria-hidden="true"><span class="sb-fill" style="width:' +
+            Math.round(week[src] / max * 100) + '%"></span></span><span class="sb-n">' + week[src] + "</span></li>";
+        }).join("")
+      : '<li><span class="sb-empty">No visits in the last 7 days yet. Post the links below to start counting.</span></li>';
+  }
+
   // ---- local cache (fallback + resilience) --------------------------------
   function saveLocal() {
     try { localStorage.setItem(LOCAL_KEY, JSON.stringify(board)); } catch (e) {}
@@ -302,6 +489,7 @@
       startDate: validIso(src.startDate) ? src.startDate : null,
       endDate: validIso(src.endDate) ? src.endDate : null,
       snapshot: src.snapshot ? JSON.parse(JSON.stringify(src.snapshot)) : null,
+      weeks: src.weeks && typeof src.weeks === "object" ? JSON.parse(JSON.stringify(src.weeks)) : null,
       events: JSON.parse(JSON.stringify(Array.isArray(src.events) ? src.events : [])),
       calendarId: typeof src.calendarId === "string" && src.calendarId ? src.calendarId : null,
       calendarKey: typeof src.calendarKey === "string" && src.calendarKey ? src.calendarKey : null,
@@ -315,6 +503,7 @@
     LH.updateLeaderboard(boardId, function (current) {
       var doc = cleanDoc(current || board);
       doc.snapshot = snapshotBefore(doc);
+      doc.weeks = weeksBefore(doc);
       mutate(doc);
       return doc;
     }).catch(function (err) {
@@ -347,6 +536,7 @@
       board.startDate = data.startDate || null;
       board.endDate = data.endDate || null;
       board.snapshot = data.snapshot || null;
+      board.weeks = data.weeks || null;
       board.events = Array.isArray(data.events) ? data.events : [];
       board.calendarId = data.calendarId || null;
       board.calendarKey = data.calendarKey || null;
@@ -383,6 +573,7 @@
         user = u;
         authKnown = true;
         render();
+        logVisit();
       });
       // Coming back from the redirect fallback: surface any sign-in error.
       if (LH.redirectResult) LH.redirectResult.catch(function (err) {
@@ -447,7 +638,8 @@
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
       "winnerCard", "prizeBanner", "joinCard", "joinCopy", "launchCard", "launchDate", "launchCount", "launchRosterCount", "launchRoster",
-      "boardCard", "boardHeading", "podium",
+      "boardCard", "boardHeading", "podium", "climber",
+      "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
       "storyCard", "storyImg", "storyShareBtn", "storySaveBtn", "storyCopyBtn", "storyCloseBtn",
       "rankCard", "rankFind", "rankSearch", "rankMatches", "rankMe",
@@ -719,6 +911,8 @@
     renderWinner(list, ph === "ended" && scored);
     renderPodium(list, scored && ph !== "before");
     renderJoin(list, ph);
+    renderClimber(list, scored && ph === "live");
+    renderStats(!restricted && !!(window.LH && LH.ready));
     // Players get the countdown + roster instead of a table of zeros; the
     // coach keeps the table to add players and log sessions.
     els.boardCard.hidden = preLaunch && restricted;
@@ -1352,7 +1546,7 @@
   }
   function shareMessage(me, list) {
     var place = isTied(me, list) ? "tied for " + ordinal(me._rank) : ordinal(me._rank);
-    return "I'm " + place + " in the " + board.title + " with " + me._c.total + (me._c.total === 1 ? " point" : " points") + "! See the leaderboard: " + playerViewUrl();
+    return "I'm " + place + " in the " + board.title + " with " + me._c.total + (me._c.total === 1 ? " point" : " points") + "! See the leaderboard: " + playerViewUrl("share");
   }
   function downloadBlob(blob, filename) {
     var url = URL.createObjectURL(blob);
@@ -1422,12 +1616,15 @@
     if (btn) btn.closest("tr").scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  function playerViewUrl() {
+  // src tags the link with where it's posted (see VISIT_SOURCES).
+  function playerViewUrl(src) {
     for (var slug in VIEW_SLUGS) {
-      if (VIEW_SLUGS[slug] === boardId) return location.origin + "/" + slug;
+      if (VIEW_SLUGS[slug] === boardId) return location.origin + "/" + slug + (src ? "?src=" + src : "");
     }
     var u = new URL(location.href);
+    u.searchParams.delete("src");
     u.searchParams.set("mode", "view");
+    if (src) u.searchParams.set("src", src);
     return u.toString();
   }
 
@@ -1442,7 +1639,7 @@
     els.shareMenu.hidden = !open;
     els.shareBoardBtn.setAttribute("aria-expanded", String(open));
     if (open) {
-      els.shareWhatsApp.href = "https://wa.me/?text=" + encodeURIComponent(shareText() + " " + playerViewUrl());
+      els.shareWhatsApp.href = "https://wa.me/?text=" + encodeURIComponent(shareText() + " " + playerViewUrl("share"));
       els.shareWhatsApp.focus();
     }
   }
@@ -1450,7 +1647,7 @@
   // all in one place); otherwise a small WhatsApp / Copy link menu, which is
   // also what Instagram's in-app browser gets.
   function shareBoard(fromMenu) {
-    var url = playerViewUrl();
+    var url = playerViewUrl(readOnly ? "share" : null);
     var fallback = function () {
       if (fromMenu) copyLink(url, "Leaderboard link copied");
       else setShareMenu(true);
@@ -1493,14 +1690,16 @@
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = "#b91c2b"; ctx.fillRect(0, 0, W, 18);
 
-      var rows = scored ? list.slice(0, 10)
-        : list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).slice(0, 10);
+      var climb = scored && phase() === "live" ? climberOfWeek(list) : null;
+      var maxRows = climb ? 7 : 10; // the climber strip takes three rows' worth of room
+      var rows = scored ? list.slice(0, maxRows)
+        : list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).slice(0, maxRows);
       var more = list.length - rows.length;
-      var rowH = 78, headH = 88, pY = 500;
+      var rowH = 78, headH = 88, pY = 500, cH = climb ? 150 + 36 : 0;
       var pH = headH + rows.length * rowH + (more > 0 ? 64 : 22);
       // A short list leaves a gap at the bottom: centre the whole layout
       // (brand row down to the link) inside the Story's safe area instead.
-      var contentEnd = pY + pH + 36 + 150 + 90 + 100;
+      var contentEnd = pY + pH + cH + 36 + 150 + 90 + 100;
       ctx.save();
       ctx.translate(0, Math.max(0, Math.floor((1760 - contentEnd) / 2)));
 
@@ -1557,8 +1756,31 @@
         ctx.fillText("+ " + more + " more on the full leaderboard", W / 2, pY + headH + rows.length * rowH + 44);
       }
 
+      // Climber of the week strip
+      if (climb) {
+        var cY = pY + pH + 36, st = climberStats(climb);
+        ctx.fillStyle = "#e9f6ee"; roundRect(ctx, X - 20, cY, W - 2 * X + 40, 150, 28); ctx.fill();
+        ctx.strokeStyle = "rgba(15,123,69,.35)"; ctx.lineWidth = 3; ctx.stroke();
+        var acx = X + 62, acy = cY + 75;
+        ctx.beginPath(); ctx.arc(acx, acy, 52, 0, Math.PI * 2); ctx.fillStyle = "#0f7b45"; ctx.fill();
+        ctx.beginPath(); ctx.arc(acx, acy, 45, 0, Math.PI * 2); ctx.fillStyle = avatarColor(climb.e.name); ctx.fill();
+        ctx.fillStyle = "#ffffff"; ctx.font = "800 34px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(initials(climb.e.name), acx, acy + 2);
+        ctx.textBaseline = "alphabetic"; ctx.textAlign = "right";
+        var rx = W - X - 10;
+        if (st.up) { ctx.fillStyle = "#0f7b45"; ctx.font = "800 44px " + FONT; ctx.fillText(st.up, rx, cY + 70); }
+        ctx.fillStyle = "#b91c2b"; ctx.font = "800 " + (st.up ? 34 : 44) + "px " + FONT; ctx.fillText(st.pts, rx, st.up ? cY + 118 : cY + 90);
+        ctx.font = "800 44px " + FONT;
+        var statW = Math.max(st.up ? ctx.measureText(st.up).width : 0, ctx.measureText(st.pts).width);
+        var ctx0 = X + 140;
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#0f7b45"; ctx.font = "800 26px " + FONT; ctx.fillText("CLIMBER OF THE WEEK", ctx0, cY + 48);
+        ctx.fillStyle = "#1c1a19"; fitText(ctx, climb.e.name, rx - statW - 30 - ctx0, "800", 44, FONT); ctx.fillText(climb.e.name, ctx0, cY + 96);
+        ctx.fillStyle = "#6f6865"; ctx.font = "700 26px " + FONT; ctx.fillText(climb.when, ctx0, cY + 136);
+      }
+
       // Prize strip
-      var sY = pY + pH + 36, sH = 150;
+      var sY = pY + pH + cH + 36, sH = 150;
       ctx.fillStyle = "#fcebed"; roundRect(ctx, X - 20, sY, W - 2 * X + 40, sH, 28); ctx.fill();
       ctx.strokeStyle = "rgba(185,28,43,.3)"; ctx.lineWidth = 3; ctx.stroke();
       var tx = X + 20;
@@ -1630,7 +1852,7 @@
   // pure JS, no network calls per code generated, so it still works offline
   // and never sends the link to a third-party image service.
   function renderQr() {
-    var url = playerViewUrl();
+    var url = playerViewUrl("qr");
     els.qrUrlText.textContent = url;
     if (typeof qrcode !== "function") {
       els.qrWrap.innerHTML = '<p class="hint">QR code generator didn’t load (offline?) — copy the link below instead.</p>';
@@ -1701,6 +1923,18 @@
       expandedId = b.getAttribute("data-pod");
       render();
       scrollToRow(expandedId);
+    });
+    els.climber.addEventListener("click", function () {
+      expandedId = els.climber.getAttribute("data-pod");
+      render();
+      scrollToRow(expandedId);
+    });
+    els.statsRefreshBtn.addEventListener("click", loadVisits);
+    els.statsLinks.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-copy-src]");
+      if (!b) return;
+      var src = b.getAttribute("data-copy-src");
+      copyLink(playerViewUrl(src), VISIT_SOURCES[src] + " link copied");
     });
     els.eventsList.addEventListener("click", function (ev) {
       var b = ev.target.closest("[data-cal-toggle], [data-ical], [data-ev-edit], [data-ev-del]");
@@ -1818,7 +2052,7 @@
     });
     els.shareCopyBtn.addEventListener("click", function () {
       setShareMenu(false);
-      copyLink(playerViewUrl(), "Leaderboard link copied");
+      copyLink(playerViewUrl("share"), "Leaderboard link copied");
     });
     els.shareWhatsApp.addEventListener("click", function () { setShareMenu(false); });
     document.addEventListener("click", function (ev) {
@@ -1831,7 +2065,7 @@
     els.storyBtn.addEventListener("click", openStory);
     els.storyShareBtn.addEventListener("click", shareStory);
     els.storySaveBtn.addEventListener("click", saveStory);
-    els.storyCopyBtn.addEventListener("click", function () { copyLink(playerViewUrl(), "Link copied. Paste it into the Link sticker."); });
+    els.storyCopyBtn.addEventListener("click", function () { copyLink(playerViewUrl("story"), "Link copied. Paste it into the Link sticker."); });
     els.storyCloseBtn.addEventListener("click", function () { els.storyCard.hidden = true; });
     els.qrBtn.addEventListener("click", toggleQr);
     els.qrCloseBtn.addEventListener("click", function () { els.qrCard.hidden = true; });

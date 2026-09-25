@@ -69,7 +69,7 @@ service cloud.firestore {
     }
     function isValidLeaderboard(d) {
       return d.keys().hasOnly(['title', 'subtitle', 'entries', 'adminPinHash', 'updatedAt', 'updatedBy', 'updatedByEmail',
-                               'startDate', 'endDate', 'snapshot', 'events', 'calendarId', 'calendarKey'])
+                               'startDate', 'endDate', 'snapshot', 'weeks', 'events', 'calendarId', 'calendarKey'])
         && d.title is string && d.title.size() <= 120
         && d.subtitle is string && d.subtitle.size() <= 120
         && d.entries is list && d.entries.size() <= 300
@@ -80,6 +80,7 @@ service cloud.firestore {
         && isOptionalIsoDate(d.get('startDate', null))
         && isOptionalIsoDate(d.get('endDate', null))
         && isValidSnapshot(d.get('snapshot', null))
+        && (d.get('weeks', null) == null || (d.get('weeks', null) is map && d.weeks.size() <= 8))
         && (d.get('events', null) == null || (d.get('events', null) is list && d.events.size() <= 60))
         && (d.get('calendarId', null) == null || (d.get('calendarId', null) is string && d.calendarId.size() <= 300))
         && (d.get('calendarKey', null) == null || (d.get('calendarKey', null) is string && d.calendarKey.size() <= 100));
@@ -101,6 +102,21 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if isLeaderboardCoach() && isValidLeaderboard(request.resource.data);
       allow delete: if false;
+
+      // Visit counters for the player link: one doc per day and source,
+      // "YYYY-MM-DD_<source>" holding { n }. Anyone may add exactly 1 (the
+      // player page does, once per browser per day); only the coach can read
+      // them, on the admin page. Nothing can set or reset a count directly.
+      match /visits/{visitId} {
+        allow read: if isLeaderboardCoach();
+        allow create: if visitId.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}_(bio|story|wa|qr|share|ig|direct)$')
+          && exists(/databases/$(database)/documents/leaderboards/$(boardId))
+          && request.resource.data.keys().hasOnly(['n'])
+          && request.resource.data.n == 1;
+        allow update: if request.resource.data.keys().hasOnly(['n'])
+          && request.resource.data.n == resource.data.n + 1;
+        allow delete: if false;
+      }
     }
 
     // TapMenu — multi-tenant QR menu / link pages for local businesses.

@@ -425,6 +425,22 @@
     });
   }
 
+  // Visit counters (see firestore.rules): +1 on "YYYY-MM-DD_<source>". The
+  // increment runs server-side, so simultaneous visits don't lose counts.
+  function logLeaderboardVisit(id, day, src) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    return leaderboardDoc(id).collection("visits").doc(day + "_" + src)
+      .set({ n: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+  }
+  // All counters for a board as [{ id: "YYYY-MM-DD_src", n }]. Coach only.
+  function getLeaderboardVisits(id) {
+    if (!ready) return Promise.reject(new Error("Not connected."));
+    return leaderboardDoc(id).collection("visits").get().then(function (qs) {
+      var out = [];
+      qs.forEach(function (d) { out.push({ id: d.id, n: d.data().n || 0 }); });
+      return out;
+    });
+  }
 
   window.LH = {
     get available() {
@@ -463,5 +479,7 @@
     saveTracker: saveTracker,
     watchLeaderboard: watchLeaderboard,
     updateLeaderboard: updateLeaderboard,
+    logLeaderboardVisit: logLeaderboardVisit,
+    getLeaderboardVisits: getLeaderboardVisits,
   };
 })();

@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=33" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=34" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -224,6 +224,8 @@
         </div>
       </div>
       <div class="podium" id="podium" hidden></div>
+      <!-- Climber of the week: biggest rank jump over the last full week -->
+      <button type="button" class="climber" id="climber" hidden></button>
       <!-- Find your rank (player view) / find a player (admin view) -->
       <div class="finder" id="rankCard" hidden>
         <div class="finder-search" id="rankFind">
@@ -251,6 +253,24 @@
           <tbody id="boardBody"></tbody>
         </table>
         <p id="boardHint" class="board-hint" hidden>Tap a player to see how their points add up.<span id="moveHint"></span></p>
+      </div>
+    </section>
+
+    <!-- Admin only: player-link visits by source, plus the tracking links -->
+    <section class="card stats-card" id="statsCard" hidden aria-labelledby="statsTitle">
+      <div class="stats-head">
+        <div>
+          <h2 id="statsTitle">Page visits</h2>
+          <p class="stats-sub">Player link, last 7 days. One visit per person per day.</p>
+        </div>
+        <button type="button" class="btn small ghost" id="statsRefreshBtn">Refresh</button>
+      </div>
+      <div class="stats-total" id="statsTotal" aria-live="polite"></div>
+      <ul class="stats-bars" id="statsBars"></ul>
+      <div class="stats-links">
+        <h3 class="stats-links-head">Your tracking links</h3>
+        <p class="stats-hint">Post a different link in each place, so the visits above show which one brings people in.</p>
+        <ul class="stats-link-list" id="statsLinks"></ul>
       </div>
     </section>
 
@@ -339,12 +359,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js?v=1"></script>
-  <script src="/firebase.js?v=37"></script>
+  <script src="/firebase.js?v=38"></script>
   <!-- QR code generator for the player-link QR panel — pure JS, generates
        client-side (no data sent anywhere to render a code). Exposes a
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=35"></script>
+  <script src="/leaderboard/app.js?v=36"></script>
 </body>
 </html>
