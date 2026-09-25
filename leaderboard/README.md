@@ -218,7 +218,8 @@ Community Points, Points Behind 1st — and sorts automatically.
      `lots-hub.web.app/*`, and paste it in the optional key field.)
 - **Challenge information**: a button to the full challenge post on
   Instagram, then "Highest Lotus Score Wins Prize", then "How scoring
-  works" (the formula as tiles plus the tie-break rule). The post link
+  works" (a formula line, "Lotus Score = Skill Points + Community Points",
+  then a tile for each part, then the tie-break rule as a note). The post link
   (`https://www.instagram.com/p/DdZCGGOkYlW/`) is set in `index.html`.
   Sits between the prize and the Join the challenge button, collapsed by default (one
   tap to open) so the leaderboard stays near the top.

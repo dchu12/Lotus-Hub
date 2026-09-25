@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=53" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=54" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -109,17 +109,13 @@
         Highest Lotus Score Wins Prize
       </p>
       <h3 class="info-sub">How scoring works</h3>
+      <p class="f-eq"><b>Lotus Score</b> <span class="f-eq-rest"><span class="f-sym">=</span> Skill Points <span class="f-sym">+</span> Community Points</span></p>
       <div class="formula">
-        <div class="f-tile f-total">
-          <div class="f-name">Lotus Score</div>
-        </div>
-        <div class="f-op"><span aria-hidden="true">=</span><span class="sr-only">equals</span></div>
         <div class="f-tile">
           <div class="f-name">Skill Points</div>
           <div class="f-rule"><b>+1</b> for every <b>+0.01</b> DUPR</div>
           <div class="f-desc">Start → End DUPR, calculated automatically</div>
         </div>
-        <div class="f-op"><span aria-hidden="true">+</span><span class="sr-only">plus</span></div>
         <div class="f-tile">
           <div class="f-name">Community Points</div>
           <ul class="f-list">
