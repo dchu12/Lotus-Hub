@@ -886,3 +886,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .btn:not(.primary):not(.danger):hover, .icon-btn:hover, .rank-match:hover { border-color: var(--brand); }
 .f-tile, .f-eq, .f-tie, .lc-tile, .stats-link-list li, .ev { border-color: var(--outline-soft); }
 .link-card:hover { border-color: var(--brand); }
+
+/* Join confetti overlay */
+.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 60; }

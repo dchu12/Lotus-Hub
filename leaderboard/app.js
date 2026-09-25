@@ -1979,6 +1979,94 @@
     }).observe(els.joinBtn);
   }
 
+  // ---- Join button: confetti + haptic ---------------------------------------------
+  // Tapping Join fires a short red-and-white confetti burst from the button
+  // and a haptic buzz, then opens the Instagram DM about 0.75s later so the
+  // burst is actually seen (opening straight away would cover it). The delay
+  // stays inside the browser's user-activation window, so the new tab isn't
+  // treated as a popup; if it's blocked anyway, the DM opens in this tab.
+  var hapticLabel = null;
+  function buzz() {
+    try {
+      if (navigator.vibrate) { navigator.vibrate([22, 40, 22]); return; }
+      // iPhone: websites can't vibrate, but on iOS 18+ Safari, toggling a
+      // switch-style checkbox gives a light haptic tick.
+      if (!hapticLabel) {
+        hapticLabel = document.createElement("label");
+        hapticLabel.setAttribute("aria-hidden", "true");
+        hapticLabel.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;";
+        var sw = document.createElement("input");
+        sw.type = "checkbox"; sw.setAttribute("switch", ""); sw.tabIndex = -1;
+        hapticLabel.appendChild(sw);
+        document.body.appendChild(hapticLabel);
+      }
+      hapticLabel.click();
+    } catch (err) {}
+  }
+  function confettiBurst(fromEl) {
+    var r = fromEl.getBoundingClientRect();
+    var c = document.createElement("canvas");
+    c.className = "confetti";
+    c.setAttribute("aria-hidden", "true");
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
+    c.width = W * dpr; c.height = H * dpr;
+    document.body.appendChild(c);
+    var ctx = c.getContext("2d");
+    ctx.scale(dpr, dpr);
+    var COLORS = ["#b91c2b", "#e0364a", "#ffffff", "#ffffff", "#8f1421"];
+    var ox = r.left + r.width / 2, oy = r.top + r.height / 2;
+    var bits = [];
+    for (var i = 0; i < 140; i++) {
+      var a = -Math.PI / 2 + (Math.random() - .5) * Math.PI * 1.3; // mostly upward
+      var sp = 7 + Math.random() * 9;
+      bits.push({
+        x: ox + (Math.random() - .5) * r.width * .6, y: oy,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        w: 6 + Math.random() * 6, h: 4 + Math.random() * 5,
+        rot: Math.random() * Math.PI, vr: (Math.random() - .5) * .35,
+        color: COLORS[i % COLORS.length], round: Math.random() < .3,
+      });
+    }
+    var start = performance.now(), LIFE = 1700;
+    function frame(now) {
+      var t = now - start;
+      ctx.clearRect(0, 0, W, H);
+      var alpha = t < LIFE - 400 ? 1 : Math.max(0, (LIFE - t) / 400);
+      bits.forEach(function (p) {
+        p.vy += .32; p.vx *= .99; p.vy *= .99;
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        if (p.round) ctx.arc(0, 0, p.h / 2 + 1, 0, Math.PI * 2);
+        else ctx.rect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.fill();
+        // White pieces get a thin red edge so they show on the light page.
+        if (p.color === "#ffffff") { ctx.lineWidth = 1; ctx.strokeStyle = "rgba(185, 28, 43, .55)"; ctx.stroke(); }
+        ctx.restore();
+      });
+      if (t < LIFE) requestAnimationFrame(frame);
+      else c.remove();
+    }
+    requestAnimationFrame(frame);
+  }
+  function celebrateJoin(ev) {
+    var a = ev.currentTarget;
+    if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return; // let "open in new tab" work normally
+    ev.preventDefault();
+    buzz();
+    var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!calm) confettiBurst(a);
+    setTimeout(function () {
+      var w = null;
+      try { w = window.open(a.href, "_blank"); } catch (err) {}
+      if (w) { try { w.opener = null; } catch (err) {} }
+      else location.href = a.href;
+    }, calm ? 0 : 750);
+  }
+
   // ---- prize photo, full size ------------------------------------------------------
   function openPrize() {
     if (!els.prizeDialogImg.getAttribute("src")) els.prizeDialogImg.src = "/leaderboard/prize-paddle-lg.png";
@@ -2006,6 +2094,8 @@
       scrollToRow(expandedId);
     });
     els.prizeZoomBtn.addEventListener("click", openPrize);
+    els.joinBtn.addEventListener("click", celebrateJoin);
+    els.joinSticky.addEventListener("click", celebrateJoin);
     els.prizeDialogClose.addEventListener("click", closePrize);
     // A tap on the dimmed backdrop (outside the dialog box) closes it too.
     els.prizeDialog.addEventListener("click", function (ev) {
