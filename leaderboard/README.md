@@ -23,7 +23,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   medals and the highlighted leader row only appear once someone has
   scored; before that, a note says scores update after each session (or
   when the challenge starts). The published tie-break for 1st, shown in
-  "How scoring works", is **more Skill Points wins**, and that's also the
+  "How scoring works" under Tiebreaker rules, is **most Community Points
+  wins**, and that's also the
   display order within a tie.
 - **Phones** show just Score and Behind 1st (tapping a player shows the
   Skill/Community split), so the table fits without sideways scrolling.
@@ -68,8 +69,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   - **After the end date**: a **winner banner** replaces the prize banner
     ("Congratulations, Chad Y! Winner of the Zocker Pro Series Control
     Paddle"), the table is titled **Final standings**, and the share text and
-    Story image switch to final results. The published tie-break (more Skill
-    Points) decides a tie on Lotus Score; a tie on both says the academy will
+    Story image switch to final results. The published tie-break (most
+    Community Points) decides a tie on Lotus Score; a tie on both says the academy will
     announce the winner.
   The page re-checks the phase every 30 seconds, so it flips over on its own.
 - **Initials avatars**: a coloured circle with each player's initials in the

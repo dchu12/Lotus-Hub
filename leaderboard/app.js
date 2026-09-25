@@ -191,7 +191,7 @@
       "</div></td></tr>";
   }
   // Players level on Lotus Score share a rank (1, 1, 3, ...). Within a tie
-  // the display order is Skill Points then name, which matches the
+  // the display order is Community Points then name, which matches the
   // published tie-break for 1st, but the rank number stays shared.
   function sortedEntries(entries) {
     var list = (entries || board.entries)
@@ -199,7 +199,7 @@
         return Object.assign({}, e, { _c: computed(e) });
       })
       .sort(function (a, b) {
-        return b._c.total - a._c.total || b._c.duprPoints - a._c.duprPoints || a.name.localeCompare(b.name);
+        return b._c.total - a._c.total || b._c.community - a._c.community || a.name.localeCompare(b.name);
       });
     list.forEach(function (e, i) {
       e._rank = i > 0 && e._c.total === list[i - 1]._c.total ? list[i - 1]._rank : i + 1;
@@ -1086,16 +1086,16 @@
     els.prizeBanner.hidden = show;
     if (!show) return;
     var lead = list[0];
-    // Published tie-break: equal Lotus Score -> more Skill Points wins. Only a
-    // tie on both is left for the academy to call.
-    var winners = list.filter(function (e) { return e._c.total === lead._c.total && e._c.duprPoints === lead._c.duprPoints; });
+    // Published tie-break: equal Lotus Score -> most Community Points wins.
+    // Only a tie on both is left for the academy to call.
+    var winners = list.filter(function (e) { return e._c.total === lead._c.total && e._c.community === lead._c.community; });
     var names = winners.map(function (e) { return e.name; });
     var headline = winners.length === 1
       ? "Congratulations, " + esc(lead.name) + "!"
       : "It's a tie: " + esc(names.slice(0, -1).join(", ")) + " &amp; " + esc(names[names.length - 1]);
     var sub = winners.length === 1
       ? "Winner of the <b>Zocker Pro Series Control Paddle</b> with " + lead._c.total + " Lotus points"
-      : "Level on Lotus Score and Skill Points (" + lead._c.total + " pts). The academy will announce the winner.";
+      : "Level on Lotus Score and Community Points (" + lead._c.total + " pts). The academy will announce the winner.";
     els.winnerCard.innerHTML =
       '<div class="win-avatars">' + winners.slice(0, 3).map(function (e) { return avatarHtml(e.name, "av-xl"); }).join("") + "</div>" +
       '<div class="win-txt"><div class="win-kicker">Final results</div>' +
