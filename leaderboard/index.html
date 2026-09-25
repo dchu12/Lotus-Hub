@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=42" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=43" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -125,9 +125,11 @@
 
     <!-- Player view: the sign-up call to action for visitors (e.g. from Instagram) -->
     <section class="join" id="joinCard" hidden aria-label="Join the challenge">
-      <a class="btn primary join-btn" id="joinBtn" href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg>
-        DM LOTUS to join the challenge<span class="sr-only"> (opens Instagram)</span>
+      <a class="join-btn" id="joinBtn" href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">
+        <span class="jb-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg></span>
+        <span class="jb-txt"><b>DM LOTUS</b> <span class="jb-sub">to join the challenge</span></span>
+        <span class="jb-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        <span class="sr-only"> (opens Instagram)</span>
       </a>
     </section>
 
