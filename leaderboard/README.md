@@ -46,7 +46,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   view, a slim version is pinned to the bottom of the screen. It only shows
   when the main button would (player view, not ended, visitor not on the
   board), and never on desktop.
-- **Sponsor line**: on its own line under the flag badge, "Sponsored by:
+- **Sponsor line**: on its own line under the paddle name, "Sponsored by:
   Lotus Pickleball Academy".
 - **Paddle name link**: "Zocker Pro Series Control Paddle" in the prize
   banner links to the paddle on zocker.ca (new tab).
@@ -128,7 +128,7 @@ Community Points, Points Behind 1st — and sorts automatically.
     opens the Instagram DM.
   - A footer shows the logo, the academy name, the Instagram handle and
     "Leaderboard updates live".
-- **Prize banner**: the paddle name has a small badge under it: an inline
+- **Prize banner**: "1st place wins" has a small badge beside it: an inline
   SVG Vietnam flag and "brand" (screen readers hear "Vietnam brand"). It's drawn in SVG because flag
   emoji don't render on Windows.
 - **Header**: three lines: "Lotus Pickleball Academy" (small red eyebrow,
