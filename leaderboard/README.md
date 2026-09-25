@@ -106,6 +106,9 @@ Community Points, Points Behind 1st — and sorts automatically.
     opens the Instagram DM.
   - A footer shows the logo, the academy name, the Instagram handle and
     "Leaderboard updates live".
+- **Prize banner**: "1st place wins" has a small "Vietnam brand" badge with
+  an inline SVG Vietnam flag beside it. It's drawn in SVG because flag
+  emoji don't render on Windows.
 - **Header**: three lines: "Lotus Pickleball Academy" (small red eyebrow,
   fixed in `index.html`), then the challenge name, then the dates line. The
   name and the dates line come from **Edit challenge details** in the admin
