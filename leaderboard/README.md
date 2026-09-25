@@ -115,7 +115,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   - Before launch there's no header pill: the header shows the dates and
     the countdown card shows the exact time left. Once live, the pill shows
     "X days left". The Story image, which has no countdown card, says
-    "Starts in X days". The countdown card's heading reads "Kicks off in",
+    "Starts in X days". The countdown card's heading reads "Challenge Kicks Off In",
     so the date isn't repeated there either.
   - Dates are always written in US style ("October 1"), whatever the phone's
     language setting.
