@@ -168,7 +168,11 @@ Community Points, Points Behind 1st — and sorts automatically.
      Firebase)" → API restrictions → add **Google Calendar API** → Save.
      (Or create a separate key restricted to that API and to
      `lots-hub.web.app/*`, and paste it in the optional key field.)
-- **How scoring works**: the formula as tiles, plus the tie-break rule.
+- **Challenge information**: quick facts (dates, prize, how to join via
+  Instagram DM; "how to join" is hidden once the challenge ends), then "How
+  scoring works" (the formula as tiles plus the tie-break rule), and a
+  button to the full challenge post on Instagram
+  (`https://www.instagram.com/p/DdZCGGOkYlW/`, in `index.html`).
   Collapsible; open by default on wide screens, collapsed on phones.
 
 - **Admin tools** (admin link only):
