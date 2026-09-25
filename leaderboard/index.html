@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=31" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=32" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -75,7 +75,10 @@
     </header>
 
     <!-- Prize callout: the first thing a challenger sees each time they check. -->
-    <section class="prize" aria-label="Challenge prize">
+    <!-- After the end date: the winner, in place of the prize banner -->
+    <section class="winner" id="winnerCard" hidden aria-live="polite"></section>
+
+    <section class="prize" id="prizeBanner" aria-label="Challenge prize">
       <img class="prize-photo" src="/leaderboard/prize-paddle.png" alt="Zocker Pro Series Control paddle" width="111" height="240" />
       <div class="prize-txt">
         <div class="prize-eyebrow">1st place wins</div>
@@ -190,15 +193,25 @@
     </section>
 
     <!-- Leaderboard table (desktop) / cards (mobile) -->
-    <section class="card board-card" aria-label="Leaderboard">
+    <!-- Before the start date: countdown + who's signed up (players see this
+         instead of a table of zeros) -->
+    <section class="card launch-card" id="launchCard" hidden aria-labelledby="launchTitle">
+      <h2 class="launch-kicker" id="launchTitle">Kicks off <span id="launchDate"></span></h2>
+      <div class="launch-count" id="launchCount" role="timer" aria-live="off"></div>
+      <div class="launch-roster-head"><span>Who's in</span><span id="launchRosterCount"></span></div>
+      <ul class="launch-roster" id="launchRoster"></ul>
+    </section>
+
+    <section class="card board-card" id="boardCard" aria-label="Leaderboard">
       <div class="board-head">
-        <h2>Lotus Leaderboard</h2>
+        <h2 id="boardHeading">Lotus Leaderboard</h2>
         <div class="board-head-right">
           <span class="count" id="playerCount"></span>
           <span class="last-updated" id="lastUpdatedText"></span>
           <button type="button" class="btn small primary" id="addPlayerBtn">+ Add player</button>
         </div>
       </div>
+      <div class="podium" id="podium" hidden></div>
       <!-- Find your rank (player view) / find a player (admin view) -->
       <div class="finder" id="rankCard" hidden>
         <div class="finder-search" id="rankFind">
@@ -320,6 +333,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=33"></script>
+  <script src="/leaderboard/app.js?v=34"></script>
 </body>
 </html>
