@@ -66,6 +66,31 @@ Community Points, Points Behind 1st — and sorts automatically.
   **when the challenge name, dates or prize change, update the tags and
   regenerate `og-image.jpg`** (bump its `?v=`). WhatsApp caches a preview
   per link for a while.
+- **Climber of the week**: a green card under the podium showing the
+  player who climbed the most spots in the last full week (Monday to
+  Sunday), with "▲4 spots · +12 pts". Ties go to more points gained. In the
+  first week, before a full week exists, it shows the climber "so far this
+  week". Only players who were on the board when the week began count.
+  Tapping it opens that player's breakdown, and the Instagram Story image
+  includes it. How it works: the first admin save each week stores the
+  standings as they were before that save (the `weeks` field, keeping the
+  last 8 weeks). Since only saves change the board, that is exactly where
+  everyone stood when the week began. It's shown only while the challenge
+  is live.
+- **Page visits by source (admin)**: the player page counts one visit per
+  browser per day (never the coach's own visits) in
+  `leaderboards/{id}/visits/{YYYY-MM-DD}_{source}`. The admin page shows a
+  **Page visits** card with the last 7 days by source, the change vs the
+  previous 7 days, and the all-time total. It also lists **tracking
+  links** to copy: `?src=bio` (Instagram bio), `?src=story` (Stories; the
+  Story card's Copy link uses it too), `?src=wa` (WhatsApp) and `?src=qr`
+  (the QR code encodes it). Links shared from the player page's Share
+  button count as "Shared by players". Instagram's in-app browser without
+  a tag counts as "Instagram (other)", and everything else as "Direct /
+  other". The tag is removed from the address bar after it's read. The
+  rules let anyone add exactly 1 to a counter for an existing board, and
+  only the coach can read the counters. Counts are approximate: clearing
+  browser data counts a visitor again.
 - **Join the challenge**: the player view shows a "Want in?" card under the
   prize with a **Join the challenge** button that opens an Instagram DM to
   `@lotuspickleballacademy_to` (`https://ig.me/m/lotuspickleballacademy_to`,
