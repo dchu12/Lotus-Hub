@@ -982,8 +982,19 @@
     for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
     return AVATAR_COLORS[h % AVATAR_COLORS.length];
   }
+  // Colours picked for particular players, by name (case-insensitive):
+  // [background, initials]. Light backgrounds get dark initials (>= 4.5:1).
+  var AVATAR_PICKS = {
+    "durian d": ["#f5c518", "#3d2f00"], // yellow
+    "lumpia l": ["#f76707", "#3a1600"], // orange
+  };
+  function avatarStyle(name) {
+    var pick = AVATAR_PICKS[String(name || "").trim().toLowerCase()];
+    return pick ? { bg: pick[0], fg: pick[1] } : { bg: avatarColor(name), fg: "#fff" };
+  }
   function avatarHtml(name, cls) {
-    return '<span class="av' + (cls ? " " + cls : "") + '" style="background:' + avatarColor(name) + '" aria-hidden="true">' + esc(initials(name)) + "</span>";
+    var st = avatarStyle(name);
+    return '<span class="av' + (cls ? " " + cls : "") + '" style="background:' + st.bg + ";color:" + st.fg + '" aria-hidden="true">' + esc(initials(name)) + "</span>";
   }
 
   // ---- challenge phase: before / live / ended ----------------------------------
@@ -1776,8 +1787,8 @@
         ctx.strokeStyle = "rgba(15,123,69,.35)"; ctx.lineWidth = 3; ctx.stroke();
         var acx = X + 62, acy = cY + 75;
         ctx.beginPath(); ctx.arc(acx, acy, 52, 0, Math.PI * 2); ctx.fillStyle = "#0f7b45"; ctx.fill();
-        ctx.beginPath(); ctx.arc(acx, acy, 45, 0, Math.PI * 2); ctx.fillStyle = avatarColor(climb.e.name); ctx.fill();
-        ctx.fillStyle = "#ffffff"; ctx.font = "800 34px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.beginPath(); ctx.arc(acx, acy, 45, 0, Math.PI * 2); ctx.fillStyle = avatarStyle(climb.e.name).bg; ctx.fill();
+        ctx.fillStyle = avatarStyle(climb.e.name).fg; ctx.font = "800 34px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(initials(climb.e.name), acx, acy + 2);
         ctx.textBaseline = "alphabetic"; ctx.textAlign = "right";
         var rx = W - X - 10;
