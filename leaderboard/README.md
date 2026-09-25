@@ -45,6 +45,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   view, a slim version is pinned to the bottom of the screen. It only shows
   when the main button would (player view, not ended, visitor not on the
   board), and never on desktop.
+- **Paddle name link**: "Zocker Pro Series Control Paddle" in the prize
+  banner links to the paddle on zocker.ca (new tab).
 - **Paddle photo**: tapping the prize photo opens it full size in a dialog
   (`prize-paddle-lg.png`, loaded only on tap). Escape, the close button or
   tapping the backdrop closes it.
