@@ -667,6 +667,9 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .f-name { font-weight: 800; font-size: .98rem; letter-spacing: -.01em; }
 .f-rule { font-size: .88rem; color: var(--ink-2); }
 .f-rule b { color: var(--brand); font-weight: 800; }
+.f-dates { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.f-dates li { display: flex; align-items: baseline; gap: 8px; font-size: .84rem; color: var(--ink-2); }
+.f-dates b { flex: none; min-width: 3.7em; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
 .f-desc { font-size: .76rem; color: var(--muted); line-height: 1.4; }
 .f-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
 .f-list li { display: flex; align-items: center; gap: 8px; font-size: .86rem; color: var(--ink-2); }
