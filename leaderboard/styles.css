@@ -122,15 +122,41 @@ body {
   max-width: 230px; font-size: .84rem; font-weight: 600; color: var(--ink-2); line-height: 1.4; text-align: right;
 }
 
-/* Join CTA (player view): just the button, full width, under the
-   challenge information. */
+/* Join CTA (player view): one full-width button under the challenge
+   information. Icon badge, label, and an arrow that nudges on hover. */
 .join { margin: 0 0 16px; }
-.btn.join-btn {
-  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-  padding: 13px 12px; border-radius: 12px; font-size: clamp(.8rem, 3.9vw, 1rem); text-align: center; text-decoration: none;
-  box-shadow: var(--shadow-sm);
+.join-btn {
+  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 60px;
+  padding: 10px 12px 10px 10px; border-radius: 16px; text-decoration: none; color: #fff;
+  background: linear-gradient(180deg, #c8283a 0%, var(--brand) 55%, #a8182a 100%);
+  border: 1px solid #a01626;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 6px 16px -6px rgba(185, 28, 43, .55), 0 1px 2px rgba(28, 20, 20, .08);
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
 }
-.join-btn svg { width: 18px; height: 18px; flex: none; }
+.join-btn:hover {
+  transform: translateY(-1px); filter: brightness(1.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 10px 22px -8px rgba(185, 28, 43, .6), 0 1px 2px rgba(28, 20, 20, .08);
+}
+.join-btn:active { transform: translateY(0); filter: brightness(.97); }
+.join-btn:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand), transparent 55%); outline-offset: 3px; }
+.jb-icon {
+  flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+  background: #fff; color: var(--brand); box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+}
+.jb-icon svg { width: 22px; height: 22px; }
+.jb-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.jb-txt b { font-size: 1.08rem; font-weight: 800; letter-spacing: .05em; }
+.jb-sub { font-size: .84rem; font-weight: 600; color: rgba(255, 255, 255, .86); margin-top: 1px; }
+.jb-arrow {
+  flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(255, 255, 255, .16); transition: transform .15s ease, background .15s ease;
+}
+.jb-arrow svg { width: 18px; height: 18px; }
+.join-btn:hover .jb-arrow { transform: translateX(3px); background: rgba(255, 255, 255, .24); }
+@media (max-width: 370px) {
+  .join-btn { gap: 10px; }
+  .jb-arrow { display: none; }
+}
 .rank-none a { color: var(--brand); font-weight: 700; }
 
 .card {
