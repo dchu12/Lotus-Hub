@@ -443,7 +443,8 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 }
 .lr-you a:hover { background: var(--accent-bg); border-color: var(--brand); }
 .lr-you a:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.lr-plus { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-bg); font-size: 1.1rem; line-height: 1; }
+.lr-plus { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-bg); }
+.lr-plus svg { width: 16px; height: 16px; display: block; }
 .launch-roster .lr-empty { padding: 8px 12px; color: var(--muted); font-weight: 600; }
 
 /* Top-3 podium */
