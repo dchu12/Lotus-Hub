@@ -115,7 +115,9 @@ Community Points, Points Behind 1st — and sorts automatically.
   fixed in `index.html`), then the challenge name, then the dates line. The
   name and the dates line come from **Edit challenge details** in the admin
   menu, which saves them to the board doc. The default dates line is
-  "Oct 1 – 31".
+  "Oct 1 – 31". The old saved "October 1 – October 31" is shown as
+  "Oct 1 – 31" (`shortSubtitle` in `app.js`) and rewritten to it on the
+  next admin save.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
   the countdown card before launch) that opens its Instagram post
   (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`). It shows

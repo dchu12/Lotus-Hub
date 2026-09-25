@@ -482,11 +482,18 @@
   // transaction to the *latest* server copy. Two coaches logging sessions at
   // the same moment therefore both land, instead of the second save
   // silently overwriting the first with its stale list.
+  // The board was first saved with the long dates line; show the shorter
+  // one instead. cleanDoc() runs on every save, so the next admin save
+  // writes the new text to the board as well.
+  var OLD_SUBTITLES = { "October 1 – October 31": "Oct 1 – 31", "October 1 - October 31": "Oct 1 – 31" };
+  function shortSubtitle(s) {
+    return OLD_SUBTITLES.hasOwnProperty(s) ? OLD_SUBTITLES[s] : s;
+  }
   function cleanDoc(src) {
     src = src || {};
     return {
       title: src.title || board.title,
-      subtitle: src.subtitle || board.subtitle,
+      subtitle: shortSubtitle(src.subtitle || board.subtitle),
       entries: JSON.parse(JSON.stringify(Array.isArray(src.entries) ? src.entries : [])),
       startDate: validIso(src.startDate) ? src.startDate : null,
       endDate: validIso(src.endDate) ? src.endDate : null,
@@ -533,7 +540,7 @@
     connected = true;
     if (data) {
       board.title = data.title || board.title;
-      board.subtitle = data.subtitle || board.subtitle;
+      board.subtitle = shortSubtitle(data.subtitle || board.subtitle);
       board.entries = Array.isArray(data.entries) ? data.entries : [];
       board.startDate = data.startDate || null;
       board.endDate = data.endDate || null;
@@ -857,7 +864,7 @@
   // ---- render ---------------------------------------------------------------
   function renderHeader() {
     els.boardTitle.textContent = board.title;
-    els.boardSubtitle.textContent = board.subtitle;
+    els.boardSubtitle.textContent = shortSubtitle(board.subtitle);
     var end = challengeDates().end;
     els.prizeMeta.hidden = !end;
     if (end) els.prizeMeta.textContent = "Awarded to the top Lotus Score on " + fmtDay(end);
