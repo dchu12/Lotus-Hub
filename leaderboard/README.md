@@ -139,6 +139,10 @@ Community Points, Points Behind 1st — and sorts automatically.
   Challenge" (`newTitle`), and the old "October 1 – October 31" as
   "Oct 1 – 31" (`shortSubtitle` in `app.js`) and rewritten to it on the
   next admin save.
+- **Book Private Drilling Session**: under the Join button, a white
+  outlined button "Book Private Drilling Session (Free*)" with a "+2 Lotus
+  Points" tag that opens the academy's Instagram DM. It shows on the player
+  view for everyone (joined or not) until the challenge ends.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
   the countdown card before launch) that opens its Instagram post
   (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`). It shows

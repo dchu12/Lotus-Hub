@@ -656,7 +656,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
-      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -1114,6 +1114,9 @@
   function renderJoin(list, ph) {
     var isIn = list.some(function (e) { return e.id === meId; });
     els.joinCard.hidden = !readOnly || ph === "ended" || isIn;
+    // The drilling-session button is for everyone on the player view, joined
+    // or not, until the challenge is over.
+    els.drillBtn.hidden = !readOnly || ph === "ended";
   }
   function pts(n) { return n + (n === 1 ? " pt" : " pts"); }
   function setMe(id) {

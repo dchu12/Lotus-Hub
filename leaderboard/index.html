@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=63" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=64" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -138,6 +138,14 @@
         <span class="sr-only"> (opens Instagram)</span>
       </a>
     </section>
+
+    <!-- Player view: book a private drilling session (Instagram DM) -->
+    <a class="drill-btn" id="drillBtn" hidden href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">
+      <span class="db-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span>
+      <span class="db-txt"><span class="db-title">Book Private Drilling Session (Free*)</span><span class="db-pts">+2 Lotus Points</span></span>
+      <span class="db-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+      <span class="sr-only"> (opens Instagram)</span>
+    </a>
 
     <p id="connBanner" class="banner" hidden></p>
 
@@ -413,6 +421,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=49"></script>
+  <script src="/leaderboard/app.js?v=50"></script>
 </body>
 </html>
