@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=46" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=47" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -46,8 +46,9 @@
           <!-- Shown until app.js loads the saved title (slow on phones while the
                Firebase SDK downloads), so keep it matching the live board's
                title/subtitle and the defaults in app.js. -->
+          <p class="hd-eyebrow">Lotus Pickleball Academy</p>
           <h1 id="boardTitle">October Lotus Challenge</h1>
-          <p class="hd-sub"><span id="boardSubtitle">October 1 – October 31</span><span class="countdown" id="countdown" hidden></span></p>
+          <p class="hd-sub"><span id="boardSubtitle">Oct 1 – 31</span><span class="countdown" id="countdown" hidden></span></p>
         </div>
       </div>
       <div class="hd-actions">
@@ -169,7 +170,7 @@
     <section class="card edit-panel" id="editPanel" hidden aria-label="Edit challenge details">
       <div class="form-row">
         <label>Challenge name<input type="text" id="titleInput" placeholder="October Lotus Challenge" maxlength="120" /></label>
-        <label>Dates (shown under the title)<input type="text" id="subtitleInput" placeholder="October 1 – October 31" maxlength="120" /></label>
+        <label>Dates (shown under the title)<input type="text" id="subtitleInput" placeholder="Oct 1 – 31" maxlength="120" /></label>
       </div>
       <div class="form-row">
         <label>Start date<input type="date" id="startDateInput" /></label>
@@ -391,6 +392,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=43"></script>
+  <script src="/leaderboard/app.js?v=44"></script>
 </body>
 </html>
