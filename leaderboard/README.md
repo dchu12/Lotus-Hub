@@ -106,6 +106,10 @@ Community Points, Points Behind 1st — and sorts automatically.
     opens the Instagram DM.
   - A footer shows the logo, the academy name, the Instagram handle and
     "Leaderboard updates live".
+- **Lotus Gachapon**: a tappable card right after the leaderboard (or after
+  the countdown card before launch) that opens its Instagram post
+  (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`). It shows
+  on both the player and admin views.
 - **Join the challenge**: the player view shows a full-width **DM LOTUS to
   join the challenge** button under the Challenge information card that opens an
   Instagram DM to `@lotuspickleballacademy_to`
