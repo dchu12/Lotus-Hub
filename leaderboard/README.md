@@ -130,7 +130,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   fixed in `index.html`), then the challenge name, then the dates line. The
   name and the dates line come from **Edit challenge details** in the admin
   menu, which saves them to the board doc. The default dates line is
-  "Oct 1 – 31". The old saved "October 1 – October 31" is shown as
+  "Oct 1 – 31". The old saved name "October Lotus Challenge" is shown as "October
+  Challenge" (`newTitle`), and the old "October 1 – October 31" as
   "Oct 1 – 31" (`shortSubtitle` in `app.js`) and rewritten to it on the
   next admin save.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
@@ -161,7 +162,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   name, rank medallion, name, points, standing, the prize, and the player
   link), built in the background as soon as the strip shows, so tapping
   Share opens the phone's share sheet straight away (iOS requires that).
-  The caption is "I'm 3rd in the October Lotus Challenge with 36 points!"
+  The caption is "I'm 3rd in the October Challenge with 36 points!"
   plus the link. On a computer without a share sheet, it downloads the image
   and copies the caption.
 - **Find your name**: a search bar at the top of the leaderboard card. In
