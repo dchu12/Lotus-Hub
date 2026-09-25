@@ -125,7 +125,7 @@ body {
   filter: drop-shadow(0 3px 5px rgba(28, 20, 20, .22)); /* transparent cut-out, so the shadow follows the paddle */
 }
 .prize-txt { min-width: 0; }
-.prize-top { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+.prize-origin { margin-top: 5px; display: flex; }
 .vn-badge {
   display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 1px 3px; border-radius: 999px;
   background: #fff; border: 1px solid color-mix(in srgb, #da251d, transparent 70%);
