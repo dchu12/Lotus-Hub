@@ -52,7 +52,7 @@ body {
 .hd h1 {
   margin: 0; font-size: 1.4rem; line-height: 1.2; font-weight: 800; letter-spacing: -.02em;
 }
-.hd-sub { margin: 3px 0 0; color: var(--muted); font-size: .88rem; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.hd-sub { margin: 3px 0 0; color: var(--muted); font-size: .78rem; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .countdown {
   display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: .74rem; font-weight: 800;
   letter-spacing: .01em; background: color-mix(in srgb, var(--brand), transparent 90%); color: var(--brand);
