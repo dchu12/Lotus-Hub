@@ -567,14 +567,11 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .scoring[open] .scoring-title { margin-bottom: 14px; }
 .scoring[open] .scoring-title::after { transform: rotate(-135deg); }
 .scoring .info-title { margin: 0; font-size: 1rem; font-weight: 800; text-transform: none; letter-spacing: -.01em; color: var(--ink); }
-.info-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
-.info-fact { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--accent-bg); }
-.info-fact svg { width: 20px; height: 20px; flex: none; color: var(--brand); margin-top: 1px; }
-.if-lbl { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--brand); }
-.if-val { font-weight: 700; font-size: .9rem; color: var(--ink); line-height: 1.35; margin-top: 1px; }
-.if-val a { color: var(--ink); text-decoration-color: color-mix(in srgb, var(--brand), transparent 50%); text-underline-offset: 2px; }
-.if-val a:hover { color: var(--brand); }
-.if-note { font-size: .78rem; color: var(--ink-2); margin-top: 2px; overflow-wrap: anywhere; }
+.info-win {
+  display: flex; align-items: center; gap: 10px; margin: 0 0 18px; padding: 12px 14px; border-radius: 12px;
+  background: var(--accent-bg); font-weight: 800; font-size: 1rem; color: var(--ink);
+}
+.info-win svg { width: 22px; height: 22px; flex: none; color: var(--brand); }
 .info-sub { margin: 0 0 10px; font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
 .info-post { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; text-decoration: none; }
 .info-post svg { width: 18px; height: 18px; flex: none; color: var(--brand); }
@@ -613,7 +610,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 
 @media (max-width: 640px) {
   .formula { grid-template-columns: 1fr; gap: 6px; }
-  .info-facts { grid-template-columns: 1fr; gap: 8px; }
   .info-post { display: flex; justify-content: center; }
   .f-op { line-height: 1; }
   .form-row.counts { gap: 10px; }
