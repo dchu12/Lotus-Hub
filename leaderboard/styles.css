@@ -428,13 +428,22 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .launch-card { text-align: center; border-top: 3px solid var(--brand); }
 .launch-card .launch-kicker { margin: 0 0 12px; font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--brand); }
 .launch-count { display: flex; justify-content: center; gap: 10px; margin-bottom: 18px; }
-.lc-tile { min-width: 84px; padding: 12px 10px 10px; border-radius: 14px; background: var(--accent-bg); border: 1px solid color-mix(in srgb, var(--brand), transparent 78%); }
+.lc-tile { min-width: 84px; padding: 12px 10px 10px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
 .lc-num { display: block; font-size: 2.1rem; font-weight: 800; line-height: 1; color: var(--brand); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .lc-lbl { display: block; margin-top: 6px; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
 .launch-roster-head { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 2px 8px; border-top: 1px solid var(--line); font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
 .launch-roster { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .launch-roster li { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; background: var(--field); border: 1px solid var(--line); font-weight: 700; font-size: .9rem; }
 .launch-roster .av { width: 30px; height: 30px; font-size: .7rem; }
+.launch-roster .lr-you { padding: 0; background: none; border: 0; }
+.lr-you a {
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px 5px 5px; border-radius: 999px;
+  border: 1.5px dashed color-mix(in srgb, var(--brand), transparent 45%); color: var(--brand); font-weight: 800; text-decoration: none;
+  transition: background .15s ease, border-color .15s ease;
+}
+.lr-you a:hover { background: var(--accent-bg); border-color: var(--brand); }
+.lr-you a:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.lr-plus { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-bg); font-size: 1.1rem; line-height: 1; }
 .launch-roster .lr-empty { padding: 8px 12px; color: var(--muted); font-weight: 600; }
 
 /* Top-3 podium */
@@ -580,7 +589,13 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 
 /* Challenge information (with "How scoring works": the formula as three
    tiles, not a sentence). A <details>, collapsed by default. */
-.scoring { margin-top: 0; }
+.scoring { margin-top: 0; padding: 14px 18px; }
+.scoring[open] { padding-bottom: 20px; }
+.info-sum { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.info-ico { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-bg); color: var(--brand); }
+.info-ico svg { width: 20px; height: 20px; }
+.info-txt { display: flex; flex-direction: column; min-width: 0; }
+.info-hint { font-size: .78rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--muted); margin-top: 1px; }
 .scoring .scoring-title {
   display: flex; align-items: center; justify-content: space-between; cursor: pointer; list-style: none;
   font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2);
@@ -706,3 +721,15 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .aa-label { grid-column: 1 / -1; }
   .session-btn { padding: 9px 4px; font-size: .8rem; }
 }
+
+/* Footer */
+.site-foot {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+  position: relative; z-index: 1; width: calc(100% - 32px); max-width: 868px; margin: -28px auto 0; padding: 22px 16px 36px; border-top: 1px solid var(--line);
+}
+.site-foot img { width: 36px; height: 36px; margin-bottom: 4px; }
+.sf-name { font-weight: 800; font-size: .92rem; color: var(--ink); }
+.sf-ig { font-size: .84rem; font-weight: 600; color: var(--brand); text-decoration: none; }
+.sf-ig:hover { text-decoration: underline; }
+.sf-live { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: .76rem; font-weight: 600; color: var(--muted); }
+.sf-dot { width: 7px; height: 7px; border-radius: 50%; background: #0f9d58; box-shadow: 0 0 0 3px rgba(15, 157, 88, .15); }
