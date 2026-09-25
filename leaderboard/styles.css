@@ -175,7 +175,7 @@ body {
 }
 .jb-icon svg { width: 22px; height: 22px; }
 .jb-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
-.jb-txt b { font-size: 1.08rem; font-weight: 800; letter-spacing: .05em; }
+.jb-txt b { font-size: 1.08rem; font-weight: 800; letter-spacing: -.005em; }
 .jb-sub { font-size: .84rem; font-weight: 600; color: rgba(255, 255, 255, .86); margin-top: 1px; }
 .jb-arrow {
   flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
@@ -824,7 +824,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .js-icon { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #fff; color: var(--brand); }
   .js-icon svg { width: 19px; height: 19px; }
   .js-txt { flex: 1; min-width: 0; font-size: .9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .js-txt b { font-weight: 800; letter-spacing: .04em; }
+  .js-txt b { font-weight: 800; }
   .js-arrow { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .16); }
   .js-arrow svg { width: 16px; height: 16px; }
   body.sticky-on .site-foot { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }

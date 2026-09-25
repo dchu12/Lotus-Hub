@@ -1958,7 +1958,7 @@
   }
 
   // ---- sticky DM bar (phones) ----------------------------------------------------
-  // Shown once the main DM LOTUS button has scrolled up out of view, and only
+  // Shown once the main Join the Challenge button has scrolled out of view, and only
   // while that button itself would be shown (player view, not ended, not
   // already on the board). CSS keeps it to phone widths.
   var joinAbove = false;

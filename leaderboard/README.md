@@ -42,7 +42,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   shimmering placeholder card stands in for the countdown/leaderboard, so a
   slow connection doesn't flash "Be the first" or an empty table. If nothing
   arrives within 10 seconds, the page shows its normal empty state.
-- **Sticky DM bar (phones)**: once the main DM LOTUS button scrolls out of
+- **Sticky DM bar (phones)**: once the main Join the Challenge button scrolls out of
   view, a slim version is pinned to the bottom of the screen. It only shows
   when the main button would (player view, not ended, visitor not on the
   board), and never on desktop.
@@ -143,8 +143,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   the countdown card before launch) that opens its Instagram post
   (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`). It shows
   on both the player and admin views.
-- **Join the challenge**: the player view shows a full-width **DM LOTUS to
-  join the challenge** button under the Challenge information card that opens an
+- **Join the challenge**: the player view shows a full-width **Join the Challenge**
+  button ("Message us on Instagram" underneath) under the Challenge information card that opens an
   Instagram DM to `@lotuspickleballacademy_to`
   (`https://ig.me/m/lotuspickleballacademy_to`, set in `JOIN_URL` in
   `app.js` and the `#joinBtn` link in `index.html`). It's hidden in the admin view,
