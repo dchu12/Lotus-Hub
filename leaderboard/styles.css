@@ -673,6 +673,13 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .f-list svg { width: 15px; height: 15px; flex: none; color: var(--muted); }
 .f-list span { flex: 1; }
 .f-list b { color: var(--brand); font-weight: 800; font-variant-numeric: tabular-nums; }
+.f-val { white-space: nowrap; }
+.f-val small { font-size: .74rem; font-weight: 700; margin-left: 1px; }
+.f-list span { white-space: nowrap; }
+@media (max-width: 360px) {
+  .f-list li { gap: 6px; font-size: .8rem; }
+  .f-val small { font-size: .66rem; }
+}
 
 .toast {
   position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
