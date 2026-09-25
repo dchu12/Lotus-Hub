@@ -114,6 +114,13 @@ body {
   filter: drop-shadow(0 3px 5px rgba(28, 20, 20, .22)); /* transparent cut-out, so the shadow follows the paddle */
 }
 .prize-txt { min-width: 0; }
+.prize-top { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+.vn-badge {
+  display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 4px; border-radius: 999px;
+  background: #fff; border: 1px solid color-mix(in srgb, #da251d, transparent 70%);
+  font-size: .66rem; font-weight: 800; letter-spacing: .02em; color: var(--ink-2); white-space: nowrap;
+}
+.vn-flag { width: 18px; height: 12px; flex: none; display: block; border-radius: 2px; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .12); }
 .prize-eyebrow {
   font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--brand);
 }
