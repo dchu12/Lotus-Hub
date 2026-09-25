@@ -125,7 +125,7 @@ body {
 /* Join CTA (player view) — sits under the prize, so "win this" leads
    straight into "here's how to get in". */
 .join {
-  display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; margin: -6px 0 16px;
+  display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; margin: 0 0 16px;
   padding: 12px 14px 12px 18px; border-radius: 16px; background: var(--card);
   border: 1px dashed color-mix(in srgb, var(--brand), transparent 55%);
 }
@@ -558,9 +558,9 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .ev-cal-opts svg { width: 16px; height: 16px; flex: none; }
 .ev-cal svg { width: 16px; height: 16px; flex: none; }
 
-/* "How scoring works": the formula as three tiles, not a sentence.
-   A <details>, open by default on wide screens and collapsed on phones. */
-.scoring { margin-top: 4px; }
+/* Challenge information (with "How scoring works": the formula as three
+   tiles, not a sentence). A <details>, collapsed by default. */
+.scoring { margin-top: 0; }
 .scoring .scoring-title {
   display: flex; align-items: center; justify-content: space-between; cursor: pointer; list-style: none;
   font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2);
@@ -572,7 +572,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 }
 .scoring[open] .scoring-title { margin-bottom: 14px; }
 .scoring[open] .scoring-title::after { transform: rotate(-135deg); }
-.scoring .info-title { font-size: 1rem; text-transform: none; letter-spacing: -.01em; color: var(--ink); }
+.scoring .info-title { margin: 0; font-size: 1rem; font-weight: 800; text-transform: none; letter-spacing: -.01em; color: var(--ink); }
 .info-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
 .info-fact { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--accent-bg); }
 .info-fact svg { width: 20px; height: 20px; flex: none; color: var(--brand); margin-top: 1px; }

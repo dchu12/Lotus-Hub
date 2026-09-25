@@ -173,7 +173,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   scoring works" (the formula as tiles plus the tie-break rule), and a
   button to the full challenge post on Instagram
   (`https://www.instagram.com/p/DdZCGGOkYlW/`, in `index.html`).
-  Collapsible; open by default on wide screens, collapsed on phones.
+  Sits between the prize and the "Want in?" card, collapsed by default (one
+  tap to open) so the leaderboard stays near the top.
 
 - **Admin tools** (admin link only):
   - **"⋯" menu** in the header: Copy player link, Player link QR code,
