@@ -167,10 +167,10 @@ Community Points, Points Behind 1st — and sorts automatically.
      Firebase)" → API restrictions → add **Google Calendar API** → Save.
      (Or create a separate key restricted to that API and to
      `lots-hub.web.app/*`, and paste it in the optional key field.)
-- **Challenge information**: "Highest Lotus Score Wins Prize", then "How
-  scoring works" (the formula as tiles plus the tie-break rule), and a
-  button to the full challenge post on Instagram
-  (`https://www.instagram.com/p/DdZCGGOkYlW/`, in `index.html`).
+- **Challenge information**: a button to the full challenge post on
+  Instagram, then "Highest Lotus Score Wins Prize", then "How scoring
+  works" (the formula as tiles plus the tie-break rule). The post link
+  (`https://www.instagram.com/p/DdZCGGOkYlW/`) is set in `index.html`.
   Sits between the prize and the Join the challenge button, collapsed by default (one
   tap to open) so the leaderboard stays near the top.
 
