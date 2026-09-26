@@ -523,11 +523,21 @@
     });
     return any ? out : null;
   }
+  // One sponsor for every colour: a single "All prizes sponsored by" line
+  // under the list. Different sponsors: each row names its own.
   function renderGachaSponsors() {
     var sp = board.gachaSponsors || {};
+    var names = GACHA_COLOURS.map(function (k) { return sp[k] || DEFAULT_SPONSOR; });
+    var same = names.every(function (n) { return n === names[0]; });
     Array.prototype.forEach.call(document.querySelectorAll("[data-sponsor]"), function (el) {
       el.textContent = sp[el.getAttribute("data-sponsor")] || DEFAULT_SPONSOR;
+      el.parentNode.hidden = same;
     });
+    var all = document.getElementById("gkAllSponsor");
+    if (all) {
+      all.hidden = !same;
+      document.getElementById("gkAllSponsorName").textContent = names[0];
+    }
   }
   function cleanDoc(src) {
     src = src || {};
