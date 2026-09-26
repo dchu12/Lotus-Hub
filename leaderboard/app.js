@@ -672,7 +672,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
-      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinSteps", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinSteps", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -2231,7 +2231,31 @@
       var r = els.joinDialog.getBoundingClientRect();
       if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closeJoin();
     });
-    document.getElementById("gachaCard").addEventListener("click", celebrate("blue"));
+    // Lotus Gachapon: the card opens the rewards board; the board's button
+    // goes on to the Instagram post with the blue confetti.
+    document.getElementById("gachaCard").addEventListener("click", function (ev) {
+      if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      ev.preventDefault();
+      buzz();
+      if (typeof els.gachaDialog.showModal === "function") els.gachaDialog.showModal();
+      else els.gachaDialog.setAttribute("open", "");
+    });
+    var closeGacha = function () {
+      if (typeof els.gachaDialog.close === "function") els.gachaDialog.close();
+      else els.gachaDialog.removeAttribute("open");
+    };
+    var gachaGo = celebrate("blue");
+    els.gachaPostBtn.addEventListener("click", function (ev) {
+      if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      gachaGo(ev);
+      closeGacha();
+    });
+    els.gachaDialogClose.addEventListener("click", closeGacha);
+    els.gachaDialog.addEventListener("click", function (ev) {
+      if (ev.target !== els.gachaDialog) return;
+      var r = els.gachaDialog.getBoundingClientRect();
+      if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closeGacha();
+    });
     els.prizeDialogClose.addEventListener("click", closePrize);
     // A tap on the dimmed backdrop (outside the dialog box) closes it too.
     els.prizeDialog.addEventListener("click", function (ev) {

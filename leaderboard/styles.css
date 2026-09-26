@@ -870,6 +870,24 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .lb-close:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .lb-cap { margin: 0; display: flex; flex-direction: column; gap: 2px; font-weight: 800; font-size: 1.05rem; }
 .lb-kicker { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
+/* Lotus Gachapon rewards board */
+.gacha-sheet { text-align: left; max-width: min(92vw, 400px); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.gacha-sheet .lb-kicker { margin: 0; font-weight: 800; }
+.gacha-sheet .jd-title { margin-bottom: 0; }
+.gk-sub { margin: 2px 0 10px; font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
+.gk-intro { margin: 0 0 14px; font-size: .9rem; line-height: 1.45; color: var(--ink-2); }
+.gk-list { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.gk-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 10px; border-radius: 14px; background: var(--field); border: 1px solid var(--line); }
+.gk-ball { width: 32px; height: 41px; flex: none; }
+.gk-label { flex: 1; padding: 6px 14px; border-radius: 10px; font-weight: 800; font-size: 1rem; letter-spacing: -.01em; transform: rotate(-1deg); }
+.gk-red .gk-ball { color: #d62b2b; }    .gk-red .gk-label { background: #b91c2b; color: #fff; }
+.gk-yellow .gk-ball { color: #f2c230; } .gk-yellow .gk-label { background: #f7d64a; color: #3b2f00; }
+.gk-blue .gk-ball { color: #2f6fe0; }   .gk-blue .gk-label { background: #2563eb; color: #fff; }
+.gk-green .gk-ball { color: #2ea44f; }  .gk-green .gk-label { background: #15803d; color: #fff; }
+.gk-red { border-color: color-mix(in srgb, var(--brand), transparent 60%); background: var(--accent-bg); }
+.gk-post { display: flex; width: 100%; box-sizing: border-box; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 14px; font-weight: 800; font-size: .95rem; white-space: nowrap; text-decoration: none; }
+.gk-post svg { width: 18px; height: 18px; color: var(--brand); }
+
 /* How to join panel */
 .join-sheet { text-align: left; max-width: min(92vw, 440px); max-height: calc(100dvh - 32px); overflow-y: auto; }
 .join-sheet .lb-kicker { margin: 0; font-weight: 800; }
