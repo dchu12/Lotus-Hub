@@ -1979,10 +1979,11 @@
     }).observe(els.joinBtn);
   }
 
-  // ---- Join button: confetti + haptic ---------------------------------------------
-  // Tapping Join fires a short red-and-white confetti burst from the button
-  // and a haptic buzz, then opens the Instagram DM about 0.75s later so the
-  // burst is actually seen (opening straight away would cover it). The delay
+  // ---- Confetti + haptic on the Join, Drilling and Gachapon buttons ---------------
+  // Tapping one fires a short confetti burst from the button (red and white
+  // for Join, yellow and white for Drilling, blue and white for Gachapon) and
+  // a haptic buzz, then opens the link about 0.75s later so the burst is
+  // actually seen (opening straight away would cover it). The delay
   // stays inside the browser's user-activation window, so the new tab isn't
   // treated as a popup; if it's blocked anyway, the DM opens in this tab.
   var hapticLabel = null;
@@ -2003,7 +2004,14 @@
       hapticLabel.click();
     } catch (err) {}
   }
-  function confettiBurst(fromEl) {
+  // Confetti colour sets per button: [colours, edge colour for white pieces].
+  var CONFETTI = {
+    red: [["#b91c2b", "#e0364a", "#ffffff", "#ffffff", "#8f1421"], "rgba(185, 28, 43, .55)"],
+    blue: [["#1d4f91", "#3b82f6", "#ffffff", "#ffffff", "#0e3a73"], "rgba(29, 79, 145, .55)"],
+    yellow: [["#f5c518", "#fcd34d", "#ffffff", "#ffffff", "#d4a106"], "rgba(170, 120, 0, .6)"],
+  };
+  function confettiBurst(fromEl, scheme) {
+    var set = CONFETTI[scheme] || CONFETTI.red;
     var r = fromEl.getBoundingClientRect();
     var c = document.createElement("canvas");
     c.className = "confetti";
@@ -2013,7 +2021,7 @@
     document.body.appendChild(c);
     var ctx = c.getContext("2d");
     ctx.scale(dpr, dpr);
-    var COLORS = ["#b91c2b", "#e0364a", "#ffffff", "#ffffff", "#8f1421"];
+    var COLORS = set[0];
     var ox = r.left + r.width / 2, oy = r.top + r.height / 2;
     var bits = [];
     for (var i = 0; i < 140; i++) {
@@ -2043,8 +2051,8 @@
         if (p.round) ctx.arc(0, 0, p.h / 2 + 1, 0, Math.PI * 2);
         else ctx.rect(-p.w / 2, -p.h / 2, p.w, p.h);
         ctx.fill();
-        // White pieces get a thin red edge so they show on the light page.
-        if (p.color === "#ffffff") { ctx.lineWidth = 1; ctx.strokeStyle = "rgba(185, 28, 43, .55)"; ctx.stroke(); }
+        // White pieces get a thin coloured edge so they show on the light page.
+        if (p.color === "#ffffff") { ctx.lineWidth = 1; ctx.strokeStyle = set[1]; ctx.stroke(); }
         ctx.restore();
       });
       if (t < LIFE) requestAnimationFrame(frame);
@@ -2052,19 +2060,23 @@
     }
     requestAnimationFrame(frame);
   }
-  function celebrateJoin(ev) {
+  // Click handler for a link that should celebrate before opening: buzz,
+  // confetti in the given colours, then open the link.
+  function celebrate(scheme) {
+    return function (ev) {
     var a = ev.currentTarget;
     if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return; // let "open in new tab" work normally
     ev.preventDefault();
     buzz();
     var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!calm) confettiBurst(a);
+    if (!calm) confettiBurst(a, scheme);
     setTimeout(function () {
       var w = null;
       try { w = window.open(a.href, "_blank"); } catch (err) {}
       if (w) { try { w.opener = null; } catch (err) {} }
       else location.href = a.href;
     }, calm ? 0 : 750);
+    };
   }
 
   // ---- prize photo, full size ------------------------------------------------------
@@ -2094,8 +2106,10 @@
       scrollToRow(expandedId);
     });
     els.prizeZoomBtn.addEventListener("click", openPrize);
-    els.joinBtn.addEventListener("click", celebrateJoin);
-    els.joinSticky.addEventListener("click", celebrateJoin);
+    els.joinBtn.addEventListener("click", celebrate("red"));
+    els.joinSticky.addEventListener("click", celebrate("red"));
+    els.drillBtn.addEventListener("click", celebrate("yellow"));
+    document.getElementById("gachaCard").addEventListener("click", celebrate("blue"));
     els.prizeDialogClose.addEventListener("click", closePrize);
     // A tap on the dimmed backdrop (outside the dialog box) closes it too.
     els.prizeDialog.addEventListener("click", function (ev) {
