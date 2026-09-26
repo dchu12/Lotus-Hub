@@ -175,8 +175,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   The "Find your name" search links to the same DM when a name isn't found.
   Every Join link (the button, the sticky bar, "+ You?" and that search
   link) first opens a **How to join** panel: three steps and an editable
-  message ("Full name", "DUPR ID" and a consent line for photos/videos at
-  Lotus events for social media; set in `JOIN_MSG` in `app.js`). **Open
+  message asking for "Name" and "DUPR ID" (set in `JOIN_MSG` in `app.js`). **Open
   Instagram** copies the message, fires the confetti and opens the DM. If
   the browser blocks copying, the panel stays open with the text selected
   and a note on copying it by hand.
