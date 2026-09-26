@@ -159,17 +159,20 @@ Community Points, Points Behind 1st — and sorts automatically.
   `CUSTOM_DOMAIN_SETUP.md`.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
   the countdown card before launch), subtitle "Mystery prizes await…". It
-  opens the **Keychain Rewards** board (`#gachaDialog` in `index.html`): a
-  pickleball keychain per colour with its prize: red = Grand Prize, yellow =
-  Sweet, blue = Drinks, green = Salty. Each prize shows "Sponsored by:" and a sponsor
-  name, **Lotus Pickleball Academy** unless changed in "⋯" → Edit challenge
-  details → **Lotus Gachapon sponsors** (one field per colour; blank = the
-  academy). Saved on the board as `gachaSponsors` `{ red, yellow, blue,
-  green }`, up to 80 characters each (checked in `firestore.rules`). The board ends with a
+  opens the Gachapon board (`#gachaDialog` in `index.html`; kicker
+  "Keychain rewards", title "Lotus Gachapon"): a pickleball keychain per
+  colour with its prize: red = Grand Prize, yellow = Sweet, blue = Drinks,
+  green = Salty. Sponsors come from "⋯" → Edit challenge details → **Lotus
+  Gachapon sponsors** (one field per colour; blank = **Lotus Pickleball
+  Academy**). When all four colours have the same sponsor, one line under
+  the list says "All prizes sponsored by …"; otherwise each prize shows its
+  own "Sponsored by:" line (`renderGachaSponsors` in `app.js`). Saved on the
+  board as `gachaSponsors` `{ red, yellow, blue, green }`, up to 80
+  characters each (checked in `firestore.rules`). The board ends with a
   preview card for the Gachapon post, styled like the challenge post card
-  (thumbnail `gacha-post.jpg`, "Lotus Gachapon", "Keychain rewards and
-  prizes", "View on Instagram"); tapping it fires the blue confetti and opens
-  the Instagram post (`https://www.instagram.com/p/Ddk2QlsEc5f/`). It shows on both the player and
+  (thumbnail `gacha-post.jpg`, "See the Gachapon post", "Photos of the
+  keychains and prizes", "View on Instagram"); tapping it fires the blue
+  confetti and opens the Instagram post (`https://www.instagram.com/p/Ddk2QlsEc5f/`). It shows on both the player and
   admin views.
 - **Colour**: cards and secondary buttons use a neutral outline (`--outline`
   in `styles.css`). Red is kept for the Join button, the prize banner, links,
