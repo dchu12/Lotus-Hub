@@ -789,9 +789,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .db-title { font-weight: 800; font-size: clamp(.88rem, 3.9vw, 1rem); line-height: 1.25; letter-spacing: -.01em; }
 .db-sub { font-size: .78rem; font-weight: 600; color: var(--muted); line-height: 1.35; }
 .db-sub b { color: var(--brand); font-weight: 800; }
-.db-earn { white-space: nowrap; }
-/* Phones: the two parts on their own lines rather than a "·" starting line two. */
-@media (max-width: 520px) { .db-earn { display: block; } .db-dot { display: none; } }
 .db-arrow { flex: none; color: var(--brand); display: grid; place-items: center; }
 .db-arrow svg { width: 20px; height: 20px; }
 
