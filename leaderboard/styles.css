@@ -868,6 +868,27 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .lb-close:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .lb-cap { margin: 0; display: flex; flex-direction: column; gap: 2px; font-weight: 800; font-size: 1.05rem; }
 .lb-kicker { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
+/* How to join panel */
+.join-sheet { text-align: left; max-width: min(92vw, 440px); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.join-sheet .lb-kicker { margin: 0; font-weight: 800; }
+.jd-title { margin: 2px 40px 12px 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -.01em; }
+.jd-steps { margin: 0 0 16px; padding: 0; list-style: none; counter-reset: jd; display: flex; flex-direction: column; gap: 9px; }
+.jd-steps li { counter-increment: jd; display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; font-size: .9rem; line-height: 1.4; color: var(--ink-2); }
+.jd-steps li::before {
+  content: counter(jd); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent-bg); color: var(--brand); font-weight: 800; font-size: .78rem;
+}
+.jd-steps b { color: var(--ink); }
+.jd-label { display: block; margin: 0 0 6px; font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.jd-msg {
+  display: block; width: 100%; box-sizing: border-box; resize: vertical; padding: 10px 12px; border-radius: 12px;
+  border: 1px solid var(--outline); background: var(--field); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.45;
+}
+.jd-msg:focus { border-color: var(--brand); outline: 3px solid color-mix(in srgb, var(--brand), transparent 85%); }
+.jd-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.jd-actions .btn { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 14px; font-weight: 800; font-size: .98rem; }
+.jd-open { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.jd-open svg { width: 16px; height: 16px; }
 
 @media (prefers-reduced-motion: reduce) {
   .sk { animation: none; }

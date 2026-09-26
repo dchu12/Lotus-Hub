@@ -73,6 +73,10 @@
   // Which player this browser picked in "Where do you rank?", so a returning
   // challenger sees their own rank straight away. Per-device convenience only.
   var JOIN_URL = "https://ig.me/m/lotuspickleballacademy_to"; // Instagram DM
+  // What a new player sends us; they fill in the blanks in the How to join panel.
+  var JOIN_MSG = "Hi Lotus! I'd like to join the October Challenge.\n\n" +
+    "Full name: \nDUPR ID: \n\n" +
+    "I consent to Lotus Pickleball Academy taking photos/videos of me during Lotus events for social media content.";
   var ME_KEY = "lotus-leaderboard:me:" + boardId;
   var meId = null;
   try { meId = localStorage.getItem(ME_KEY); } catch (err) {}
@@ -666,7 +670,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
-      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "joinDialog", "joinDialogClose", "joinMsg", "joinCopyBtn", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -1053,7 +1057,7 @@
     var roster = list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
     els.launchRosterCount.textContent = roster.length ? roster.length + (roster.length === 1 ? " player" : " players") : "";
     var you = readOnly
-      ? '<li class="lr-you"><a href="' + JOIN_URL + '" target="_blank" rel="noopener"><span class="lr-plus" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></span>' +
+      ? '<li class="lr-you"><a href="' + JOIN_URL + '" data-join target="_blank" rel="noopener"><span class="lr-plus" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></span>' +
         (roster.length ? "You?" : "Be the first") + '<span class="sr-only"> Join the challenge on Instagram</span></a></li>'
       : "";
     els.launchRoster.innerHTML = roster.length
@@ -1666,7 +1670,7 @@
             '<span class="rm-pts">' + h[0]._c.total + " Lotus Score</span></button>";
         }).join("")
       : '<p class="rank-none">No ' + (readOnly ? "challenger" : "player") + " matching &ldquo;" + esc(els.rankSearch.value.trim()) + "&rdquo;" +
-        (readOnly ? ' yet. Check the spelling, or <a href="' + JOIN_URL + '" target="_blank" rel="noopener">DM us on Instagram</a> to join.' : ".") + "</p>";
+        (readOnly ? ' yet. Check the spelling, or <a href="' + JOIN_URL + '" data-join target="_blank" rel="noopener">DM us on Instagram</a> to join.' : ".") + "</p>";
   }
   // Player view: remember "me". Admin view: just jump to that player's row
   // with it open, which is where the session buttons live.
@@ -2101,6 +2105,42 @@
     };
   }
 
+  // ---- How to join panel ----------------------------------------------------------
+  // Every Join link opens this first, so people know what to send before the
+  // (empty) Instagram chat opens. The message is editable and gets copied for
+  // them on "Open Instagram"; the links still work as plain DM links without JS.
+  function openJoin(ev) {
+    if (ev && (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey)) return;
+    if (ev) ev.preventDefault();
+    if (!els.joinMsg.value) els.joinMsg.value = JOIN_MSG;
+    els.joinCopyBtn.textContent = "Copy message";
+    if (typeof els.joinDialog.showModal === "function") els.joinDialog.showModal();
+    else els.joinDialog.setAttribute("open", "");
+    // Tall enough to show the whole message without scrolling inside the box.
+    els.joinMsg.style.height = "auto";
+    els.joinMsg.style.height = (els.joinMsg.scrollHeight + 2) + "px";
+    // Cursor at the end of "Full name: " so they can type straight away.
+    var at = els.joinMsg.value.indexOf("Full name: ");
+    if (at !== -1 && window.matchMedia && window.matchMedia("(hover: hover)").matches) {
+      els.joinMsg.focus({ preventScroll: true });
+      els.joinMsg.setSelectionRange(at + 11, at + 11);
+      els.joinMsg.scrollTop = 0;
+    }
+  }
+  function closeJoin() {
+    if (typeof els.joinDialog.close === "function") els.joinDialog.close();
+    else els.joinDialog.removeAttribute("open");
+  }
+  function copyJoinMsg() {
+    var text = els.joinMsg.value || JOIN_MSG;
+    var done = function () { els.joinCopyBtn.textContent = "Copied \u2713"; };
+    var fallback = function () {
+      try { els.joinMsg.select(); if (document.execCommand("copy")) done(); } catch (err) {}
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
+  }
+
   // ---- prize photo, full size ------------------------------------------------------
   function openPrize() {
     if (!els.prizeDialogImg.getAttribute("src")) els.prizeDialogImg.src = "/leaderboard/prize-paddle-lg.png";
@@ -2128,8 +2168,25 @@
       scrollToRow(expandedId);
     });
     els.prizeZoomBtn.addEventListener("click", openPrize);
-    els.joinBtn.addEventListener("click", celebrate("red"));
-    els.joinSticky.addEventListener("click", celebrate("red"));
+    document.addEventListener("click", function (ev) {
+      var a = ev.target.closest && ev.target.closest("a[data-join]");
+      if (a) openJoin(ev);
+    });
+    var joinGo = celebrate("red");
+    els.joinOpenBtn.addEventListener("click", function (ev) {
+      if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      copyJoinMsg();
+      joinGo(ev); // buzz + confetti from this button, then opens the DM
+      closeJoin();
+      toast("Message copied. Paste it in the Instagram chat.");
+    });
+    els.joinCopyBtn.addEventListener("click", copyJoinMsg);
+    els.joinDialogClose.addEventListener("click", closeJoin);
+    els.joinDialog.addEventListener("click", function (ev) {
+      if (ev.target !== els.joinDialog) return;
+      var r = els.joinDialog.getBoundingClientRect();
+      if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closeJoin();
+    });
     els.drillBtn.addEventListener("click", celebrate("yellow"));
     document.getElementById("gachaCard").addEventListener("click", celebrate("blue"));
     els.prizeDialogClose.addEventListener("click", closePrize);

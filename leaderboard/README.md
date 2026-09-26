@@ -173,6 +173,12 @@ Community Points, Points Behind 1st — and sorts automatically.
   `app.js` and the `#joinBtn` link in `index.html`). It's hidden in the admin view,
   once the challenge has ended, and once a visitor has picked their own name.
   The "Find your name" search links to the same DM when a name isn't found.
+  Every Join link (the button, the sticky bar, "+ You?" and that search
+  link) first opens a **How to join** panel: three steps and an editable
+  message ("Full name", "DUPR ID" and a consent line for photos/videos at
+  Lotus events for social media; set in `JOIN_MSG` in `app.js`). **Open
+  Instagram** copies the message, fires the confetti and opens the DM;
+  **Copy message** just copies it.
 - **Share the leaderboard**: the player view has a **Share** button in the
   header (share icon on phones). It opens the phone's share sheet (WhatsApp,
   Instagram, texts…) with a short message and the player link; where there's
