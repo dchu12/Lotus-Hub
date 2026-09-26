@@ -784,7 +784,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .drill-btn:hover { border-color: var(--brand); transform: translateY(-1px); box-shadow: var(--shadow); }
 .drill-btn:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand), transparent 55%); outline-offset: 3px; }
 .db-icon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-bg); color: var(--brand); }
-.db-icon svg { width: 22px; height: 22px; }
+.db-icon svg { width: 30px; height: 30px; }
 .db-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .db-title { font-weight: 800; font-size: clamp(.88rem, 3.9vw, 1rem); line-height: 1.25; letter-spacing: -.01em; }
 .db-pts {
