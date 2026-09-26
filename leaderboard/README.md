@@ -128,8 +128,8 @@ Community Points, Points Behind 1st — and sorts automatically.
     opens the Instagram DM.
   - A footer shows the logo, the academy name, the Instagram handle and
     "Leaderboard updates live".
-- **Prize banner**: "1st place wins" has a small badge beside it: an inline
-  SVG Vietnam flag and "brand" (screen readers hear "Vietnam brand"). It's drawn in SVG because flag
+- **Prize banner**: "1st place wins" has the Vietnam flag beside it (an inline
+  SVG; screen readers hear "Vietnam brand"). It's drawn in SVG because flag
   emoji don't render on Windows.
 - **Header**: three lines: "Lotus Pickleball Academy" (small red eyebrow,
   fixed in `index.html`), then the challenge name, then the dates line. The
@@ -149,8 +149,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   confetti and the DM opens straight away. If the browser blocks the new
   tab, the DM opens in the same tab.
 - **Book Drilling Session**: just above the Lotus Gachapon card, a white
-  outlined button "Book Drilling Session" with an "Earn +2 Comm. Points"
-  tag that opens the academy's Instagram DM. It shows on the player
+  outlined button "Book Drilling Session" with an "Earn +2 Community
+  Points" tag that opens the academy's Instagram DM. It shows on the player
   view for everyone (joined or not) until the challenge ends.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
   the countdown card before launch) that opens its Instagram post
