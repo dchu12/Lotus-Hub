@@ -139,10 +139,12 @@ Community Points, Points Behind 1st — and sorts automatically.
   Challenge" (`newTitle`), and the old "October 1 – October 31" as
   "Oct 1 – 31" (`shortSubtitle` in `app.js`) and rewritten to it on the
   next admin save.
-- **Join celebration**: tapping Join the October Challenge (or the pinned bar)
-  fires a red-and-white confetti burst from the button and a haptic buzz
+- **Button celebrations**: tapping Join the October Challenge (or the pinned
+  bar) fires a red-and-white confetti burst from the button; Book Drilling
+  Session fires yellow and white; Lotus Gachapon fires blue and white. Each
+  also gives a haptic buzz
   (vibration on Android; a light haptic tick on iPhone with iOS 18+, since
-  iPhones don't let websites vibrate), then opens the Instagram DM about
+  iPhones don't let websites vibrate), then opens its Instagram link about
   0.75s later so the burst is seen. With "reduce motion" on there's no
   confetti and the DM opens straight away. If the browser blocks the new
   tab, the DM opens in the same tab.
