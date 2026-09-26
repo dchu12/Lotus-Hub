@@ -69,7 +69,7 @@ service cloud.firestore {
     }
     function isValidLeaderboard(d) {
       return d.keys().hasOnly(['title', 'subtitle', 'entries', 'adminPinHash', 'updatedAt', 'updatedBy', 'updatedByEmail',
-                               'startDate', 'endDate', 'snapshot', 'weeks', 'events', 'calendarId', 'calendarKey'])
+                               'startDate', 'endDate', 'snapshot', 'weeks', 'events', 'calendarId', 'calendarKey', 'gachaSponsors'])
         && d.title is string && d.title.size() <= 120
         && d.subtitle is string && d.subtitle.size() <= 120
         && d.entries is list && d.entries.size() <= 300
@@ -83,7 +83,19 @@ service cloud.firestore {
         && (d.get('weeks', null) == null || (d.get('weeks', null) is map && d.weeks.size() <= 8))
         && (d.get('events', null) == null || (d.get('events', null) is list && d.events.size() <= 60))
         && (d.get('calendarId', null) == null || (d.get('calendarId', null) is string && d.calendarId.size() <= 300))
-        && (d.get('calendarKey', null) == null || (d.get('calendarKey', null) is string && d.calendarKey.size() <= 100));
+        && (d.get('calendarKey', null) == null || (d.get('calendarKey', null) is string && d.calendarKey.size() <= 100))
+        && isValidGachaSponsors(d.get('gachaSponsors', null));
+    }
+    // Lotus Gachapon sponsor names, one per keychain colour: { red, yellow,
+    // blue, green }, each optional and short.
+    function isValidGachaSponsors(v) {
+      return v == null
+        || (v is map
+            && v.keys().hasOnly(['red', 'yellow', 'blue', 'green'])
+            && v.get('red', '') is string && v.get('red', '').size() <= 80
+            && v.get('yellow', '') is string && v.get('yellow', '').size() <= 80
+            && v.get('blue', '') is string && v.get('blue', '').size() <= 80
+            && v.get('green', '') is string && v.get('green', '').size() <= 80);
     }
     // "YYYY-MM-DD" or absent/null — the challenge dates behind the countdown.
     function isOptionalIsoDate(v) {
