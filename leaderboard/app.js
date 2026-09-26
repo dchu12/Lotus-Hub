@@ -1635,7 +1635,7 @@
       ctx.fillText("Zocker Pro Series Control Paddle", textX, 1168);
 
       // Footer link
-      ctx.textAlign = "center"; ctx.fillStyle = "#6f6865"; ctx.font = "600 32px " + FONT;
+      ctx.textAlign = "center"; ctx.fillStyle = "#6f6865"; fitText(ctx, playerViewLabel(), 900, "600", 32, FONT);
       ctx.fillText(playerViewLabel(), 540, 1290);
 
       return new Promise(function (resolve) { c.toBlob(resolve, "image/png"); });
@@ -1730,10 +1730,9 @@
   function publicOrigin() {
     return /(^|\.)(web\.app|firebaseapp\.com|lotuspickleballacademy\.com)$/.test(location.hostname) ? PUBLIC_ORIGIN : location.origin;
   }
-  // The short form printed on share images: the bare domain, whose home page
-  // opens the challenge.
+  // The address printed on share images: the player link without "https://".
   function playerViewLabel() {
-    return publicOrigin() === PUBLIC_ORIGIN ? "lotuspickleballacademy.com" : playerViewUrl().replace(/^https?:\/\//, "");
+    return playerViewUrl().replace(/^https?:\/\//, "");
   }
   // src tags the link with where it's posted (see VISIT_SOURCES).
   function playerViewUrl(src) {

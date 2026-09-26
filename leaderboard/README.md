@@ -196,8 +196,7 @@ Community Points, Points Behind 1st — and sorts automatically.
 - **Public link domain**: every link the page hands out (Share, Copy link,
   QR code, Story image, calendar events) uses
   `https://lotuspickleballacademy.com/lotusoctoberchallenge`, and share images
-  print just `lotuspickleballacademy.com` (its home page opens the
-  challenge). That holds whichever Firebase site the page was opened on,
+  print that same address (without `https://`). That holds whichever Firebase site the page was opened on,
   including the admin at lots-hub.web.app; set in `PUBLIC_ORIGIN` in `app.js`.
   Local copies (localhost) keep their own address.
 - **Instagram Story image** (admin, "⋯" → Instagram Story image): draws a
