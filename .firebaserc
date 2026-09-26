@@ -1,5 +1,17 @@
 {
   "projects": {
     "default": "lots-hub"
+  },
+  "targets": {
+    "lots-hub": {
+      "hosting": {
+        "main": [
+          "lots-hub"
+        ],
+        "academy": [
+          "lotuspickleballacademy"
+        ]
+      }
+    }
   }
 }

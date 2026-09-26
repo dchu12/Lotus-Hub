@@ -152,6 +152,12 @@ Community Points, Points Behind 1st — and sorts automatically.
   outlined button "Book Drilling Session" with an "Earn +2 Community
   Points" tag that opens the academy's Instagram DM. It shows on the player
   view for everyone (joined or not) until the challenge ends.
+- **Custom domain**: a second Hosting site, `lotuspickleballacademy` (target
+  `academy` in `.firebaserc` and `firebase.json`), serves the same files. Its
+  home page 302-redirects to `/lotusoctoberchallenge`, so
+  lotuspickleballacademy.com opens the challenge. The deploy workflow creates
+  the site if it's missing. To connect the domain, see
+  `CUSTOM_DOMAIN_SETUP.md`.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
   the countdown card before launch) that opens its Instagram post
   (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`). It shows
