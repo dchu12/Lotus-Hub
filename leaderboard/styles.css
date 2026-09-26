@@ -895,19 +895,15 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .join-sheet { text-align: left; max-width: min(92vw, 440px); max-height: calc(100dvh - 32px); overflow-y: auto; }
 .join-sheet .lb-kicker { margin: 0; font-weight: 800; }
 .jd-title { margin: 2px 40px 12px 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -.01em; }
-.jd-steps { margin: 0 0 16px; padding: 0; list-style: none; counter-reset: jd; display: flex; flex-direction: column; gap: 9px; }
-.jd-steps li { counter-increment: jd; display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; font-size: .9rem; line-height: 1.4; color: var(--ink-2); }
-.jd-steps li::before {
-  content: counter(jd); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--accent-bg); color: var(--brand); font-weight: 800; font-size: .78rem;
-}
-.jd-steps b { color: var(--ink); }
 .jd-label { display: block; margin: 0 0 6px; font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
-.jd-msg {
-  display: block; width: 100%; box-sizing: border-box; resize: vertical; padding: 10px 12px; border-radius: 12px;
-  border: 1px solid var(--outline); background: var(--field); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.45;
+/* The message as a sent chat bubble */
+.jd-bubble {
+  margin: 0 0 12px; padding: 11px 14px; border-radius: 18px 18px 4px 18px; max-width: 92%; margin-left: auto;
+  background: linear-gradient(135deg, #b91c2b, #d6336c); color: #fff; font-size: 1rem; font-weight: 600; line-height: 1.4;
+  -webkit-user-select: all; user-select: all; box-shadow: 0 4px 12px rgba(185, 28, 43, .18);
 }
-.jd-msg:focus { border-color: var(--brand); outline: 3px solid color-mix(in srgb, var(--brand), transparent 85%); }
+.jd-how { margin: 0; font-size: .88rem; line-height: 1.45; color: var(--ink-2); }
+.jd-how b { color: var(--ink); }
 .jd-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 .jd-fail { margin: 8px 0 0; padding: 8px 10px; border-radius: 10px; background: #fff8e1; border: 1px solid #f0c040; color: #5c4400; font-size: .82rem; line-height: 1.4; }
 .jd-actions .btn { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 14px; font-weight: 800; font-size: .98rem; }

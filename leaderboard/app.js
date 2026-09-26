@@ -74,11 +74,9 @@
   // challenger sees their own rank straight away. Per-device convenience only.
   var JOIN_URL = "https://ig.me/m/lotuspickleballacademy_to"; // Instagram DM
   // What a new player sends us; they fill in the blanks in the How to join panel.
-  var JOIN_MSG = "Hi Coach! I'd like to join the October Challenge.\n\n" +
-    "Name: \nDUPR ID: ";
+  var JOIN_MSG = "Hi Coach! I'd like to join the October Challenge.";
   // ...and what someone booking a Drill Training session sends.
-  var DRILL_MSG = "Hi Coach! I'd like to book a Drill Training session.\n\n" +
-    "Name: \nPreferred day and time: ";
+  var DRILL_MSG = "Hi Coach! I'd like to book a Drill Training session.";
   var ME_KEY = "lotus-leaderboard:me:" + boardId;
   var meId = null;
   try { meId = localStorage.getItem(ME_KEY); } catch (err) {}
@@ -694,7 +692,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen",
-      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinSteps", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -2152,26 +2150,16 @@
     };
   }
 
-  // ---- Message panel: How to join / Book a Drill Training Session -------------------
-  // Every Join link and the drilling button open this first, so people know
-  // what to send before the (empty) Instagram chat opens. The message is
-  // editable and gets copied for them on "Open Instagram"; the links still
-  // work as plain DM links without JS.
-  var PASTE_STEP = "<li><span>Tap <b>Open Instagram</b>. Your message is copied automatically, so just <b>paste</b> it in the chat and send.</span></li>";
+  // ---- Message panel: Join / Book a Drill Training Session --------------------------
+  // Every Join link and the drill card open this first, so people see the
+  // message they'll send before the (empty) Instagram chat opens. Nothing to
+  // fill in: "Open Instagram" copies it and opens the DM, they paste and send.
+  // The links still work as plain DM links without JS.
   var PANELS = {
-    join: {
-      kicker: "October Challenge", title: "How to join", msg: JOIN_MSG, scheme: "red",
-      steps: "<li><span>Add your <b>name</b> and <b>DUPR ID</b> below.</span></li>" + PASTE_STEP +
-        "<li><span>We&rsquo;ll reply and add you to the leaderboard.</span></li>",
-    },
-    drill: {
-      kicker: "Earn +2 Community Points", title: "Book a Drill Training Session", msg: DRILL_MSG, scheme: "yellow",
-      steps: "<li><span>Add your <b>name</b> and the <b>day and time</b> that work for you below.</span></li>" + PASTE_STEP +
-        "<li><span>We&rsquo;ll reply to confirm your session. Each session you attend earns <b>+2 Community Points</b>.</span></li>",
-    },
+    join: { kicker: "October Challenge", title: "Join the October Challenge", msg: JOIN_MSG, scheme: "red" },
+    drill: { kicker: "Earn +2 Community Points", title: "Book a Drill Training Session", msg: DRILL_MSG, scheme: "yellow" },
   };
   var panelMode = "join";
-  var panelDrafts = {}; // what they've typed so far, per panel
   function openJoin(ev, mode) {
     if (ev && (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey)) return;
     if (ev) ev.preventDefault();
@@ -2180,33 +2168,31 @@
     var cfg = PANELS[panelMode];
     els.joinDialogKicker.textContent = cfg.kicker;
     els.joinDialogTitle.textContent = cfg.title;
-    els.joinSteps.innerHTML = cfg.steps;
-    els.joinMsg.value = panelDrafts[panelMode] || cfg.msg;
+    els.joinMsg.textContent = cfg.msg;
     els.joinCopyFail.hidden = true;
     if (typeof els.joinDialog.showModal === "function") els.joinDialog.showModal();
     else els.joinDialog.setAttribute("open", "");
-    // Tall enough to show the whole message without scrolling inside the box.
-    els.joinMsg.style.height = "auto";
-    els.joinMsg.style.height = (els.joinMsg.scrollHeight + 2) + "px";
-    // Cursor at the end of "Name: " so they can type straight away.
-    var at = els.joinMsg.value.indexOf("Name: ");
-    if (at !== -1 && window.matchMedia && window.matchMedia("(hover: hover)").matches) {
-      els.joinMsg.focus({ preventScroll: true });
-      els.joinMsg.setSelectionRange(at + 6, at + 6);
-      els.joinMsg.scrollTop = 0;
-    }
   }
   function closeJoin() {
-    panelDrafts[panelMode] = els.joinMsg.value;
     if (typeof els.joinDialog.close === "function") els.joinDialog.close();
     else els.joinDialog.removeAttribute("open");
+  }
+  function selectJoinMsg() {
+    try {
+      var range = document.createRange();
+      range.selectNodeContents(els.joinMsg);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      return true;
+    } catch (err) { return false; }
   }
   // Resolves true once the message is on the clipboard, false if the
   // browser wouldn't allow it.
   function copyJoinMsg() {
-    var text = els.joinMsg.value || PANELS[panelMode].msg;
+    var text = PANELS[panelMode].msg;
     var legacy = function () {
-      try { els.joinMsg.select(); return document.execCommand("copy"); } catch (err) { return false; }
+      try { return selectJoinMsg() && document.execCommand("copy"); } catch (err) { return false; }
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       return navigator.clipboard.writeText(text).then(function () { return true; }, legacy);
@@ -2255,7 +2241,7 @@
         // Couldn't copy: keep the panel up with the text selected and say how
         // to copy it by hand, rather than claiming it was copied.
         els.joinCopyFail.hidden = false;
-        try { els.joinMsg.focus({ preventScroll: true }); els.joinMsg.select(); } catch (err) {}
+        selectJoinMsg();
       });
     });
     els.joinDialogClose.addEventListener("click", closeJoin);
