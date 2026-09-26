@@ -177,8 +177,9 @@ Community Points, Points Behind 1st — and sorts automatically.
   link) first opens a **How to join** panel: three steps and an editable
   message ("Full name", "DUPR ID" and a consent line for photos/videos at
   Lotus events for social media; set in `JOIN_MSG` in `app.js`). **Open
-  Instagram** copies the message, fires the confetti and opens the DM;
-  **Copy message** just copies it.
+  Instagram** copies the message, fires the confetti and opens the DM. If
+  the browser blocks copying, the panel stays open with the text selected
+  and a note on copying it by hand.
 - **Share the leaderboard**: the player view has a **Share** button in the
   header (share icon on phones). It opens the phone's share sheet (WhatsApp,
   Instagram, texts…) with a short message and the player link; where there's
