@@ -157,7 +157,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   lotuspickleballacademy.com opens the challenge. The deploy workflow creates
   the site if it's missing. To connect the domain, see
   `CUSTOM_DOMAIN_SETUP.md`.
-- **Lotus Gachapon**: a tappable card right after the leaderboard (or after
+- **Lotus Gachapon**: a tappable card, "Lotus Gachapon Mini Game", right after the leaderboard (or after
   the countdown card before launch), subtitle "Mystery prizes await…". It
   opens the Gachapon board (`#gachaDialog` in `index.html`; kicker
   "Mystery prizes await…", title "Lotus Gachapon Mini Game"): a pickleball keychain per
