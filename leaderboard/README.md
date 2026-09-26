@@ -160,8 +160,12 @@ Community Points, Points Behind 1st — and sorts automatically.
   `CUSTOM_DOMAIN_SETUP.md`.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
   the countdown card before launch) that opens its Instagram post
-  (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`). It shows
-  on both the player and admin views.
+  (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`), with the
+  subtitle "Pull the red ball for a prize". It shows on both the player and
+  admin views.
+- **Colour**: cards and secondary buttons use a neutral outline (`--outline`
+  in `styles.css`). Red is kept for the Join button, the prize banner, links,
+  scores, icons and arrows.
 - **Join the challenge**: the player view shows a full-width **Join the October Challenge**
   button ("Message us on Instagram" underneath) under the Challenge information card that opens an
   Instagram DM to `@lotuspickleballacademy_to`
@@ -238,10 +242,10 @@ Community Points, Points Behind 1st — and sorts automatically.
      Firebase)" → API restrictions → add **Google Calendar API** → Save.
      (Or create a separate key restricted to that API and to
      `lots-hub.web.app/*`, and paste it in the optional key field.)
-- **October Challenge Information**: a button to the full challenge post on
-  Instagram, then "Highest Lotus Score Wins Prize", then "How scoring
-  works" (a formula line, "Lotus Score = Skill Points + Community Points",
-  then a tile for each part, then the tie-break rule as a note). The post link
+- **How It Works** (hint "Scoring · Prize · Tiebreaker"): a button to the
+  full challenge post on Instagram, then "Highest Lotus Score wins", then a
+  formula line, "Lotus Score = Skill Points + Community Points", a tile for
+  each part, and the tie-break rule as a one-line note. The post link
   (`https://www.instagram.com/p/DdZCGGOkYlW/`) is set in `index.html`.
   Sits under the Join the October Challenge button, collapsed by default (one
   tap to open) so the leaderboard stays near the top.

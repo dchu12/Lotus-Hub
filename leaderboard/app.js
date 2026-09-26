@@ -1066,7 +1066,7 @@
     var tile = function (n, label) {
       return '<div class="lc-tile"><span class="lc-num">' + String(n).padStart(2, "0") + '</span><span class="lc-lbl">' + label + "</span></div>";
     };
-    els.launchCount.innerHTML = tile(t.days, t.days === 1 ? "day" : "days") + tile(t.hours, t.hours === 1 ? "hour" : "hours") + tile(t.mins, "min");
+    els.launchCount.innerHTML = tile(t.days, "days") + tile(t.hours, "hrs") + tile(t.mins, "mins");
     els.launchCount.setAttribute("aria-label", "Starts in " + t.days + " days, " + t.hours + " hours and " + t.mins + " minutes");
   }
 
