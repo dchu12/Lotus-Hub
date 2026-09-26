@@ -886,6 +886,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 }
 .jd-msg:focus { border-color: var(--brand); outline: 3px solid color-mix(in srgb, var(--brand), transparent 85%); }
 .jd-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.jd-fail { margin: 8px 0 0; padding: 8px 10px; border-radius: 10px; background: #fff8e1; border: 1px solid #f0c040; color: #5c4400; font-size: .82rem; line-height: 1.4; }
 .jd-actions .btn { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 14px; font-weight: 800; font-size: .98rem; }
 .jd-open { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 .jd-open svg { width: 16px; height: 16px; }

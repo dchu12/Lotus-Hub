@@ -670,7 +670,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
-      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "joinDialog", "joinDialogClose", "joinMsg", "joinCopyBtn", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "joinDialog", "joinDialogClose", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -2113,7 +2113,7 @@
     if (ev && (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey)) return;
     if (ev) ev.preventDefault();
     if (!els.joinMsg.value) els.joinMsg.value = JOIN_MSG;
-    els.joinCopyBtn.textContent = "Copy message";
+    els.joinCopyFail.hidden = true;
     if (typeof els.joinDialog.showModal === "function") els.joinDialog.showModal();
     else els.joinDialog.setAttribute("open", "");
     // Tall enough to show the whole message without scrolling inside the box.
@@ -2131,14 +2131,17 @@
     if (typeof els.joinDialog.close === "function") els.joinDialog.close();
     else els.joinDialog.removeAttribute("open");
   }
+  // Resolves true once the message is on the clipboard, false if the
+  // browser wouldn't allow it.
   function copyJoinMsg() {
     var text = els.joinMsg.value || JOIN_MSG;
-    var done = function () { els.joinCopyBtn.textContent = "Copied \u2713"; };
-    var fallback = function () {
-      try { els.joinMsg.select(); if (document.execCommand("copy")) done(); } catch (err) {}
+    var legacy = function () {
+      try { els.joinMsg.select(); return document.execCommand("copy"); } catch (err) { return false; }
     };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
-    else fallback();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function () { return true; }, legacy);
+    }
+    return Promise.resolve(legacy());
   }
 
   // ---- prize photo, full size ------------------------------------------------------
@@ -2175,12 +2178,16 @@
     var joinGo = celebrate("red");
     els.joinOpenBtn.addEventListener("click", function (ev) {
       if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-      copyJoinMsg();
+      var copying = copyJoinMsg();
       joinGo(ev); // buzz + confetti from this button, then opens the DM
-      closeJoin();
-      toast("Message copied. Paste it in the Instagram chat.");
+      copying.then(function (ok) {
+        if (ok) { closeJoin(); toast("Message copied. Paste it in the Instagram chat."); return; }
+        // Couldn't copy: keep the panel up with the text selected and say how
+        // to copy it by hand, rather than claiming it was copied.
+        els.joinCopyFail.hidden = false;
+        try { els.joinMsg.focus({ preventScroll: true }); els.joinMsg.select(); } catch (err) {}
+      });
     });
-    els.joinCopyBtn.addEventListener("click", copyJoinMsg);
     els.joinDialogClose.addEventListener("click", closeJoin);
     els.joinDialog.addEventListener("click", function (ev) {
       if (ev.target !== els.joinDialog) return;
