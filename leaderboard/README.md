@@ -162,7 +162,11 @@ Community Points, Points Behind 1st — and sorts automatically.
   the countdown card before launch), subtitle "Mystery prizes await…". It
   opens the **Keychain Rewards** board (`#gachaDialog` in `index.html`): a
   pickleball keychain per colour with its prize: red = Grand Prize, yellow =
-  Sweet, blue = Drinks, green = Salty. The board's **See the Gachapon post**
+  Sweet, blue = Drinks, green = Salty. Each prize shows "Sponsored by:" and a sponsor
+  name, **Lotus Pickleball Academy** unless changed in "⋯" → Edit challenge
+  details → **Lotus Gachapon sponsors** (one field per colour; blank = the
+  academy). Saved on the board as `gachaSponsors` `{ red, yellow, blue,
+  green }`, up to 80 characters each (checked in `firestore.rules`). The board's **See the Gachapon post**
   button fires the blue confetti and opens the Instagram post
   (`https://www.instagram.com/p/Ddk2QlsEc5f/`). It shows on both the player and
   admin views.
