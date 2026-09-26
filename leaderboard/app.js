@@ -75,8 +75,7 @@
   var JOIN_URL = "https://ig.me/m/lotuspickleballacademy_to"; // Instagram DM
   // What a new player sends us; they fill in the blanks in the How to join panel.
   var JOIN_MSG = "Hi Lotus! I'd like to join the October Challenge.\n\n" +
-    "Full name: \nDUPR ID: \n\n" +
-    "I consent to Lotus Pickleball Academy taking photos/videos of me during Lotus events for social media content.";
+    "Name: \nDUPR ID: ";
   var ME_KEY = "lotus-leaderboard:me:" + boardId;
   var meId = null;
   try { meId = localStorage.getItem(ME_KEY); } catch (err) {}
@@ -2119,11 +2118,11 @@
     // Tall enough to show the whole message without scrolling inside the box.
     els.joinMsg.style.height = "auto";
     els.joinMsg.style.height = (els.joinMsg.scrollHeight + 2) + "px";
-    // Cursor at the end of "Full name: " so they can type straight away.
-    var at = els.joinMsg.value.indexOf("Full name: ");
+    // Cursor at the end of "Name: " so they can type straight away.
+    var at = els.joinMsg.value.indexOf("Name: ");
     if (at !== -1 && window.matchMedia && window.matchMedia("(hover: hover)").matches) {
       els.joinMsg.focus({ preventScroll: true });
-      els.joinMsg.setSelectionRange(at + 11, at + 11);
+      els.joinMsg.setSelectionRange(at + 6, at + 6);
       els.joinMsg.scrollTop = 0;
     }
   }
