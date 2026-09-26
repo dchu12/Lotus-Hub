@@ -150,7 +150,10 @@ Community Points, Points Behind 1st — and sorts automatically.
   tab, the DM opens in the same tab.
 - **Book Drilling Session**: just above the Lotus Gachapon card, a white
   outlined button "Book Drilling Session" with an "Earn +2 Community
-  Points" tag that opens the academy's Instagram DM. It shows on the player
+  Points" tag. It opens the same message panel as Join, titled "Book a
+  drilling session", with a message asking for "Name" and "Preferred day and
+  time" (`DRILL_MSG` in `app.js`); Open Instagram copies it, fires the yellow
+  confetti and opens the academy's Instagram DM. It shows on the player
   view for everyone (joined or not) until the challenge ends.
 - **Custom domain**: a second Hosting site, `lotuspickleballacademy` (target
   `academy` in `.firebaserc` and `firebase.json`), serves the same files. Its

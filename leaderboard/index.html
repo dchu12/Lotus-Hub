@@ -302,7 +302,7 @@
     </section>
 
     <!-- Player view: book a drilling session (Instagram DM) -->
-    <a class="drill-btn" id="drillBtn" hidden href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">
+    <a class="drill-btn" id="drillBtn" data-drill hidden href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">
       <span class="db-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span>
       <span class="db-txt"><span class="db-title">Book Drilling Session</span><span class="db-pts">Earn +2 Community Points</span></span>
       <span class="db-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
@@ -410,9 +410,9 @@
   <!-- How to join: what to send, then open the Instagram DM -->
   <dialog class="lightbox join-sheet" id="joinDialog" aria-labelledby="joinDialogTitle">
     <button type="button" class="lb-close" id="joinDialogClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-    <p class="lb-kicker">October Challenge</p>
+    <p class="lb-kicker" id="joinDialogKicker">October Challenge</p>
     <h2 class="jd-title" id="joinDialogTitle">How to join</h2>
-    <ol class="jd-steps">
+    <ol class="jd-steps" id="joinSteps">
       <li><span>Add your <b>name</b> and <b>DUPR ID</b> below.</span></li>
       <li><span>Tap <b>Open Instagram</b>. Your message is copied automatically, so just <b>paste</b> it in the chat and send.</span></li>
       <li><span>We&rsquo;ll reply and add you to the leaderboard.</span></li>
@@ -438,6 +438,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=57"></script>
+  <script src="/leaderboard/app.js?v=58"></script>
 </body>
 </html>

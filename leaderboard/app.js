@@ -76,6 +76,9 @@
   // What a new player sends us; they fill in the blanks in the How to join panel.
   var JOIN_MSG = "Hi Lotus! I'd like to join the October Challenge.\n\n" +
     "Name: \nDUPR ID: ";
+  // ...and what someone booking a drilling session sends.
+  var DRILL_MSG = "Hi Lotus! I'd like to book a drilling session.\n\n" +
+    "Name: \nPreferred day and time: ";
   var ME_KEY = "lotus-leaderboard:me:" + boardId;
   var meId = null;
   try { meId = localStorage.getItem(ME_KEY); } catch (err) {}
@@ -669,7 +672,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
-      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "joinDialog", "joinDialogClose", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinSteps", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -2104,14 +2107,36 @@
     };
   }
 
-  // ---- How to join panel ----------------------------------------------------------
-  // Every Join link opens this first, so people know what to send before the
-  // (empty) Instagram chat opens. The message is editable and gets copied for
-  // them on "Open Instagram"; the links still work as plain DM links without JS.
-  function openJoin(ev) {
+  // ---- Message panel: How to join / Book a drilling session -------------------------
+  // Every Join link and the drilling button open this first, so people know
+  // what to send before the (empty) Instagram chat opens. The message is
+  // editable and gets copied for them on "Open Instagram"; the links still
+  // work as plain DM links without JS.
+  var PASTE_STEP = "<li><span>Tap <b>Open Instagram</b>. Your message is copied automatically, so just <b>paste</b> it in the chat and send.</span></li>";
+  var PANELS = {
+    join: {
+      kicker: "October Challenge", title: "How to join", msg: JOIN_MSG, scheme: "red",
+      steps: "<li><span>Add your <b>name</b> and <b>DUPR ID</b> below.</span></li>" + PASTE_STEP +
+        "<li><span>We&rsquo;ll reply and add you to the leaderboard.</span></li>",
+    },
+    drill: {
+      kicker: "Earn +2 Community Points", title: "Book a drilling session", msg: DRILL_MSG, scheme: "yellow",
+      steps: "<li><span>Add your <b>name</b> and the <b>day and time</b> that work for you below.</span></li>" + PASTE_STEP +
+        "<li><span>We&rsquo;ll reply to confirm your session. Each session you attend earns <b>+2 Community Points</b>.</span></li>",
+    },
+  };
+  var panelMode = "join";
+  var panelDrafts = {}; // what they've typed so far, per panel
+  function openJoin(ev, mode) {
     if (ev && (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey)) return;
     if (ev) ev.preventDefault();
-    if (!els.joinMsg.value) els.joinMsg.value = JOIN_MSG;
+    if (els.joinDialog.open) return;
+    panelMode = mode || "join";
+    var cfg = PANELS[panelMode];
+    els.joinDialogKicker.textContent = cfg.kicker;
+    els.joinDialogTitle.textContent = cfg.title;
+    els.joinSteps.innerHTML = cfg.steps;
+    els.joinMsg.value = panelDrafts[panelMode] || cfg.msg;
     els.joinCopyFail.hidden = true;
     if (typeof els.joinDialog.showModal === "function") els.joinDialog.showModal();
     else els.joinDialog.setAttribute("open", "");
@@ -2127,13 +2152,14 @@
     }
   }
   function closeJoin() {
+    panelDrafts[panelMode] = els.joinMsg.value;
     if (typeof els.joinDialog.close === "function") els.joinDialog.close();
     else els.joinDialog.removeAttribute("open");
   }
   // Resolves true once the message is on the clipboard, false if the
   // browser wouldn't allow it.
   function copyJoinMsg() {
-    var text = els.joinMsg.value || JOIN_MSG;
+    var text = els.joinMsg.value || PANELS[panelMode].msg;
     var legacy = function () {
       try { els.joinMsg.select(); return document.execCommand("copy"); } catch (err) { return false; }
     };
@@ -2171,14 +2197,14 @@
     });
     els.prizeZoomBtn.addEventListener("click", openPrize);
     document.addEventListener("click", function (ev) {
-      var a = ev.target.closest && ev.target.closest("a[data-join]");
-      if (a) openJoin(ev);
+      var a = ev.target.closest && ev.target.closest("a[data-join], a[data-drill]");
+      if (a) openJoin(ev, a.hasAttribute("data-drill") ? "drill" : "join");
     });
-    var joinGo = celebrate("red");
+    var panelGo = { red: celebrate("red"), yellow: celebrate("yellow") };
     els.joinOpenBtn.addEventListener("click", function (ev) {
       if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
       var copying = copyJoinMsg();
-      joinGo(ev); // buzz + confetti from this button, then opens the DM
+      panelGo[PANELS[panelMode].scheme](ev); // buzz + confetti from this button, then opens the DM
       copying.then(function (ok) {
         if (ok) { closeJoin(); toast("Message copied. Paste it in the Instagram chat."); return; }
         // Couldn't copy: keep the panel up with the text selected and say how
@@ -2193,7 +2219,6 @@
       var r = els.joinDialog.getBoundingClientRect();
       if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closeJoin();
     });
-    els.drillBtn.addEventListener("click", celebrate("yellow"));
     document.getElementById("gachaCard").addEventListener("click", celebrate("blue"));
     els.prizeDialogClose.addEventListener("click", closePrize);
     // A tap on the dimmed backdrop (outside the dialog box) closes it too.
