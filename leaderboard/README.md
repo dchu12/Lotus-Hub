@@ -149,7 +149,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   confetti and the DM opens straight away. If the browser blocks the new
   tab, the DM opens in the same tab.
 - **Book Drilling Session**: just above the Lotus Gachapon card, a white
-  outlined button "Book Drilling Session" with a "+2 Lotus Score"
+  outlined button "Book Drilling Session" with an "Earn +2 Comm. Points"
   tag that opens the academy's Instagram DM. It shows on the player
   view for everyone (joined or not) until the challenge ends.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
