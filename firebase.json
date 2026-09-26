@@ -1,32 +1,183 @@
 {
-  "hosting": {
-    "public": ".",
-    "ignore": [
-      "firebase.json",
-      ".firebaserc",
-      "firestore.rules",
-      "**/.git/**",
-      "**/node_modules/**",
-      "functions/**",
-      "docs/**",
-      "*.md"
-    ],
-    "headers": [
-      { "source": "/lotus", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-      { "source": "/lotus/**", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-      { "source": "/lotusoctoberchallenge", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-      { "source": "/lotusoctoberchallenge/**", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-      { "source": "/leaderboard/**", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
-    ],
-    "rewrites": [
-      { "source": "/lotus", "destination": "/leaderboard/index.html" },
-      { "source": "/lotus/**", "destination": "/leaderboard/index.html" },
-      { "source": "/lotusoctoberchallenge", "destination": "/leaderboard/index.html" },
-      { "source": "/lotusoctoberchallenge/**", "destination": "/leaderboard/index.html" },
-      { "source": "/leaderboard/**", "destination": "/leaderboard/index.html" },
-      { "source": "**", "destination": "/index.html" }
-    ]
-  },
+  "hosting": [
+    {
+      "target": "main",
+      "public": ".",
+      "ignore": [
+        "firebase.json",
+        ".firebaserc",
+        "firestore.rules",
+        "**/.git/**",
+        "**/node_modules/**",
+        "functions/**",
+        "docs/**",
+        "*.md"
+      ],
+      "headers": [
+        {
+          "source": "/lotus",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/lotus/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/lotusoctoberchallenge",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/lotusoctoberchallenge/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/leaderboard/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "/lotus",
+          "destination": "/leaderboard/index.html"
+        },
+        {
+          "source": "/lotus/**",
+          "destination": "/leaderboard/index.html"
+        },
+        {
+          "source": "/lotusoctoberchallenge",
+          "destination": "/leaderboard/index.html"
+        },
+        {
+          "source": "/lotusoctoberchallenge/**",
+          "destination": "/leaderboard/index.html"
+        },
+        {
+          "source": "/leaderboard/**",
+          "destination": "/leaderboard/index.html"
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
+      "target": "academy",
+      "public": ".",
+      "ignore": [
+        "firebase.json",
+        ".firebaserc",
+        "firestore.rules",
+        "**/.git/**",
+        "**/node_modules/**",
+        "functions/**",
+        "docs/**",
+        "*.md"
+      ],
+      "headers": [
+        {
+          "source": "/lotus",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/lotus/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/lotusoctoberchallenge",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/lotusoctoberchallenge/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/leaderboard/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        }
+      ],
+      "redirects": [
+        {
+          "source": "/",
+          "destination": "/lotusoctoberchallenge",
+          "type": 302
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "/lotus",
+          "destination": "/leaderboard/index.html"
+        },
+        {
+          "source": "/lotus/**",
+          "destination": "/leaderboard/index.html"
+        },
+        {
+          "source": "/lotusoctoberchallenge",
+          "destination": "/leaderboard/index.html"
+        },
+        {
+          "source": "/lotusoctoberchallenge/**",
+          "destination": "/leaderboard/index.html"
+        },
+        {
+          "source": "/leaderboard/**",
+          "destination": "/leaderboard/index.html"
+        }
+      ]
+    }
+  ],
   "firestore": {
     "rules": "firestore.rules"
   },

@@ -56,10 +56,29 @@ jobs:
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/service-account.json"
 
+      # Second Hosting site for the custom domain lotuspickleballacademy.com
+      # (target "academy" in .firebaserc / firebase.json): its home page
+      # redirects to the challenge. Create it on first run; if that isn't
+      # possible (e.g. the site ID is taken), still deploy the main site.
+      - name: Make sure the lotuspickleballacademy site exists
+        id: academy
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/service-account.json
+        run: |
+          if firebase hosting:sites:get lotuspickleballacademy --project lots-hub --non-interactive >/dev/null 2>&1 \
+            || firebase hosting:sites:create lotuspickleballacademy --project lots-hub --non-interactive; then
+            echo "only=hosting,firestore:rules" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Couldn't find or create the lotuspickleballacademy Hosting site; deploying the main site only."
+            echo "only=hosting:main,firestore:rules" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy hosting + Firestore rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/service-account.json
-        run: firebase deploy --only hosting,firestore:rules --project lots-hub --non-interactive
+        run: firebase deploy --only "${{ steps.academy.outputs.only }}" --project lots-hub --non-interactive
 
       - name: Done
-        run: echo "Deployed → https://lots-hub.web.app  (tracker at /thank-you.html)"
+        run: |
+          echo "Deployed → https://lots-hub.web.app  (tracker at /thank-you.html)"
+          echo "Custom-domain site → https://lotuspickleballacademy.web.app (home opens the challenge)"
