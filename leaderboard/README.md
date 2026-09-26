@@ -268,7 +268,7 @@ Community Points, Points Behind 1st — and sorts automatically.
 - **How It Works** (hint "Prize · Eligibility · Scoring"): "Highest Lotus Score wins" with the
   prize name (Zocker Pro Series Control Paddle) under it, then the
   eligibility rule ("Skill Points and Ranked Play need a DUPR Reliability
-  Score of 90% or higher on October 1", also shown in the Join panel, not
+  Score of 90% or higher", also shown in the Join panel, not
   the Drill Training one), then a
   formula line, "Lotus Score = Skill Points + Community Points", a tile for
   each part (Skill Points: "Every +0.01 DUPR = +1 Skill Point", Starting DUPR
