@@ -170,7 +170,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   in `styles.css`). Red is kept for the Join button, the prize banner, links,
   scores, icons and arrows.
 - **Join the challenge**: the player view shows a full-width **Join the October Challenge**
-  button ("Message us on Instagram" underneath) under the Challenge information card that opens an
+  button under the How It Works card that leads to an
   Instagram DM to `@lotuspickleballacademy_to`
   (`https://ig.me/m/lotuspickleballacademy_to`, set in `JOIN_URL` in
   `app.js` and the `#joinBtn` link in `index.html`). It's hidden in the admin view,
