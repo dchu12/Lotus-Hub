@@ -160,7 +160,7 @@ Community Points, Points Behind 1st — and sorts automatically.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
   the countdown card before launch), subtitle "Mystery prizes await…". It
   opens the Gachapon board (`#gachaDialog` in `index.html`; kicker
-  "Keychain rewards", title "Lotus Gachapon"): a pickleball keychain per
+  "Gachapon Mini Game", title "Lotus Gachapon Mini Game"): a pickleball keychain per
   colour with its prize: red = Grand Prize, yellow = Sweet, blue = Drinks,
   green = Salty. Sponsors come from "⋯" → Edit challenge details → **Lotus
   Gachapon sponsors** (one field per colour; blank = **Lotus Pickleball
