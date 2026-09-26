@@ -146,8 +146,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   confetti and the DM opens straight away. If the browser blocks the new
   tab, the DM opens in the same tab.
 - **Book a Drill Training Session**: just above the Lotus Gachapon card, an
-  outlined button "Book a Drill Training Session" with "Improve your game ·
-  Earn +2 Community Points" under it. It opens the same message panel as Join, titled "Book a
+  outlined card "Drill Training" with "Earn +2 Community Points" under it. It opens the same message panel as Join, titled "Book a
   Drill Training Session", with a message asking for "Name" and "Preferred day and
   time" (`DRILL_MSG` in `app.js`); Open Instagram copies it, fires the yellow
   confetti and opens the academy's Instagram DM. It shows on the player
