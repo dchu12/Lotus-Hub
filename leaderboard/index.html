@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=78" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=79" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -122,8 +122,12 @@
       <div class="formula">
         <div class="f-tile">
           <div class="f-name">Skill Points</div>
-          <div class="f-rule"><b>+1</b> for every <b>+0.01</b> DUPR gained</div>
-          <p class="f-span"><b>Oct 1</b> DUPR <span class="f-arrow" aria-hidden="true">&rarr;</span><span class="sr-only">to</span> <b>Oct 31</b> DUPR</p>
+          <div class="f-rule">Every <b>+0.01</b> DUPR = <b>+1 Skill Point</b></div>
+          <ul class="f-when">
+            <li><span>Starting DUPR</span><b>October 1</b></li>
+            <li><span>Final DUPR</span><b>October 31</b></li>
+          </ul>
+          <p class="f-ex">Example: 3.00 &rarr; 3.08 DUPR = <b>+8 Skill Points</b></p>
         </div>
         <div class="f-tile">
           <div class="f-name">Community Points</div>

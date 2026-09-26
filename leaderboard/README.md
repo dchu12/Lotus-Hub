@@ -255,7 +255,9 @@ Community Points, Points Behind 1st — and sorts automatically.
   full challenge post on Instagram, then "Highest Lotus Score wins" with the
   prize name (Zocker Pro Series Control Paddle) under it, then a
   formula line, "Lotus Score = Skill Points + Community Points", a tile for
-  each part, and the tie-break rule as a one-line note. The post link
+  each part (Skill Points: "Every +0.01 DUPR = +1 Skill Point", Starting DUPR
+  October 1 / Final DUPR October 31, and the example "3.00 → 3.08 DUPR = +8
+  Skill Points"), and the tie-break rule as a one-line note. The post link
   (`https://www.instagram.com/p/DdZCGGOkYlW/`) is set in `index.html`.
   Sits under the Join the October Challenge button, collapsed by default (one
   tap to open) so the leaderboard stays near the top.

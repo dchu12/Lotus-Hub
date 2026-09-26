@@ -673,9 +673,12 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 }
 .f-name { font-weight: 800; font-size: .98rem; letter-spacing: -.01em; }
 .f-rule { font-size: .88rem; color: var(--ink-2); }
-.f-rule b { color: var(--brand); font-weight: 800; }
-.f-span { margin: 0; font-size: .84rem; color: var(--ink-2); }
-.f-span b { font-weight: 800; color: var(--ink); }
+.f-rule b { color: var(--brand); font-weight: 800; white-space: nowrap; }
+.f-when { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.f-when li { display: flex; justify-content: space-between; gap: 10px; font-size: .84rem; color: var(--ink-2); }
+.f-when b { font-weight: 800; color: var(--ink); white-space: nowrap; }
+.f-ex { margin: 4px 0 0; padding-top: 7px; border-top: 1px dashed var(--line); font-size: .78rem; color: var(--muted); }
+.f-ex b { color: var(--brand); font-weight: 800; white-space: nowrap; }
 .f-arrow { color: var(--brand); font-weight: 800; margin: 0 2px; }
 .f-desc { font-size: .76rem; color: var(--muted); line-height: 1.4; }
 .f-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
