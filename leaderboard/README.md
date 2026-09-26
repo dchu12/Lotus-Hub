@@ -280,8 +280,9 @@ Community Points, Points Behind 1st — and sorts automatically.
   full rules" and "View on Instagram". The post link
   (`https://www.instagram.com/p/DdZCGGOkYlW/`) is set in `index.html`; to
   change the thumbnail, replace `challenge-post.jpg` and bump the sw cache.
-  Sits under the Join the October Challenge button, collapsed by default (one
-  tap to open) so the leaderboard stays near the top.
+  Sits right under the prize banner, above the Join the October Challenge
+  button, collapsed by default (one tap to open) so the leaderboard stays
+  near the top.
 
 - **Admin tools** (admin link only):
   - **"⋯" menu** in the header: Copy player link, Player link QR code,
