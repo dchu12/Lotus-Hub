@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=71" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=72" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -116,27 +116,26 @@
       </a>
       <p class="info-win">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
-        Highest Lotus Score Wins Prize
+        Highest Lotus Score wins
       </p>
-      <h3 class="info-sub">How scoring works</h3>
       <p class="f-eq"><b>Lotus Score</b> <span class="f-eq-rest"><span class="f-sym">=</span> Skill Points <span class="f-sym">+</span> Community Points</span></p>
       <div class="formula">
         <div class="f-tile">
           <div class="f-name">Skill Points</div>
-          <div class="f-rule"><b>+1 Lotus Score</b> for every <b>+0.01</b> DUPR increase.</div>
-          <ul class="f-dates"><li><b>Oct 1</b><span>Beginning DUPR Rating</span></li><li><b>Oct 31</b><span>Ending DUPR Rating</span></li></ul>
+          <div class="f-rule"><b>+1</b> for every <b>+0.01</b> DUPR gained</div>
+          <p class="f-span"><b>Oct 1</b> DUPR <span class="f-arrow" aria-hidden="true">&rarr;</span><span class="sr-only">to</span> <b>Oct 31</b> DUPR</p>
         </div>
         <div class="f-tile">
           <div class="f-name">Community Points</div>
           <ul class="f-list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="15" rx="6"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>Ranked Play</span><b class="f-val">+1 <small>Lotus Score</small></b></li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M15 3.13a4 4 0 0 1 0 7.75"/></svg><span>Social Play</span><b class="f-val">+3 <small>Lotus Score</small></b></li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg><span>Drill Training</span><b class="f-val">+2 <small>Lotus Score</small></b></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="15" rx="6"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>Ranked Play</span><b class="f-val">+1</b></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M15 3.13a4 4 0 0 1 0 7.75"/></svg><span>Social Play</span><b class="f-val">+3</b></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg><span>Drill Training</span><b class="f-val">+2</b></li>
           </ul>
-          <div class="f-desc">Per session attended hosted by Lotus</div>
+          <div class="f-desc">Per Lotus-hosted session</div>
         </div>
       </div>
-      <p class="f-tie"><b>Tiebreaker rules</b> Tied for 1st at the end? The player with the most Community Points wins.</p>
+      <p class="f-tie"><b>Tiebreaker:</b> most Community Points wins</p>
     </details>
 
     <p id="connBanner" class="banner" hidden></p>
