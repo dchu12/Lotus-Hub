@@ -74,10 +74,10 @@
   // challenger sees their own rank straight away. Per-device convenience only.
   var JOIN_URL = "https://ig.me/m/lotuspickleballacademy_to"; // Instagram DM
   // What a new player sends us; they fill in the blanks in the How to join panel.
-  var JOIN_MSG = "Hi Lotus! I'd like to join the October Challenge.\n\n" +
+  var JOIN_MSG = "Hi Coach! I'd like to join the October Challenge.\n\n" +
     "Name: \nDUPR ID: ";
   // ...and what someone booking a Drill Training session sends.
-  var DRILL_MSG = "Hi Lotus! I'd like to book a Drill Training session.\n\n" +
+  var DRILL_MSG = "Hi Coach! I'd like to book a Drill Training session.\n\n" +
     "Name: \nPreferred day and time: ";
   var ME_KEY = "lotus-leaderboard:me:" + boardId;
   var meId = null;
