@@ -692,7 +692,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen",
-      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinElig", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -2155,7 +2155,7 @@
   // fill in: "Open Instagram" copies it and opens the DM, they paste and send.
   // The links still work as plain DM links without JS.
   var PANELS = {
-    join: { kicker: "October Challenge", title: "Join the October Challenge", msg: JOIN_MSG, scheme: "red" },
+    join: { kicker: "October Challenge", title: "Join the October Challenge", msg: JOIN_MSG, scheme: "red", elig: true },
     drill: { kicker: "Earn +2 Community Points", title: "Book a Drill Training Session", msg: DRILL_MSG, scheme: "yellow" },
   };
   var panelMode = "join";
@@ -2168,6 +2168,7 @@
     els.joinDialogKicker.textContent = cfg.kicker;
     els.joinDialogTitle.textContent = cfg.title;
     els.joinMsg.textContent = cfg.msg;
+    els.joinElig.hidden = !cfg.elig;
     els.joinCopyFail.hidden = true;
     if (typeof els.joinDialog.showModal === "function") els.joinDialog.showModal();
     else els.joinDialog.setAttribute("open", "");
