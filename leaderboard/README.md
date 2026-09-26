@@ -161,7 +161,7 @@ Community Points, Points Behind 1st — and sorts automatically.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
   the countdown card before launch) that opens its Instagram post
   (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`), with the
-  subtitle "Pull the red ball for a prize". It shows on both the player and
+  subtitle "Bonus prizes available". It shows on both the player and
   admin views.
 - **Colour**: cards and secondary buttons use a neutral outline (`--outline`
   in `styles.css`). Red is kept for the Join button, the prize banner, links,
