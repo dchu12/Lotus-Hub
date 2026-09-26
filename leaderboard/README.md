@@ -140,7 +140,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   "Oct 1 – 31" (`shortSubtitle` in `app.js`) and rewritten to it on the
   next admin save.
 - **Button celebrations**: tapping Join the October Challenge (or the pinned
-  bar) fires a red-and-white confetti burst from the button; Book Drilling
+  bar) fires a red-and-white confetti burst from the button; Book a Drill Training
   Session fires yellow and white; Lotus Gachapon fires blue and white. Each
   also gives a haptic buzz
   (vibration on Android; a light haptic tick on iPhone with iOS 18+, since
@@ -148,10 +148,10 @@ Community Points, Points Behind 1st — and sorts automatically.
   0.75s later so the burst is seen. With "reduce motion" on there's no
   confetti and the DM opens straight away. If the browser blocks the new
   tab, the DM opens in the same tab.
-- **Book Drilling Session**: just above the Lotus Gachapon card, a white
-  outlined button "Book Drilling Session" with an "Earn +2 Community
-  Points" tag. It opens the same message panel as Join, titled "Book a
-  drilling session", with a message asking for "Name" and "Preferred day and
+- **Book a Drill Training Session**: just above the Lotus Gachapon card, an
+  outlined button "Book a Drill Training Session" with "Improve your game ·
+  Earn +2 Community Points" under it. It opens the same message panel as Join, titled "Book a
+  Drill Training Session", with a message asking for "Name" and "Preferred day and
   time" (`DRILL_MSG` in `app.js`); Open Instagram copies it, fires the yellow
   confetti and opens the academy's Instagram DM. It shows on the player
   view for everyone (joined or not) until the challenge ends.
@@ -164,7 +164,7 @@ Community Points, Points Behind 1st — and sorts automatically.
 - **Lotus Gachapon**: a tappable card right after the leaderboard (or after
   the countdown card before launch) that opens its Instagram post
   (`https://www.instagram.com/p/Ddk2QlsEc5f/`, set in `index.html`), with the
-  subtitle "Bonus prizes available". It shows on both the player and
+  subtitle "Mystery prizes await…". It shows on both the player and
   admin views.
 - **Colour**: cards and secondary buttons use a neutral outline (`--outline`
   in `styles.css`). Red is kept for the Join button, the prize banner, links,
