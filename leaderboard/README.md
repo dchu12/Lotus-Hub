@@ -252,7 +252,8 @@ Community Points, Points Behind 1st — and sorts automatically.
      (Or create a separate key restricted to that API and to
      `lots-hub.web.app/*`, and paste it in the optional key field.)
 - **How It Works** (hint "Scoring · Prize · Tiebreaker"): a button to the
-  full challenge post on Instagram, then "Highest Lotus Score wins", then a
+  full challenge post on Instagram, then "Highest Lotus Score wins" with the
+  prize name (Zocker Pro Series Control Paddle) under it, then a
   formula line, "Lotus Score = Skill Points + Community Points", a tile for
   each part, and the tie-break rule as a one-line note. The post link
   (`https://www.instagram.com/p/DdZCGGOkYlW/`) is set in `index.html`.

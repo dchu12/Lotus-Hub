@@ -652,6 +652,8 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   background: var(--accent-bg); font-weight: 800; font-size: 1rem; color: var(--ink);
 }
 .info-win svg { width: 22px; height: 22px; flex: none; color: var(--brand); }
+.iw-txt { display: flex; flex-direction: column; gap: 2px; }
+.iw-prize { font-size: .86rem; font-weight: 700; color: var(--brand); }
 .info-post { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; text-decoration: none; }
 .info-post svg { width: 18px; height: 18px; flex: none; color: var(--brand); }
 .f-tie { margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--field); border: 1px solid var(--line); font-size: .82rem; color: var(--ink-2); }
