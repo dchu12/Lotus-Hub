@@ -673,6 +673,13 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 }
 .pc-cta svg { width: 15px; height: 15px; flex: none; transition: transform .15s ease; }
 .post-card:hover .pc-cta svg { transform: translateX(2px); }
+/* Eligibility: the one rule that decides who can take part */
+.info-elig {
+  display: flex; align-items: flex-start; gap: 10px; margin: -8px 0 18px; padding: 10px 14px; border-radius: 12px;
+  background: var(--field); border: 1px solid var(--outline-soft, var(--line)); font-size: .86rem; line-height: 1.45; color: var(--ink-2);
+}
+.info-elig svg, .jd-elig svg { width: 20px; height: 20px; flex: none; margin-top: 1px; color: var(--brand); }
+.info-elig b { color: var(--ink); }
 .f-tie { margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--field); border: 1px solid var(--line); font-size: .82rem; color: var(--ink-2); }
 .f-tie b { color: var(--ink); }
 /* The formula as one line of labels, then a tile explaining each part */
@@ -914,6 +921,9 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .join-sheet { text-align: left; max-width: min(92vw, 440px); max-height: calc(100dvh - 32px); overflow-y: auto; }
 .join-sheet .lb-kicker { margin: 0; font-weight: 800; }
 .jd-title { margin: 2px 40px 12px 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -.01em; }
+.jd-elig { display: flex; align-items: flex-start; gap: 8px; margin: -4px 0 14px; font-size: .84rem; line-height: 1.4; color: var(--ink-2); }
+.jd-elig svg { width: 18px; height: 18px; }
+.jd-elig b { color: var(--ink); }
 .jd-label { display: block; margin: 0 0 6px; font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
 /* The message as a sent chat bubble */
 .jd-bubble {

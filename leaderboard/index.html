@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=85" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=86" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -107,13 +107,14 @@
       <summary class="scoring-title">
         <span class="info-sum">
           <span class="info-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg></span>
-          <span class="info-txt"><h2 class="info-title">How It Works</h2><span class="info-hint">Scoring · Prize · Tiebreaker</span></span>
+          <span class="info-txt"><h2 class="info-title">How It Works</h2><span class="info-hint">Prize · Eligibility · Scoring</span></span>
         </span>
       </summary>
       <p class="info-win">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
         <span class="iw-txt">Highest Lotus Score wins<span class="iw-prize">Zocker Pro Series Control Paddle</span></span>
       </p>
+      <p class="info-elig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 3 8.3 7 9.5 4-1.2 7-5.1 7-9.5V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg><span><b>Eligibility:</b> DUPR Reliability Score of <b>90% or higher</b> on October 1</span></p>
       <p class="f-eq"><b>Lotus Score</b> <span class="f-eq-rest"><span class="f-sym">=</span> Skill Points <span class="f-sym">+</span> Community Points</span></p>
       <div class="formula">
         <div class="f-tile">
@@ -432,6 +433,7 @@
     <button type="button" class="lb-close" id="joinDialogClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <p class="lb-kicker" id="joinDialogKicker">October Challenge</p>
     <h2 class="jd-title" id="joinDialogTitle">Join the October Challenge</h2>
+    <p class="jd-elig" id="joinElig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 3 8.3 7 9.5 4-1.2 7-5.1 7-9.5V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg><span>Open to players with a DUPR Reliability Score of <b>90% or higher</b> on October 1</span></p>
     <p class="jd-label" id="joinMsgLabel">Your message</p>
     <p class="jd-bubble" id="joinMsg" aria-labelledby="joinMsgLabel">Hi Coach! I&rsquo;d like to join the October Challenge.</p>
     <p class="jd-how" id="joinHow">Tap below. We&rsquo;ll copy this message and open Instagram. Just <b>paste</b> it and send.</p>
@@ -470,6 +472,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=65"></script>
+  <script src="/leaderboard/app.js?v=66"></script>
 </body>
 </html>
