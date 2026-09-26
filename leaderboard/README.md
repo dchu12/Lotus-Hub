@@ -185,6 +185,13 @@ Community Points, Points Behind 1st — and sorts automatically.
   no share sheet (desktop, Instagram's in-app browser) it offers **Share on
   WhatsApp** (`wa.me` link) and **Copy link**. On the admin link it's
   "⋯" → **Share leaderboard**.
+- **Public link domain**: every link the page hands out (Share, Copy link,
+  QR code, Story image, calendar events) uses
+  `https://lotuspickleballacademy.com/lotusoctoberchallenge`, and share images
+  print just `lotuspickleballacademy.com` (its home page opens the
+  challenge). That holds whichever Firebase site the page was opened on,
+  including the admin at lots-hub.web.app; set in `PUBLIC_ORIGIN` in `app.js`.
+  Local copies (localhost) keep their own address.
 - **Instagram Story image** (admin, "⋯" → Instagram Story image): draws a
   1080×1920 image of the current standings (top 10, ties share a rank; "Who's
   in" before anyone has scored), the countdown, the prize and the player
@@ -247,7 +254,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   3. APIs & Services → Credentials → the "Browser key (auto created by
      Firebase)" → API restrictions → add **Google Calendar API** → Save.
      (Or create a separate key restricted to that API and to
-     `lots-hub.web.app/*`, and paste it in the optional key field.)
+     `lots-hub.web.app/*` and `lotuspickleballacademy.com/*`, and paste it
+     in the optional key field.)
 - **How It Works** (hint "Scoring · Prize · Tiebreaker"): a button to the
   full challenge post on Instagram, then "Highest Lotus Score wins" with the
   prize name (Zocker Pro Series Control Paddle) under it, then a

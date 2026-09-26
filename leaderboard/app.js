@@ -1605,7 +1605,7 @@
 
       // Footer link
       ctx.textAlign = "center"; ctx.fillStyle = "#6f6865"; ctx.font = "600 32px " + FONT;
-      ctx.fillText(playerViewUrl().replace(/^https?:\/\//, ""), 540, 1290);
+      ctx.fillText(playerViewLabel(), 540, 1290);
 
       return new Promise(function (resolve) { c.toBlob(resolve, "image/png"); });
     });
@@ -1692,10 +1692,22 @@
     if (btn) btn.closest("tr").scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  // Links we hand out (share, QR, story, calendar) use the academy's own
+  // domain when the page is served from Firebase Hosting, whichever site the
+  // admin happens to be on. Anywhere else (local testing) keeps its origin.
+  var PUBLIC_ORIGIN = "https://lotuspickleballacademy.com";
+  function publicOrigin() {
+    return /(^|\.)(web\.app|firebaseapp\.com|lotuspickleballacademy\.com)$/.test(location.hostname) ? PUBLIC_ORIGIN : location.origin;
+  }
+  // The short form printed on share images: the bare domain, whose home page
+  // opens the challenge.
+  function playerViewLabel() {
+    return publicOrigin() === PUBLIC_ORIGIN ? "lotuspickleballacademy.com" : playerViewUrl().replace(/^https?:\/\//, "");
+  }
   // src tags the link with where it's posted (see VISIT_SOURCES).
   function playerViewUrl(src) {
     for (var slug in VIEW_SLUGS) {
-      if (VIEW_SLUGS[slug] === boardId) return location.origin + "/" + slug + (src ? "?src=" + src : "");
+      if (VIEW_SLUGS[slug] === boardId) return publicOrigin() + "/" + slug + (src ? "?src=" + src : "");
     }
     var u = new URL(location.href);
     u.searchParams.delete("src");
@@ -1873,8 +1885,8 @@
       var fY = sY + sH + 90;
       ctx.textAlign = "center";
       ctx.fillStyle = "#524c4a"; ctx.font = "700 32px " + FONT; ctx.fillText("See the full leaderboard", W / 2, fY);
-      ctx.fillStyle = "#b91c2b"; fitText(ctx, playerViewUrl().replace(/^https?:\/\//, ""), W - 2 * X, "800", 40, FONT);
-      ctx.fillText(playerViewUrl().replace(/^https?:\/\//, ""), W / 2, fY + 52);
+      ctx.fillStyle = "#b91c2b"; fitText(ctx, playerViewLabel(), W - 2 * X, "800", 40, FONT);
+      ctx.fillText(playerViewLabel(), W / 2, fY + 52);
       ctx.fillStyle = "#8a8380"; ctx.font = "600 26px " + FONT;
       ctx.fillText("Updated " + new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" }), W / 2, fY + 100);
       ctx.restore();
