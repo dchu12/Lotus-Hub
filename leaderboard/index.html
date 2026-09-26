@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=83" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=84" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -424,15 +424,11 @@
   <dialog class="lightbox join-sheet" id="joinDialog" aria-labelledby="joinDialogTitle">
     <button type="button" class="lb-close" id="joinDialogClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <p class="lb-kicker" id="joinDialogKicker">October Challenge</p>
-    <h2 class="jd-title" id="joinDialogTitle">How to join</h2>
-    <ol class="jd-steps" id="joinSteps">
-      <li><span>Add your <b>name</b> and <b>DUPR ID</b> below.</span></li>
-      <li><span>Tap <b>Open Instagram</b>. Your message is copied automatically, so just <b>paste</b> it in the chat and send.</span></li>
-      <li><span>We&rsquo;ll reply and add you to the leaderboard.</span></li>
-    </ol>
-    <label class="jd-label" for="joinMsg">Your message</label>
-    <textarea class="jd-msg" id="joinMsg" rows="4" spellcheck="false"></textarea>
-    <p class="jd-fail" id="joinCopyFail" role="alert" hidden>Your phone didn&rsquo;t let us copy it. Press and hold the message, tap <b>Select All</b>, then <b>Copy</b>, and paste it in the chat.</p>
+    <h2 class="jd-title" id="joinDialogTitle">Join the October Challenge</h2>
+    <p class="jd-label" id="joinMsgLabel">Your message</p>
+    <p class="jd-bubble" id="joinMsg" aria-labelledby="joinMsgLabel">Hi Coach! I&rsquo;d like to join the October Challenge.</p>
+    <p class="jd-how" id="joinHow">Tap below. We&rsquo;ll copy this message and open Instagram. Just <b>paste</b> it and send.</p>
+    <p class="jd-fail" id="joinCopyFail" role="alert" hidden>Your phone didn&rsquo;t let us copy it. Press and hold the message above, tap <b>Copy</b>, then paste it in the chat.</p>
     <div class="jd-actions">
       <a class="btn primary jd-open" id="joinOpenBtn" href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">Open Instagram<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span class="sr-only"> (opens Instagram)</span></a>
     </div>
@@ -467,6 +463,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=63"></script>
+  <script src="/leaderboard/app.js?v=64"></script>
 </body>
 </html>

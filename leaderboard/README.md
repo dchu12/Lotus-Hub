@@ -147,9 +147,9 @@ Community Points, Points Behind 1st — and sorts automatically.
   tab, the DM opens in the same tab.
 - **Book a Drill Training Session**: just above the Lotus Gachapon card, an
   outlined card "Drill Training" with "Earn +2 Community Points" under it. It opens the same message panel as Join, titled "Book a
-  Drill Training Session", with a message asking for "Name" and "Preferred day and
-  time" (`DRILL_MSG` in `app.js`); Open Instagram copies it, fires the yellow
-  confetti and opens the academy's Instagram DM. It shows on the player
+  Drill Training Session", with the message "Hi Coach! I'd like to book a Drill
+  Training session." (`DRILL_MSG` in `app.js`); Open Instagram copies it, fires
+  the yellow confetti and opens the academy's Instagram DM. It shows on the player
   view for everyone (joined or not) until the challenge ends.
 - **Custom domain**: a second Hosting site, `lotuspickleballacademy` (target
   `academy` in `.firebaserc` and `firebase.json`), serves the same files. Its
@@ -180,9 +180,11 @@ Community Points, Points Behind 1st — and sorts automatically.
   once the challenge has ended, and once a visitor has picked their own name.
   The "Find your name" search links to the same DM when a name isn't found.
   Every Join link (the button, the sticky bar, "+ You?" and that search
-  link) first opens a **How to join** panel: three steps and an editable
-  message asking for "Name" and "DUPR ID" (set in `JOIN_MSG` in `app.js`). **Open
-  Instagram** copies the message, fires the confetti and opens the DM. If
+  link) first opens a short panel, **Join the October Challenge**, showing
+  the message they'll send as a chat bubble: "Hi Coach! I'd like to join the
+  October Challenge." (`JOIN_MSG` in `app.js`). There's nothing to fill in;
+  the coach looks players up. **Open Instagram** copies the message, fires
+  the confetti and opens the DM, so they just paste and send. If
   the browser blocks copying, the panel stays open with the text selected
   and a note on copying it by hand.
 - **Share the leaderboard**: the player view has a **Share** button in the
