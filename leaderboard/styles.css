@@ -469,12 +469,13 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .lc-num { display: block; font-size: 2.1rem; font-weight: 800; line-height: 1; color: var(--brand); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .lc-lbl { display: block; margin-top: 6px; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
 .launch-roster-head { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 2px 8px; border-top: 1px solid var(--line); font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
-.launch-roster { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-.launch-roster li { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; background: var(--field); border: 1px solid var(--line); font-weight: 700; font-size: .9rem; }
+.launch-roster { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: 8px; }
+.launch-roster li { min-width: 0; display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 22px; background: var(--field); border: 1px solid var(--line); font-weight: 700; font-size: .9rem; }
+.launch-roster .lr-name { min-width: 0; line-height: 1.2; text-align: left; overflow-wrap: anywhere; }
 .launch-roster .av { width: 30px; height: 30px; font-size: .7rem; }
 .launch-roster .lr-you { padding: 0; background: none; border: 0; }
 .lr-you a {
-  display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px 5px 5px; border-radius: 999px;
+  display: flex; width: 100%; box-sizing: border-box; align-items: center; gap: 8px; padding: 4px 14px 4px 4px; border-radius: 999px;
   border: 1.5px dashed color-mix(in srgb, var(--brand), transparent 45%); color: var(--brand); font-weight: 800; text-decoration: none;
   transition: background .15s ease, border-color .15s ease;
 }
@@ -482,7 +483,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .lr-you a:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .lr-plus { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-bg); }
 .lr-plus svg { width: 16px; height: 16px; display: block; }
-.launch-roster .lr-empty { padding: 8px 12px; color: var(--muted); font-weight: 600; }
+.launch-roster .lr-empty { grid-column: 1 / -1; padding: 8px 12px; color: var(--muted); font-weight: 600; }
 
 /* Top-3 podium */
 .podium { display: flex; justify-content: center; align-items: flex-end; gap: 10px; padding: 18px 22px 4px; }
@@ -873,14 +874,19 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .join-sticky { animation: none; }
 }
 
-/* One outline system: every card and button on the page gets the red
-   outline the drilling button introduced; boxes inside a card get a softer
-   tint of the same red, so the cards still frame what's inside them. */
+/* One outline system. Cards and secondary buttons share one warm neutral
+   outline, and boxes inside a card a lighter one. Red is kept for what
+   should pull the eye: the Join button, the prize banner, links, scores,
+   icons and arrows (and a card's outline on hover). */
 :root {
-  --outline: color-mix(in srgb, var(--brand), transparent 45%);
-  --outline-soft: color-mix(in srgb, var(--brand), transparent 74%);
+  --outline: #d6cfcc;
+  --outline-soft: var(--line);
 }
 .card, .prize { border-width: 1.5px; border-style: solid; border-color: var(--outline); }
+.prize { border-color: color-mix(in srgb, var(--brand), transparent 45%); }
+.drill-btn { border-color: var(--outline); }
+.info-ico, .db-icon, .lk-ico { background: var(--field); border: 1px solid var(--line); }
+.db-pts { background: var(--accent-bg); color: var(--brand); }
 .launch-card { border-top: 3px solid var(--brand); }
 .btn:not(.primary):not(.danger), .icon-btn, .rank-match, .lb-close { border-color: var(--outline); }
 .btn:not(.primary):not(.danger):hover, .icon-btn:hover, .rank-match:hover { border-color: var(--brand); }
