@@ -651,8 +651,28 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .info-win svg { width: 22px; height: 22px; flex: none; color: var(--brand); }
 .iw-txt { display: flex; flex-direction: column; gap: 2px; }
 .iw-prize { font-size: .86rem; font-weight: 700; color: var(--brand); }
-.info-post { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; text-decoration: none; }
-.info-post svg { width: 18px; height: 18px; flex: none; color: var(--brand); }
+/* Preview card for the Instagram announcement post, at the end of How It Works */
+.post-card {
+  display: flex; align-items: center; gap: 14px; margin: 12px 0 0; padding: 10px 14px 10px 10px; border-radius: 14px;
+  background: var(--card); border: 1.5px solid var(--outline, var(--line)); color: var(--ink); text-decoration: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.post-card:hover { border-color: var(--brand); box-shadow: var(--shadow-sm); }
+.post-card:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand), transparent 55%); outline-offset: 2px; }
+.pc-thumb { width: 88px; height: 88px; flex: none; border-radius: 10px; object-fit: cover; background: var(--field); }
+.pc-txt { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.pc-handle { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: .74rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.pc-h { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pc-handle svg { width: 14px; height: 14px; flex: none; color: var(--brand); }
+.pc-title { font-size: .98rem; font-weight: 800; line-height: 1.25; letter-spacing: -.01em; }
+.pc-sub { font-size: .8rem; color: var(--ink-2); line-height: 1.35; }
+.pc-cta { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: .84rem; font-weight: 800; color: var(--brand); white-space: nowrap; }
+@media (max-width: 380px) {
+  .post-card { gap: 12px; }
+  .pc-thumb { width: 72px; height: 72px; }
+}
+.pc-cta svg { width: 15px; height: 15px; flex: none; transition: transform .15s ease; }
+.post-card:hover .pc-cta svg { transform: translateX(2px); }
 .f-tie { margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--field); border: 1px solid var(--line); font-size: .82rem; color: var(--ink-2); }
 .f-tie b { color: var(--ink); }
 /* The formula as one line of labels, then a tile explaining each part */
@@ -705,7 +725,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .formula { grid-template-columns: 1fr; gap: 8px; }
   .f-eq b { display: block; font-size: 1.05rem; }
   .f-eq-rest { font-size: .84rem; }
-  .info-post { display: flex; justify-content: center; }
   .form-row.counts { gap: 10px; }
   .form-row.counts label { min-width: calc(50% - 6px); flex: 1 1 calc(50% - 6px); }
   .board-head { padding: 14px 16px; }
