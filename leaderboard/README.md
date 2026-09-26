@@ -83,8 +83,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   leading"), so the link shows a branded card in WhatsApp, Instagram DMs,
   iMessage and Facebook. Crawlers don't run JavaScript, so these are static:
   **when the challenge name, dates or prize change, update the tags and
-  regenerate `og-image.jpg`** (bump its `?v=`; now `?v=2`, with the academy
-  eyebrow, "Oct 1 – 31" and the flag badge). WhatsApp caches a preview
+  regenerate `og-image.jpg`** (bump its `?v=`; now `?v=5`, with the academy
+  eyebrow and "Oct 1 – 31"; the source is `og.html`, rendered at 1200×630). WhatsApp caches a preview
   per link for a while.
 - **Climber of the week**: a green card under the podium showing the
   player who climbed the most spots in the last full week (Monday to
@@ -128,9 +128,6 @@ Community Points, Points Behind 1st — and sorts automatically.
     opens the Instagram DM.
   - A footer shows the logo, the academy name, the Instagram handle and
     "Leaderboard updates live".
-- **Prize banner**: "1st place wins" has the Vietnam flag beside it (an inline
-  SVG; screen readers hear "Vietnam brand"). It's drawn in SVG because flag
-  emoji don't render on Windows.
 - **Header**: three lines: "Lotus Pickleball Academy" (small red eyebrow,
   fixed in `index.html`), then the challenge name, then the dates line. The
   name and the dates line come from **Edit challenge details** in the admin
