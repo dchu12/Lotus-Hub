@@ -165,9 +165,11 @@ Community Points, Points Behind 1st — and sorts automatically.
   name, **Lotus Pickleball Academy** unless changed in "⋯" → Edit challenge
   details → **Lotus Gachapon sponsors** (one field per colour; blank = the
   academy). Saved on the board as `gachaSponsors` `{ red, yellow, blue,
-  green }`, up to 80 characters each (checked in `firestore.rules`). The board's **See the Gachapon post**
-  button fires the blue confetti and opens the Instagram post
-  (`https://www.instagram.com/p/Ddk2QlsEc5f/`). It shows on both the player and
+  green }`, up to 80 characters each (checked in `firestore.rules`). The board ends with a
+  preview card for the Gachapon post, styled like the challenge post card
+  (thumbnail `gacha-post.jpg`, "Lotus Gachapon", "Keychain rewards and
+  prizes", "View on Instagram"); tapping it fires the blue confetti and opens
+  the Instagram post (`https://www.instagram.com/p/Ddk2QlsEc5f/`). It shows on both the player and
   admin views.
 - **Colour**: cards and secondary buttons use a neutral outline (`--outline`
   in `styles.css`). Red is kept for the Join button, the prize banner, links,
