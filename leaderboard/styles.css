@@ -659,7 +659,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 }
 .post-card:hover { border-color: var(--brand); box-shadow: var(--shadow-sm); }
 .post-card:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand), transparent 55%); outline-offset: 2px; }
-.pc-thumb { width: 88px; height: 88px; flex: none; border-radius: 10px; object-fit: cover; background: var(--field); }
+.post-card .pc-thumb { display: block; width: 88px; height: 88px; max-width: none; flex: none; margin: 0; border-radius: 10px; object-fit: cover; background: var(--field); filter: none; }
 .pc-txt { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
 .pc-handle { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: .74rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
 .pc-h { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -668,8 +668,9 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .pc-sub { font-size: .8rem; color: var(--ink-2); line-height: 1.35; }
 .pc-cta { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: .84rem; font-weight: 800; color: var(--brand); white-space: nowrap; }
 @media (max-width: 380px) {
-  .post-card { gap: 12px; }
-  .pc-thumb { width: 72px; height: 72px; }
+  .post-card { gap: 12px; padding-right: 12px; }
+  .pc-cta { font-size: .8rem; }
+  .post-card .pc-thumb { width: 72px; height: 72px; }
 }
 .pc-cta svg { width: 15px; height: 15px; flex: none; transition: transform .15s ease; }
 .post-card:hover .pc-cta svg { transform: translateX(2px); }
@@ -914,8 +915,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .sp-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .sp-red { background: #d62b2b; } .sp-yellow { background: #f2c230; } .sp-blue { background: #2f6fe0; } .sp-green { background: #2ea44f; }
 .gk-red { border-color: color-mix(in srgb, var(--brand), transparent 60%); background: var(--accent-bg); }
-.gk-post { display: flex; width: 100%; box-sizing: border-box; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 14px; font-weight: 800; font-size: .95rem; white-space: nowrap; text-decoration: none; }
-.gk-post svg { width: 18px; height: 18px; color: var(--brand); }
+.gk-card { margin-top: 16px; }
 
 /* How to join panel */
 .join-sheet { text-align: left; max-width: min(92vw, 440px); max-height: calc(100dvh - 32px); overflow-y: auto; }
