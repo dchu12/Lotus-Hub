@@ -76,8 +76,8 @@
   // What a new player sends us; they fill in the blanks in the How to join panel.
   var JOIN_MSG = "Hi Lotus! I'd like to join the October Challenge.\n\n" +
     "Name: \nDUPR ID: ";
-  // ...and what someone booking a drilling session sends.
-  var DRILL_MSG = "Hi Lotus! I'd like to book a drilling session.\n\n" +
+  // ...and what someone booking a Drill Training session sends.
+  var DRILL_MSG = "Hi Lotus! I'd like to book a Drill Training session.\n\n" +
     "Name: \nPreferred day and time: ";
   var ME_KEY = "lotus-leaderboard:me:" + boardId;
   var meId = null;
@@ -2107,7 +2107,7 @@
     };
   }
 
-  // ---- Message panel: How to join / Book a drilling session -------------------------
+  // ---- Message panel: How to join / Book a Drill Training Session -------------------
   // Every Join link and the drilling button open this first, so people know
   // what to send before the (empty) Instagram chat opens. The message is
   // editable and gets copied for them on "Open Instagram"; the links still
@@ -2120,7 +2120,7 @@
         "<li><span>We&rsquo;ll reply and add you to the leaderboard.</span></li>",
     },
     drill: {
-      kicker: "Earn +2 Community Points", title: "Book a drilling session", msg: DRILL_MSG, scheme: "yellow",
+      kicker: "Earn +2 Community Points", title: "Book a Drill Training Session", msg: DRILL_MSG, scheme: "yellow",
       steps: "<li><span>Add your <b>name</b> and the <b>day and time</b> that work for you below.</span></li>" + PASTE_STEP +
         "<li><span>We&rsquo;ll reply to confirm your session. Each session you attend earns <b>+2 Community Points</b>.</span></li>",
     },

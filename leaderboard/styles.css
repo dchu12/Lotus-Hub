@@ -773,7 +773,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .session-btn { padding: 9px 4px; font-size: .8rem; }
 }
 
-/* Book a private drilling session (player view): a white, red-outlined
+/* Book a Drill Training session (player view): a white, red-outlined
    button just above the Lotus Gachapon card. */
 .drill-btn {
   display: flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 10px 14px; border-radius: 16px;
@@ -787,11 +787,11 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .db-icon svg { width: 30px; height: 30px; }
 .db-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .db-title { font-weight: 800; font-size: clamp(.88rem, 3.9vw, 1rem); line-height: 1.25; letter-spacing: -.01em; }
-.db-pts {
-  display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px;
-  background: var(--brand); color: #fff; font-size: .72rem; font-weight: 800; letter-spacing: .01em; white-space: nowrap;
-}
-@media (max-width: 360px) { .db-pts { font-size: .66rem; padding: 2px 8px; } }
+.db-sub { font-size: .78rem; font-weight: 600; color: var(--muted); line-height: 1.35; }
+.db-sub b { color: var(--brand); font-weight: 800; }
+.db-earn { white-space: nowrap; }
+/* Phones: the two parts on their own lines rather than a "·" starting line two. */
+@media (max-width: 520px) { .db-earn { display: block; } .db-dot { display: none; } }
 .db-arrow { flex: none; color: var(--brand); display: grid; place-items: center; }
 .db-arrow svg { width: 20px; height: 20px; }
 
@@ -910,7 +910,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .prize { border-color: color-mix(in srgb, var(--brand), transparent 45%); }
 .drill-btn { border-color: var(--outline); }
 .info-ico, .db-icon, .lk-ico { background: var(--field); border: 1px solid var(--line); }
-.db-pts { background: var(--accent-bg); color: var(--brand); }
 .launch-card { border-top: 3px solid var(--brand); }
 .btn:not(.primary):not(.danger), .icon-btn, .rank-match, .lb-close { border-color: var(--outline); }
 .btn:not(.primary):not(.danger):hover, .icon-btn:hover, .rank-match:hover { border-color: var(--brand); }
