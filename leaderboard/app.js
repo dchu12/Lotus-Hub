@@ -131,15 +131,24 @@
     var secs = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
     if (secs < 45) return "just now";
     var mins = Math.round(secs / 60);
-    if (mins < 60) return mins + " minute" + (mins === 1 ? "" : "s") + " ago";
-    var hours = Math.round(mins / 60);
-    if (hours < 24) return hours + " hour" + (hours === 1 ? "" : "s") + " ago";
-    var days = Math.round(hours / 24);
-    if (days < 7) return days + " day" + (days === 1 ? "" : "s") + " ago";
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    // Past the first hour, a clock time says more than "5 hours ago":
+    // "today, 9:12 PM", "yesterday, 9:12 PM", then "Oct 3, 9:12 PM".
+    if (mins < 60) return mins + (mins === 1 ? " minute" : " minutes") + " ago";
+    var time = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    var day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var daysAgo = Math.round((today - day) / 86400000);
+    if (daysAgo <= 0) return "today, " + time;
+    if (daysAgo === 1) return "yesterday, " + time;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + ", " + time;
   }
+  // A DUPR box left blank means "not entered yet", not a rating of 0.
+  function hasDupr(v) { return num(v) > 0; }
   function computed(e) {
-    var duprPoints = Math.round(num(e.duprImprovement) * 100);
+    // Until both Start and End DUPR are in, Skill Points stay at 0 (a blank
+    // End used to count as 0 and knock ~350 points off).
+    var missing = e.mode === "range" && !(hasDupr(e.startDupr) && hasDupr(e.endDupr));
+    var duprPoints = missing ? 0 : Math.round(num(e.duprImprovement) * 100);
     var community =
       int(e.ranked) * POINTS.ranked +
       int(e.social) * POINTS.social +
@@ -154,12 +163,14 @@
   // each number sits directly under Skill Points or Community Points.
   var SESSION_LABELS = { ranked: "Ranked", social: "Social", drill: "Drill" };
   function breakdownRows(e, restricted) {
-    var improvement = num(e.duprImprovement);
+    var improvement = e._c.duprPoints / 100;
     var d = Math.min(3, Math.max(2, decimals(e.startDupr), decimals(e.endDupr)));
     var sign = improvement > 0 ? "+" : "";
     var change = sign + improvement.toFixed(d);
+    var fmtD = function (v) { return hasDupr(v) ? num(v).toFixed(d) : "&ndash;"; };
     var duprDetail = e.mode === "range"
-      ? num(e.startDupr).toFixed(d) + " &rarr; " + num(e.endDupr).toFixed(d) + '<span class="bd-detail">' + change + "</span>"
+      ? fmtD(e.startDupr) + " &rarr; " + fmtD(e.endDupr) +
+        (hasDupr(e.startDupr) && hasDupr(e.endDupr) ? '<span class="bd-detail">' + change + "</span>" : "")
       : change;
     var rows = [["DUPR", duprDetail, e._c.duprPoints, ""]];
     [["Ranked Play", int(e.ranked), POINTS.ranked],
@@ -174,14 +185,13 @@
         '<td class="total"><span class="m-only">' + (r[2] !== "" ? r[2] : r[3]) + "</span></td>" +
         '<td class="col-sub">' + r[2] + "</td>" +
         '<td class="col-sub">' + r[3] + "</td>" +
-        '<td class="behind"></td>' +
         "</tr>"
       );
     }).join("");
     if (restricted) return html;
     var id = esc(e.id);
     return html +
-      '<tr class="bd-row bd-admin bd-last"><td colspan="6"><div class="admin-actions">' +
+      '<tr class="bd-row bd-admin bd-last"><td colspan="5"><div class="admin-actions">' +
       '<div class="aa-log"><span class="aa-label">Log a session</span>' +
       ["ranked", "social", "drill"].map(function (f) {
         return '<button type="button" class="btn small session-btn" data-log="' + f + '" data-id="' + id + '">+1 ' + SESSION_LABELS[f] + "</button>";
@@ -347,7 +357,7 @@
     return null;
   }
   function climberStats(c) {
-    return { up: c.up > 0 ? "\u25B2" + c.up + (c.up === 1 ? " spot" : " spots") : "", pts: "+" + c.pts + (c.pts === 1 ? " pt" : " pts") };
+    return { up: c.up > 0 ? "\u25B2" + c.up + (c.up === 1 ? " spot" : " spots") : "", pts: "+" + c.pts + " Lotus Score" };
   }
   function renderClimber(list, show) {
     var c = show ? climberOfWeek(list) : null;
@@ -356,7 +366,7 @@
     var st = climberStats(c);
     els.climber.setAttribute("data-pod", c.e.id);
     els.climber.setAttribute("aria-label", "Climber of the week (" + c.when + "): " + c.e.name +
-      (c.up > 0 ? ", up " + c.up + (c.up === 1 ? " spot" : " spots") : "") + ", " + c.pts + (c.pts === 1 ? " point" : " points") + " gained. Show how their points add up.");
+      (c.up > 0 ? ", up " + c.up + (c.up === 1 ? " spot" : " spots") : "") + ", Lotus Score up " + c.pts + ". Show how their points add up.");
     els.climber.innerHTML =
       avatarHtml(c.e.name) +
       '<span class="cl-txt"><span class="cl-eyebrow">Climber of the week</span><span class="cl-name">' + esc(c.e.name) + '</span><span class="cl-when">' + esc(c.when) + "</span></span>" +
@@ -652,7 +662,7 @@
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "countdown", "editBoardBtn", "editPanel", "titleInput",
       "subtitleInput", "startDateInput", "endDateInput", "saveBoardBtn", "cancelBoardBtn",
-      "noScores", "moveHint", "scoringCard", "prizeMeta", "eventsCard", "eventsList",
+      "noScores", "duprWarn", "moveHint", "scoringCard", "prizeMeta", "eventsCard", "eventsList",
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput",
@@ -674,7 +684,8 @@
   // DUPR improvement is always calculated automatically from Start/End DUPR —
   // no manual override.
   function currentImprovement() {
-    return num(els.endDuprInput.value) - num(els.startDuprInput.value);
+    var start = els.startDuprInput.value, end = els.endDuprInput.value;
+    return hasDupr(start) && hasDupr(end) ? num(end) - num(start) : 0;
   }
 
   function updatePreview() {
@@ -712,8 +723,8 @@
     // a manually-typed duprImprovement with no start/end on file — fall back
     // to Start 0 / End <improvement> so the value carries over unchanged.
     if (e.mode === "range") {
-      els.startDuprInput.value = e.startDupr != null ? e.startDupr : "";
-      els.endDuprInput.value = e.endDupr != null ? e.endDupr : "";
+      els.startDuprInput.value = hasDupr(e.startDupr) ? e.startDupr : "";
+      els.endDuprInput.value = hasDupr(e.endDupr) ? e.endDupr : "";
     } else {
       els.startDuprInput.value = 0;
       els.endDuprInput.value = e.duprImprovement != null ? e.duprImprovement : "";
@@ -761,8 +772,8 @@
       id: editingId || uid(),
       name: name,
       mode: "range",
-      startDupr: num(els.startDuprInput.value),
-      endDupr: num(els.endDuprInput.value),
+      startDupr: hasDupr(els.startDuprInput.value) ? num(els.startDuprInput.value) : null,
+      endDupr: hasDupr(els.endDuprInput.value) ? num(els.endDuprInput.value) : null,
       duprImprovement: currentImprovement(),
       ranked: int(els.rankedInput.value),
       social: int(els.socialInput.value),
@@ -952,6 +963,7 @@
     els.boardHint.hidden = !list.length;
     var cd = countdown();
     els.noScores.hidden = !list.length || scored;
+    renderDuprWarn(list, !restricted && ph !== "ended");
     els.boardEmpty.textContent = restricted ? "No players yet." : "No players yet. Tap \u201c+ Add player\u201d to add the first one.";
     els.noScores.textContent = cd && cd.phase === "before"
       ? "The challenge starts " + fmtDay(challengeDates().start) + ". Scores update after each session."
@@ -978,7 +990,6 @@
           '<td class="total">' + e._c.total + "</td>" +
           '<td class="col-sub">' + e._c.duprPoints + "</td>" +
           '<td class="col-sub">' + e._c.community + "</td>" +
-          '<td class="behind">' + behindFirst(e, list) + "</td>" +
           "</tr>" +
           (open ? breakdownRows(e, restricted) : "")
         );
@@ -1059,6 +1070,21 @@
     els.launchCount.setAttribute("aria-label", "Starts in " + t.days + " days, " + t.hours + " hours and " + t.mins + " minutes");
   }
 
+  // ---- admin: players still missing a starting DUPR ------------------------------
+  // Skill Points count from the Oct 1 rating, so everyone needs one on file
+  // before launch. Each name opens that player's edit form.
+  function renderDuprWarn(list, show) {
+    var missing = show ? list.filter(function (e) { return e.mode === "range" && !hasDupr(e.startDupr); }) : [];
+    els.duprWarn.hidden = !missing.length;
+    if (!missing.length) return;
+    els.duprWarn.innerHTML =
+      "<b>" + missing.length + (missing.length === 1 ? " player needs" : " players need") + " a Start DUPR</b> " +
+      '<span class="dw-why">Skill Points stay at 0 until it&rsquo;s in. Tap a name to add it.</span>' +
+      '<span class="dw-names">' + missing.map(function (e) {
+        return '<button type="button" class="dw-name" data-edit="' + esc(e.id) + '">' + esc(e.name) + "</button>";
+      }).join("") + "</span>";
+  }
+
   // ---- top-3 podium -----------------------------------------------------------
   function renderPodium(list, show) {
     els.podium.hidden = !show;
@@ -1070,10 +1096,10 @@
       var place = list.indexOf(e) + 1; // podium step by position; the badge shows the (possibly shared) rank
       return (
         '<button type="button" class="pod pod-' + place + " " + (MEDAL[e._rank] || "") + '" data-pod="' + esc(e.id) + '" aria-label="' +
-        esc(ordinal(e._rank) + " place: " + e.name + ", " + e._c.total + " points") + '">' +
+        esc(ordinal(e._rank) + " place: " + e.name + ", Lotus Score " + e._c.total) + '">' +
         avatarHtml(e.name, "av-lg") +
         '<span class="pod-name">' + esc(e.name) + "</span>" +
-        '<span class="pod-pts">' + e._c.total + " pts</span>" +
+        '<span class="pod-pts">' + e._c.total + '<span class="pod-unit">Lotus Score</span></span>' +
         '<span class="pod-step" aria-hidden="true">' + e._rank + "</span>" +
         "</button>"
       );
@@ -1094,8 +1120,8 @@
       ? "Congratulations, " + esc(lead.name) + "!"
       : "It's a tie: " + esc(names.slice(0, -1).join(", ")) + " &amp; " + esc(names[names.length - 1]);
     var sub = winners.length === 1
-      ? "Winner of the <b>Zocker Pro Series Control Paddle</b> with " + lead._c.total + " Lotus points"
-      : "Level on Lotus Score and Community Points (" + lead._c.total + " pts). The academy will announce the winner.";
+      ? "Winner of the <b>Zocker Pro Series Control Paddle</b> with a Lotus Score of " + lead._c.total
+      : "Level on Lotus Score and Community Points (" + lead._c.total + " Lotus Score). The academy will announce the winner.";
     els.winnerCard.innerHTML =
       '<div class="win-avatars">' + winners.slice(0, 3).map(function (e) { return avatarHtml(e.name, "av-xl"); }).join("") + "</div>" +
       '<div class="win-txt"><div class="win-kicker">Final results</div>' +
@@ -1104,10 +1130,6 @@
       '<img class="win-paddle" src="/leaderboard/prize-paddle.png" alt="" width="111" height="240" />';
   }
 
-  function behindFirst(e, list) {
-    if (e._rank === 1) return '<span class="behind-lead">&mdash;</span>';
-    return list[0]._c.total - e._c.total;
-  }
   // Player view: the Instagram sign-up button for visitors. Hidden in the
   // admin view, once the challenge is over, and once a visitor has picked
   // their own name (they're already in).
@@ -1139,7 +1161,7 @@
     var medal = scored ? MEDAL_BY_RANK[me._rank] || "" : "none";
     els.rankMe.innerHTML =
       '<span class="rank-big ' + medal + '">' + (scored ? "#" + me._rank : "&ndash;") + "</span>" +
-      '<div class="me-txt"><div class="me-name">' + esc(me.name) + ' <span class="me-pts">' + me._c.total + " pts</span></div>" +
+      '<div class="me-txt"><div class="me-name">' + esc(me.name) + ' <span class="me-pts">' + me._c.total + " Lotus Score</span></div>" +
       '<div class="me-status">' + esc(status) + "</div></div>" +
       '<div class="me-actions">' +
       (scored ? '<button type="button" class="btn small primary" data-rank="share">Share</button>' : "") +
@@ -1159,10 +1181,10 @@
     if (me._rank === 1) {
       var next = list.filter(function (e) { return e._rank > 1; })[0];
       return tied ? "Tied for 1st place"
-        : next ? "1st place, " + pts(me._c.total - next._c.total) + " ahead of " + ordinal(next._rank)
+        : next ? "1st place, " + (me._c.total - next._c.total) + " ahead of " + ordinal(next._rank)
         : "1st place";
     }
-    return (tied ? "Tied for " + ordinal(me._rank) + " \u00b7 " : "") + pts(list[0]._c.total - me._c.total) + " behind 1st place";
+    return (tied ? "Tied for " + ordinal(me._rank) + " \u00b7 " : "") + (list[0]._c.total - me._c.total) + " behind 1st place";
   }
 
   // ---- Upcoming community events ------------------------------------------
@@ -1641,7 +1663,7 @@
       ? hits.slice(0, 6).map(function (h) {
           return '<button type="button" class="rank-match" data-me="' + esc(h[0].id) + '">' +
             '<span class="rm-rank">#' + h[0]._rank + '</span><span class="rm-name">' + esc(h[0].name) + "</span>" +
-            '<span class="rm-pts">' + h[0]._c.total + " pts</span></button>";
+            '<span class="rm-pts">' + h[0]._c.total + " Lotus Score</span></button>";
         }).join("")
       : '<p class="rank-none">No ' + (readOnly ? "challenger" : "player") + " matching &ldquo;" + esc(els.rankSearch.value.trim()) + "&rdquo;" +
         (readOnly ? ' yet. Check the spelling, or <a href="' + JOIN_URL + '" target="_blank" rel="noopener">DM us on Instagram</a> to join.' : ".") + "</p>";
@@ -1937,7 +1959,7 @@
     var rows = list.map(function (e) {
       return [
         e._rank, e.name, e.startDupr != null ? e.startDupr : "", e.endDupr != null ? e.endDupr : "",
-        fmtSigned(e.duprImprovement), e._c.duprPoints,
+        fmtSigned(e._c.duprPoints / 100), e._c.duprPoints,
         int(e.ranked), int(e.social), int(e.drill),
         e._c.community, e._c.total, list[0]._c.total - e._c.total,
       ];
@@ -2118,6 +2140,10 @@
       if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closePrize();
     });
     watchJoinButton();
+    els.duprWarn.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-edit]");
+      if (b) editEntryById(b.getAttribute("data-edit"));
+    });
     els.climber.addEventListener("click", function () {
       expandedId = els.climber.getAttribute("data-pod");
       render();
