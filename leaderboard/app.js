@@ -99,6 +99,7 @@
     calendarId: null, // optional public Google Calendar that replaces `events`
     calendarKey: null, // optional API key for it (defaults to the site's Firebase key)
     gachaSponsors: null, // { red, yellow, blue, green }: Lotus Gachapon sponsor per keychain colour
+    prizeSponsor: null, // sponsor of the 1st place prize; null = the academy (line hidden)
   };
   // Fallback dates for a board whose doc doesn't have them saved yet; the
   // edit panel's date fields override these once saved.
@@ -523,6 +524,18 @@
     });
     return any ? out : null;
   }
+  function cleanPrizeSponsor(v) {
+    var name = typeof v === "string" ? v.trim().slice(0, 80) : "";
+    return name || null;
+  }
+  // The prize banner names a sponsor only when it isn't the academy itself
+  // (already named at the top of the page).
+  function renderPrizeSponsor() {
+    var name = board.prizeSponsor;
+    var show = !!name && name.toLowerCase() !== DEFAULT_SPONSOR.toLowerCase();
+    els.prizeSponsorLine.hidden = !show;
+    els.prizeSponsorName.textContent = show ? name : "";
+  }
   // One sponsor for every colour: a single "All prizes sponsored by" line
   // under the list. Different sponsors: each row names its own.
   function renderGachaSponsors() {
@@ -553,6 +566,7 @@
       calendarId: typeof src.calendarId === "string" && src.calendarId ? src.calendarId : null,
       calendarKey: typeof src.calendarKey === "string" && src.calendarKey ? src.calendarKey : null,
       gachaSponsors: cleanSponsors(src.gachaSponsors),
+      prizeSponsor: cleanPrizeSponsor(src.prizeSponsor),
     };
   }
   function commit(mutate) {
@@ -604,6 +618,7 @@
       board.calendarId = data.calendarId || null;
       board.calendarKey = data.calendarKey || null;
       board.gachaSponsors = cleanSponsors(data.gachaSponsors);
+      board.prizeSponsor = cleanPrizeSponsor(data.prizeSponsor);
       lastRemoteDoc = cleanDoc(data);
       // A write we just made ourselves can arrive with updatedAt still null
       // for one snapshot (the serverTimestamp placeholder resolves a moment
@@ -701,7 +716,7 @@
       "noScores", "duprWarn", "moveHint", "scoringCard", "prizeMeta", "eventsCard", "eventsList",
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
-      "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen",
+      "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen", "prizeSponsorInput", "prizeSponsorLine", "prizeSponsorName",
       "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinElig", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
@@ -878,6 +893,7 @@
     els.gkSponsorYellow.value = sp.yellow || "";
     els.gkSponsorBlue.value = sp.blue || "";
     els.gkSponsorGreen.value = sp.green || "";
+    els.prizeSponsorInput.value = board.prizeSponsor || "";
     els.editPanel.hidden = false;
   }
   function saveBoardMeta() {
@@ -891,6 +907,7 @@
       red: els.gkSponsorRed.value, yellow: els.gkSponsorYellow.value,
       blue: els.gkSponsorBlue.value, green: els.gkSponsorGreen.value,
     });
+    var prizeSponsor = cleanPrizeSponsor(els.prizeSponsorInput.value);
     els.editPanel.hidden = true;
     commit(function (doc) {
       if (title) doc.title = title;
@@ -900,6 +917,7 @@
       doc.calendarId = calId;
       doc.calendarKey = calKey;
       doc.gachaSponsors = sponsors;
+      doc.prizeSponsor = prizeSponsor;
     });
     fetchCalendar(true);
     toast("Challenge details saved");
@@ -978,6 +996,7 @@
     if (restricted) { els.qrCard.hidden = true; els.editPanel.hidden = true; }
     updateLastUpdatedText();
     renderGachaSponsors();
+    renderPrizeSponsor();
 
     var list = sortedEntries();
     var scored = anyScored(list);

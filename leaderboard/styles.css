@@ -104,22 +104,28 @@ body {
 
 /* Prize callout under the header: compact, with the actual paddle */
 .prize {
-  display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 10px 22px 10px 12px;
+  position: relative; display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 10px 22px 10px 12px;
   border-radius: 16px; border: 1px solid color-mix(in srgb, var(--brand), transparent 72%);
   background: linear-gradient(100deg, var(--accent-bg), #fff 85%);
   box-shadow: var(--shadow-sm);
 }
+/* The paddle button covers the whole banner (::after), so one tap anywhere
+   opens the full-size photo; the shop link lives in that view. */
 .prize-zoom {
-  appearance: none; border: 0; background: none; padding: 0; margin: 0; flex: none; position: relative;
-  cursor: zoom-in; border-radius: 10px; display: block;
+  appearance: none; border: 0; background: none; padding: 0; margin: 0; flex: none;
+  cursor: zoom-in; display: block; color: inherit;
 }
-.prize-zoom:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.prize-zoom::after { content: ""; position: absolute; inset: 0; border-radius: 16px; z-index: 1; }
+.prize-zoom:focus-visible { outline: none; }
+.prize:has(.prize-zoom:focus-visible) { outline: 2px solid var(--brand); outline-offset: 3px; }
+.prize:hover { border-color: var(--brand); }
+.pz-wrap { position: relative; display: block; }
 .pz-badge {
   position: absolute; right: -6px; bottom: 2px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
   background: #fff; color: var(--brand); box-shadow: 0 1px 3px rgba(28, 20, 20, .25);
 }
 .pz-badge svg { width: 11px; height: 11px; }
-.prize-zoom:hover .pz-badge { background: var(--brand); color: #fff; }
+.prize:hover .pz-badge { background: var(--brand); color: #fff; }
 .prize-photo {
   flex: none; width: 36px; height: 72px; object-fit: contain;
   filter: drop-shadow(0 3px 5px rgba(28, 20, 20, .22)); /* transparent cut-out, so the shadow follows the paddle */
@@ -132,14 +138,6 @@ body {
 .prize-eyebrow {
   font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--brand);
 }
-.prize-link {
-  color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand), transparent 55%);
-  text-decoration-thickness: 2px; text-underline-offset: 3px; transition: color .15s ease, text-decoration-color .15s ease;
-}
-.prize-link:hover { color: var(--brand); text-decoration-color: var(--brand); }
-.prize-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
-.pl-last { white-space: nowrap; }
-.pl-ext { width: .8em; height: .8em; margin-left: 4px; vertical-align: -.05em; color: var(--brand); }
 .prize-main { font-size: 1.02rem; font-weight: 800; color: var(--ink); line-height: 1.3; margin-top: 1px; letter-spacing: -.01em; }
 .prize-meta {
   margin-left: auto; padding-left: 16px; border-left: 1px solid color-mix(in srgb, var(--brand), transparent 72%);
@@ -815,7 +813,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .db-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .db-title { font-weight: 800; font-size: clamp(.88rem, 3.9vw, 1rem); line-height: 1.25; letter-spacing: -.01em; }
 .db-sub { font-size: .78rem; font-weight: 600; color: var(--muted); line-height: 1.35; }
-.db-sub b { color: var(--brand); font-weight: 800; }
 .db-arrow { flex: none; color: var(--brand); display: grid; place-items: center; }
 .db-arrow svg { width: 20px; height: 20px; }
 
@@ -890,10 +887,13 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .lb-close {
   position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line);
   background: #fff; color: var(--ink-2); display: grid; place-items: center; cursor: pointer;
+  z-index: 2; /* above the full-size photo on tall, narrow phones */
 }
 .lb-close svg { width: 16px; height: 16px; }
 .lb-close:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .lb-cap { margin: 0; display: flex; flex-direction: column; gap: 2px; font-weight: 800; font-size: 1.05rem; }
+.lb-shop { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; min-height: 44px; text-decoration: none; }
+.lb-shop svg { width: 15px; height: 15px; color: var(--brand); }
 .lb-kicker { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
 /* Lotus Gachapon rewards board */
 .gacha-sheet { text-align: left; max-width: min(92vw, 400px); max-height: calc(100dvh - 32px); overflow-y: auto; }

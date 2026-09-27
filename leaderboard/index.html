@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=90" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=91" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -80,14 +80,14 @@
     <section class="winner" id="winnerCard" hidden aria-live="polite"></section>
 
     <section class="prize" id="prizeBanner" aria-label="Challenge prize">
-      <button type="button" class="prize-zoom" id="prizeZoomBtn" aria-haspopup="dialog" aria-label="View the Zocker Pro Series Control paddle full size">
-        <img class="prize-photo" src="/leaderboard/prize-paddle.png" alt="" width="111" height="240" />
-        <span class="pz-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.2-4.2M11 8.5v5M8.5 11h5"/></svg></span>
+      <button type="button" class="prize-zoom" id="prizeZoomBtn" aria-haspopup="dialog" aria-label="View the prize paddle full size">
+        <span class="pz-wrap"><img class="prize-photo" src="/leaderboard/prize-paddle.png" alt="" width="111" height="240" />
+        <span class="pz-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.2-4.2M11 8.5v5M8.5 11h5"/></svg></span></span>
       </button>
       <div class="prize-txt">
         <div class="prize-top"><span class="prize-eyebrow">1st place wins</span></div>
-        <div class="prize-main"><a class="prize-link" href="https://zocker.ca/products/pickleball-paddle-zocker-happy-hp05-pro-series-control?variant=49136662085787" target="_blank" rel="noopener">Zocker Pro Series Control <span class="pl-last">Paddle<svg class="pl-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></span><span class="sr-only"> (opens zocker.ca)</span></a></div>
-        <div class="prize-origin"><span class="prize-sponsor">Sponsored by: <b>Lotus Pickleball Academy</b></span></div>
+        <div class="prize-main">Zocker Pro Series Control Paddle</div>
+        <div class="prize-origin" id="prizeSponsorLine" hidden><span class="prize-sponsor">Sponsored by: <b id="prizeSponsorName"></b></span></div>
       </div>
       <div class="prize-meta" id="prizeMeta" hidden></div>
     </section>
@@ -97,7 +97,7 @@
       <summary class="scoring-title">
         <span class="info-sum">
           <span class="info-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg></span>
-          <span class="info-txt"><h2 class="info-title">How It Works</h2><span class="info-hint">Prize · Scoring · Eligibility</span></span>
+          <span class="info-txt"><h2 class="info-title">How It Works</h2><span class="info-hint">Lotus Score = Skill Points + Community Points</span></span>
         </span>
       </summary>
       <p class="info-win">
@@ -194,6 +194,11 @@
         <label class="grow"><span>Calendar API key <span class="opt">(only if you made a separate one)</span></span><input type="text" id="calendarKeyInput" maxlength="100" autocomplete="off" spellcheck="false" placeholder="Leave blank to use the site's key" /></label>
       </div>
       <p class="hint hint-tight">When set, the events card shows the upcoming events from this <b>public</b> Google Calendar instead of the ones added here, and players get a Subscribe button. Clear the ID to go back.</p>
+      <h3 class="section-lbl">Prize sponsor</h3>
+      <div class="form-row">
+        <label class="grow"><span>Sponsor of the 1st place prize</span><input type="text" id="prizeSponsorInput" maxlength="80" placeholder="Lotus Pickleball Academy" /></label>
+      </div>
+      <p class="hint hint-tight">Shown as &ldquo;Sponsored by:&rdquo; on the prize banner. Leave blank when the prize is from Lotus Pickleball Academy (the line is hidden then).</p>
       <h3 class="section-lbl">Lotus Gachapon sponsors</h3>
       <div class="form-row sponsor-row">
         <label><span><span class="sp-dot sp-red" aria-hidden="true"></span>Red &middot; Grand Prize</span><input type="text" id="gkSponsorRed" maxlength="80" placeholder="Lotus Pickleball Academy" /></label>
@@ -201,7 +206,7 @@
         <label><span><span class="sp-dot sp-blue" aria-hidden="true"></span>Blue &middot; Drinks</span><input type="text" id="gkSponsorBlue" maxlength="80" placeholder="Lotus Pickleball Academy" /></label>
         <label><span><span class="sp-dot sp-green" aria-hidden="true"></span>Green &middot; Salty</span><input type="text" id="gkSponsorGreen" maxlength="80" placeholder="Lotus Pickleball Academy" /></label>
       </div>
-      <p class="hint hint-tight">Shown as &ldquo;Sponsored by:&rdquo; under each prize on the Lotus Gachapon board. Leave one blank for Lotus Pickleball Academy.</p>
+      <p class="hint hint-tight">Leave one blank for Lotus Pickleball Academy. When all four match, the board shows one &ldquo;All prizes sponsored by&rdquo; line; otherwise each prize names its own sponsor.</p>
       <div class="form-actions">
         <button type="button" class="btn primary" id="saveBoardBtn">Save</button>
         <button type="button" class="btn ghost" id="cancelBoardBtn">Cancel</button>
@@ -322,7 +327,7 @@
     <!-- Player view: book a Drill Training session (Instagram DM) -->
     <a class="drill-btn" id="drillBtn" data-drill hidden href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">
       <span class="db-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span>
-      <span class="db-txt"><span class="db-title">Drill Training</span><span class="db-sub"><b>Earn +2 Community Points</b></span></span>
+      <span class="db-txt"><span class="db-title">Drill Training</span><span class="db-sub">Earn +2 Community Points</span></span>
       <span class="db-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
       <span class="sr-only"> (opens Instagram)</span>
     </a>
@@ -426,6 +431,7 @@
     <button type="button" class="lb-close" id="prizeDialogClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <img id="prizeDialogImg" alt="Zocker Pro Series Control paddle" width="500" height="1082" />
     <p class="lb-cap"><span class="lb-kicker">1st place wins</span><span id="prizeDialogTitle">Zocker Pro Series Control Paddle</span></p>
+    <a class="btn lb-shop" href="https://zocker.ca/products/pickleball-paddle-zocker-happy-hp05-pro-series-control?variant=49136662085787" target="_blank" rel="noopener">View the paddle<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="sr-only"> on zocker.ca</span></a>
   </dialog>
 
   <!-- How to join: what to send, then open the Instagram DM -->
@@ -480,6 +486,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=67"></script>
+  <script src="/leaderboard/app.js?v=68"></script>
 </body>
 </html>
