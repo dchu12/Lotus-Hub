@@ -46,13 +46,15 @@ Community Points, Points Behind 1st — and sorts automatically.
   view, a slim version is pinned to the bottom of the screen. It only shows
   when the main button would (player view, not ended, visitor not on the
   board), and never on desktop.
-- **Sponsor line**: on its own line under the paddle name, "Sponsored by:
-  Lotus Pickleball Academy".
-- **Paddle name link**: "Zocker Pro Series Control Paddle" in the prize
-  banner links to the paddle on zocker.ca (new tab).
-- **Paddle photo**: tapping the prize photo opens it full size in a dialog
-  (`prize-paddle-lg.png`, loaded only on tap). Escape, the close button or
-  tapping the backdrop closes it.
+- **Sponsor line**: "Sponsored by: …" under the paddle name, only when a
+  sponsor other than Lotus Pickleball Academy is set in "⋯" → Edit challenge
+  details → **Prize sponsor** (saved as `prizeSponsor` on the board, up to 80
+  characters, checked in `firestore.rules`; blank = the academy, line hidden).
+- **Paddle photo**: tapping anywhere on the prize banner opens the photo
+  full size in a dialog (`prize-paddle-lg.png`, loaded only on tap), with a
+  **View the paddle** button that opens it on zocker.ca (new tab). The
+  photo button covers the whole banner (`.prize-zoom::after`), so there's
+  one tap action. Escape, the close button or tapping the backdrop closes it.
 - **Leaderboard heading**: "Lotus Leaderboard" with "5 players · Updated N
   minutes ago" directly under it, and the admin's + Add player button beside
   it.
@@ -146,7 +148,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   confetti and the DM opens straight away. If the browser blocks the new
   tab, the DM opens in the same tab.
 - **Book a Drill Training Session**: just above the Lotus Gachapon card, an
-  outlined card "Drill Training" with "Earn +2 Community Points" under it. It opens the same message panel as Join, titled "Book a
+  outlined card "Drill Training" with "Earn +2 Community Points" (grey, like the Gachapon card's subtitle) under it. It opens the same message panel as Join, titled "Book a
   Drill Training Session", with the message "Hi Coach! I'd like to book a Drill
   Training session." (`DRILL_MSG` in `app.js`); Open Instagram copies it, fires
   the yellow confetti and opens the academy's Instagram DM. It shows on the player
@@ -268,7 +270,7 @@ Community Points, Points Behind 1st — and sorts automatically.
      (Or create a separate key restricted to that API and to
      `lots-hub.web.app/*` and `lotuspickleballacademy.com/*`, and paste it
      in the optional key field.)
-- **How It Works** (hint "Prize · Scoring · Eligibility"): "Highest Lotus Score wins" with the
+- **How It Works** (hint "Lotus Score = Skill Points + Community Points"): "Highest Lotus Score wins" with the
   prize name (Zocker Pro Series Control Paddle) under it, then a
   formula line, "Lotus Score = Skill Points + Community Points", a tile for
   each part (Skill Points: "Every +0.01 DUPR = +1 Skill Point", Starting DUPR
