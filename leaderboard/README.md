@@ -268,15 +268,15 @@ Community Points, Points Behind 1st — and sorts automatically.
      (Or create a separate key restricted to that API and to
      `lots-hub.web.app/*` and `lotuspickleballacademy.com/*`, and paste it
      in the optional key field.)
-- **How It Works** (hint "Prize · Eligibility · Scoring"): "Highest Lotus Score wins" with the
-  prize name (Zocker Pro Series Control Paddle) under it, then the
-  eligibility rule ("Skill Points and Ranked Play need a DUPR Reliability
-  Score of 90% or higher", also shown in the Join panel, not
-  the Drill Training one), then a
+- **How It Works** (hint "Prize · Scoring · Eligibility"): "Highest Lotus Score wins" with the
+  prize name (Zocker Pro Series Control Paddle) under it, then a
   formula line, "Lotus Score = Skill Points + Community Points", a tile for
   each part (Skill Points: "Every +0.01 DUPR = +1 Skill Point", Starting DUPR
   October 1 / Final DUPR October 31, and the example "3.00 → 3.08 DUPR = +8
-  Skill Points"), the tie-break rule as a one-line note, and last a preview
+  Skill Points"), then under the Community Points tile the eligibility rule
+  ("Skill Points and Ranked Play need a DUPR Reliability Score of 90% or
+  higher", also shown in the Join panel, not the Drill Training one), the
+  tie-break rule as a one-line note, and last a preview
   card for the challenge post on Instagram: a thumbnail of its first slide
   (`challenge-post.jpg`, 288×288, cropped from a screenshot of the post),
   the account handle, "October Lotus Challenge", "Entry, eligibility and the
