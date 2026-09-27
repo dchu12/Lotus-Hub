@@ -676,7 +676,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .post-card:hover .pc-cta svg { transform: translateX(2px); }
 /* Eligibility: the one rule that decides who can take part */
 .info-elig {
-  display: flex; align-items: flex-start; gap: 10px; margin: -8px 0 18px; padding: 10px 14px; border-radius: 12px;
+  display: flex; align-items: flex-start; gap: 10px; margin: 12px 0 0; padding: 10px 14px; border-radius: 12px;
   background: var(--field); border: 1px solid var(--outline-soft, var(--line)); font-size: .86rem; line-height: 1.45; color: var(--ink-2);
 }
 .info-elig svg, .jd-elig svg { width: 20px; height: 20px; flex: none; margin-top: 1px; color: var(--brand); }
