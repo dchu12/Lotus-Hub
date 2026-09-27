@@ -792,7 +792,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 }
 
 /* Book a Drill Training session (player view): a white, red-outlined
-   button just above the Lotus Gachapon card. */
+   button just above the Gachapon card. */
 .drill-btn {
   display: flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 10px 14px; border-radius: 16px;
   background: var(--card); border: 1.5px solid color-mix(in srgb, var(--brand), transparent 45%); color: var(--ink); text-decoration: none;
@@ -809,7 +809,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .db-arrow { flex: none; color: var(--brand); display: grid; place-items: center; }
 .db-arrow svg { width: 20px; height: 20px; }
 
-/* Link card (Lotus Gachapon): a tappable row like the Challenge
+/* Link card (Gachapon): a tappable row like the Challenge
    information header, opening a post in a new tab. */
 .link-card {
   display: flex; align-items: center; gap: 12px; padding: 14px; text-decoration: none; color: var(--ink);
@@ -888,7 +888,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .lb-shop { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; min-height: 44px; text-decoration: none; }
 .lb-shop svg { width: 15px; height: 15px; color: var(--brand); }
 .lb-kicker { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
-/* Lotus Gachapon rewards board */
+/* Gachapon rewards board */
 .gacha-sheet { text-align: left; max-width: min(92vw, 400px); max-height: calc(100dvh - 32px); overflow-y: auto; }
 .gacha-sheet .lb-kicker { margin: 0; font-weight: 800; }
 .gacha-sheet .jd-title { margin-bottom: 8px; }

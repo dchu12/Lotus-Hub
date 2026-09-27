@@ -98,7 +98,7 @@
     events: [], // upcoming community events, see renderEvents()
     calendarId: null, // optional public Google Calendar that replaces `events`
     calendarKey: null, // optional API key for it (defaults to the site's Firebase key)
-    gachaSponsors: null, // { red, yellow, blue, green }: Lotus Gachapon sponsor per keychain colour
+    gachaSponsors: null, // { red, yellow, blue, green }: Gachapon sponsor per keychain colour
     prizeSponsor: null, // sponsor of the 1st place prize; null = the academy (line hidden)
   };
   // Fallback dates for a board whose doc doesn't have them saved yet; the
@@ -513,7 +513,7 @@
   function newTitle(s) {
     return OLD_TITLES.hasOwnProperty(s) ? OLD_TITLES[s] : s;
   }
-  // Lotus Gachapon sponsors: keep only the four colours, trimmed and short;
+  // Gachapon sponsors: keep only the four colours, trimmed and short;
   // a blank colour falls back to the academy (null when none are set).
   var GACHA_COLOURS = ["red", "yellow", "blue", "green"];
   var DEFAULT_SPONSOR = "Lotus Pickleball Academy";
@@ -2284,7 +2284,7 @@
       var r = els.joinDialog.getBoundingClientRect();
       if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closeJoin();
     });
-    // Lotus Gachapon: the card opens the rewards board; the board's button
+    // Gachapon: the card opens the rewards board; the board's button
     // goes on to the Instagram post with the blue confetti.
     document.getElementById("gachaCard").addEventListener("click", function (ev) {
       if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;

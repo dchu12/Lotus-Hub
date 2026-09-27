@@ -140,14 +140,14 @@ Community Points, Points Behind 1st — and sorts automatically.
   next admin save.
 - **Button celebrations**: tapping Join the October Challenge (or the pinned
   bar) fires a red-and-white confetti burst from the button; Book a Drill Training
-  Session fires yellow and white; Lotus Gachapon fires blue and white. Each
+  Session fires yellow and white; Gachapon fires blue and white. Each
   also gives a haptic buzz
   (vibration on Android; a light haptic tick on iPhone with iOS 18+, since
   iPhones don't let websites vibrate), then opens its Instagram link about
   0.75s later so the burst is seen. With "reduce motion" on there's no
   confetti and the DM opens straight away. If the browser blocks the new
   tab, the DM opens in the same tab.
-- **Book a Drill Training Session**: just above the Lotus Gachapon card, an
+- **Book a Drill Training Session**: just above the Gachapon card, an
   outlined card "Drill Training" with "Earn +2 Community Points" (grey, like the Gachapon card's subtitle) under it. It opens the same message panel as Join, titled "Book a
   Drill Training Session", with the message "Hi Coach! I'd like to book a Drill
   Training session." (`DRILL_MSG` in `app.js`); Open Instagram copies it, fires
@@ -159,10 +159,10 @@ Community Points, Points Behind 1st — and sorts automatically.
   lotuspickleballacademy.com opens the challenge. The deploy workflow creates
   the site if it's missing. To connect the domain, see
   `CUSTOM_DOMAIN_SETUP.md`.
-- **Lotus Gachapon**: a tappable card, "Lotus Gachapon Mini Game", right after the leaderboard (or after
+- **Gachapon**: a tappable card, "Gachapon Mini Game", right after the leaderboard (or after
   the countdown card before launch), subtitle "Mystery prizes await…". It
   opens the Gachapon board (`#gachaDialog` in `index.html`; kicker
-  "Mystery prizes await…", title "Lotus Gachapon Mini Game"): a pickleball keychain per
+  "Mystery prizes await…", title "Gachapon Mini Game"): a pickleball keychain per
   colour with its prize: red = Grand Prize, yellow = Sweet, blue = Drinks,
   green = Salty. Sponsors come from "⋯" → Edit challenge details → **Lotus
   Gachapon sponsors** (one field per colour; blank = **Lotus Pickleball

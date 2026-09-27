@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=92" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=93" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -196,7 +196,7 @@
         <label class="grow"><span>Sponsor of the 1st place prize</span><input type="text" id="prizeSponsorInput" maxlength="80" placeholder="Lotus Pickleball Academy" /></label>
       </div>
       <p class="hint hint-tight">Shown as &ldquo;Sponsored by:&rdquo; on the prize banner. Leave blank when the prize is from Lotus Pickleball Academy (the line is hidden then).</p>
-      <h3 class="section-lbl">Lotus Gachapon sponsors</h3>
+      <h3 class="section-lbl">Gachapon sponsors</h3>
       <div class="form-row sponsor-row">
         <label><span><span class="sp-dot sp-red" aria-hidden="true"></span>Red &middot; Grand Prize</span><input type="text" id="gkSponsorRed" maxlength="80" placeholder="Lotus Pickleball Academy" /></label>
         <label><span><span class="sp-dot sp-yellow" aria-hidden="true"></span>Yellow &middot; Sweet</span><input type="text" id="gkSponsorYellow" maxlength="80" placeholder="Lotus Pickleball Academy" /></label>
@@ -330,11 +330,11 @@
       <span class="sr-only"> (opens Instagram)</span>
     </a>
 
-    <!-- Lotus Gachapon: opens the keychain rewards board (#gachaDialog); the
+    <!-- Gachapon: opens the keychain rewards board (#gachaDialog); the
          link still goes to its Instagram post without JS -->
     <a class="card link-card" id="gachaCard" href="https://www.instagram.com/p/Ddk2QlsEc5f/" target="_blank" rel="noopener" aria-haspopup="dialog">
       <span class="lk-ico" aria-hidden="true"><svg class="lk-key" viewBox="0 0 24 28.5"><circle cx="12" cy="3" r="2.2" fill="none" stroke="#8a8380" stroke-width="1.4"/><path d="M12 5.2v3" stroke="#8a8380" stroke-width="1.4" stroke-linecap="round"/><g transform="translate(0 6.2)"><defs><radialGradient id="gpbs" cx="36%" cy="30%" r="78%"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></radialGradient><clipPath id="gpbc"><circle cx="12" cy="12" r="10.0"/></clipPath></defs><circle cx="12" cy="12" r="10.0" fill="currentColor"/><g fill="#000" fill-opacity=".5" clip-path="url(#gpbc)"><ellipse cx="17.39" cy="9.54" rx="1.60" ry="1.99" transform="rotate(-24.6 17.39 9.54)"/><ellipse cx="19.26" cy="18.75" rx="0.27" ry="1.99" transform="rotate(42.9 19.26 18.75)"/><ellipse cx="6.07" cy="11.83" rx="1.60" ry="1.99" transform="rotate(-178.4 6.07 11.83)"/><ellipse cx="7.94" cy="21.04" rx="0.27" ry="1.99" transform="rotate(114.2 7.94 21.04)"/><ellipse cx="12.50" cy="14.47" rx="1.92" ry="1.99" transform="rotate(78.5 12.50 14.47)"/><ellipse cx="13.99" cy="3.84" rx="1.08" ry="1.99" transform="rotate(-76.3 13.99 3.84)"/><ellipse cx="21.57" cy="12.18" rx="0.58" ry="1.99" transform="rotate(1.1 21.57 12.18)"/><ellipse cx="13.66" cy="20.17" rx="1.10" ry="1.99" transform="rotate(78.5 13.66 20.17)"/><ellipse cx="6.99" cy="5.26" rx="1.08" ry="1.99" transform="rotate(-126.6 6.99 5.26)"/><ellipse cx="3.26" cy="15.89" rx="0.58" ry="1.99" transform="rotate(156.0 3.26 15.89)"/></g><circle cx="12" cy="12" r="10.0" fill="url(#gpbs)"/></g></svg></span>
-      <span class="lk-txt"><span class="lk-title">Lotus Gachapon Mini Game</span><span class="lk-sub">Mystery prizes await&hellip;</span></span>
+      <span class="lk-txt"><span class="lk-title">Gachapon Mini Game</span><span class="lk-sub">Mystery prizes await&hellip;</span></span>
       <span class="lk-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </a>
 
@@ -447,11 +447,11 @@
     </div>
   </dialog>
 
-  <!-- Lotus Gachapon: the keychain rewards board -->
+  <!-- Gachapon: the keychain rewards board -->
   <dialog class="lightbox gacha-sheet" id="gachaDialog" aria-labelledby="gachaDialogTitle">
     <button type="button" class="lb-close" id="gachaDialogClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <p class="lb-kicker">Mystery prizes await&hellip;</p>
-    <h2 class="jd-title" id="gachaDialogTitle">Lotus Gachapon Mini Game</h2>
+    <h2 class="jd-title" id="gachaDialogTitle">Gachapon Mini Game</h2>
     <p class="gk-intro">Win at a Lotus session for a chance to pull a pickleball keychain. The colour you pull is your prize category:</p>
     <ul class="gk-list">
       <li class="gk-row gk-red"><svg class="gk-ball" viewBox="0 0 24 31" aria-hidden="true"><circle cx="12" cy="3.6" r="2.6" fill="none" stroke="#8a8380" stroke-width="1.4"/><path d="M12 6.2v2.4" stroke="#8a8380" stroke-width="1.4" stroke-linecap="round"/><g transform="translate(0 7)"><defs><radialGradient id="gkreds" cx="36%" cy="30%" r="78%"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></radialGradient><clipPath id="gkredc"><circle cx="12" cy="12" r="10.0"/></clipPath></defs><circle cx="12" cy="12" r="10.0" fill="currentColor"/><g fill="#000" fill-opacity=".5" clip-path="url(#gkredc)"><ellipse cx="17.39" cy="9.54" rx="1.60" ry="1.99" transform="rotate(-24.6 17.39 9.54)"/><ellipse cx="19.26" cy="18.75" rx="0.27" ry="1.99" transform="rotate(42.9 19.26 18.75)"/><ellipse cx="6.07" cy="11.83" rx="1.60" ry="1.99" transform="rotate(-178.4 6.07 11.83)"/><ellipse cx="7.94" cy="21.04" rx="0.27" ry="1.99" transform="rotate(114.2 7.94 21.04)"/><ellipse cx="12.50" cy="14.47" rx="1.92" ry="1.99" transform="rotate(78.5 12.50 14.47)"/><ellipse cx="13.99" cy="3.84" rx="1.08" ry="1.99" transform="rotate(-76.3 13.99 3.84)"/><ellipse cx="21.57" cy="12.18" rx="0.58" ry="1.99" transform="rotate(1.1 21.57 12.18)"/><ellipse cx="13.66" cy="20.17" rx="1.10" ry="1.99" transform="rotate(78.5 13.66 20.17)"/><ellipse cx="6.99" cy="5.26" rx="1.08" ry="1.99" transform="rotate(-126.6 6.99 5.26)"/><ellipse cx="3.26" cy="15.89" rx="0.58" ry="1.99" transform="rotate(156.0 3.26 15.89)"/></g><circle cx="12" cy="12" r="10.0" fill="url(#gkreds)"/></g></svg><span class="gk-txt"><span class="gk-label">Grand Prize</span><span class="gk-sponsor">Sponsored by: <b data-sponsor="red">Lotus Pickleball Academy</b></span></span></li>
@@ -484,6 +484,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=69"></script>
+  <script src="/leaderboard/app.js?v=70"></script>
 </body>
 </html>
