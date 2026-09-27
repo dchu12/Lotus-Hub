@@ -270,14 +270,15 @@ Community Points, Points Behind 1st — and sorts automatically.
      (Or create a separate key restricted to that API and to
      `lots-hub.web.app/*` and `lotuspickleballacademy.com/*`, and paste it
      in the optional key field.)
-- **How It Works** (hint "Lotus Score = Skill Points + Community Points"): "Highest Lotus Score wins" with the
-  prize name (Zocker Pro Series Control Paddle) under it, then a
-  formula line, "Lotus Score = Skill Points + Community Points", a tile for
+- **How It Works** (hint "Highest Lotus Score wins the prize"): opens on
+  the formula line, "Lotus Score = Skill Points + Community Points" (the
+  prize itself is on the banner above, not repeated here), a tile for
   each part (Skill Points: "Every +0.01 DUPR = +1 Skill Point", Starting DUPR
   October 1 / Final DUPR October 31, and the example "3.00 → 3.08 DUPR = +8
-  Skill Points"), then under the Community Points tile the eligibility rule
-  ("Skill Points and Ranked Play need a DUPR Reliability Score of 90% or
-  higher", also shown in the Join panel, not the Drill Training one), the
+  Skill Points"; Community Points: Ranked Play +1, Social Play +3, Drill
+  Training +2, Gachapon Draw +1), then under the Community Points tile the eligibility rule
+  ("DUPR Reliability Score of 90% or higher to participate in Ranked Play
+  matches", also shown in the Join panel, not the Drill Training one), the
   tie-break rule as a one-line note, and last a preview
   card for the challenge post on Instagram: a thumbnail of its first slide
   (`challenge-post.jpg`, 288×288, cropped from a screenshot of the post),
@@ -296,7 +297,9 @@ Community Points, Points Behind 1st — and sorts automatically.
   - **"+ Add player"** in the leaderboard header opens the add form, which
     stays hidden otherwise. Edit also opens it; saving or Cancel closes it.
   - **Log a session**: open a player (tap their row, or use "Find a
-    player") and tap **+1 Ranked / +1 Social / +1 Drill**. It saves
+    player") and tap **+1 Ranked / +1 Social / +1 Drill / +1 Gachapon**
+    (a Gachapon Draw is worth +1 Community Point; `POINTS.gacha`, stored as
+    `gacha` on the entry, also in the edit form and the CSV export). It saves
     immediately, and the confirmation has an **Undo** for about 6 seconds.
     Edit and Delete live in the same strip.
   - The form's DUPR fields show example placeholders ("e.g. 3.20"), and the
