@@ -18,7 +18,7 @@
 (function () {
   "use strict";
 
-  var POINTS = { ranked: 1, social: 3, drill: 2 };
+  var POINTS = { ranked: 1, social: 3, drill: 2, gacha: 1 };
   var params = new URLSearchParams(location.search);
 
   // Custom line-icon set (replaces emoji throughout the page). Plain inline
@@ -158,7 +158,8 @@
     var community =
       int(e.ranked) * POINTS.ranked +
       int(e.social) * POINTS.social +
-      int(e.drill) * POINTS.drill;
+      int(e.drill) * POINTS.drill +
+      int(e.gacha) * POINTS.gacha;
     return { duprPoints: duprPoints, community: community, total: duprPoints + community };
   }
   function decimals(v) {
@@ -167,7 +168,7 @@
   }
   // One row per scoring source, laid out in the main table's own columns so
   // each number sits directly under Skill Points or Community Points.
-  var SESSION_LABELS = { ranked: "Ranked", social: "Social", drill: "Drill" };
+  var SESSION_LABELS = { ranked: "Ranked", social: "Social", drill: "Drill", gacha: "Gachapon" };
   function breakdownRows(e, restricted) {
     var improvement = e._c.duprPoints / 100;
     var d = Math.min(3, Math.max(2, decimals(e.startDupr), decimals(e.endDupr)));
@@ -181,7 +182,8 @@
     var rows = [["DUPR", duprDetail, e._c.duprPoints, ""]];
     [["Ranked Play", int(e.ranked), POINTS.ranked],
      ["Social Play", int(e.social), POINTS.social],
-     ["Drill Training", int(e.drill), POINTS.drill]].forEach(function (x) {
+     ["Drill Training", int(e.drill), POINTS.drill],
+     ["Gachapon Draw", int(e.gacha), POINTS.gacha]].forEach(function (x) {
       rows.push([x[0], x[1] + " &times; " + x[2] + (x[2] === 1 ? " pt" : " pts"), "", x[1] * x[2]]);
     });
     var html = rows.map(function (r, i) {
@@ -199,7 +201,7 @@
     return html +
       '<tr class="bd-row bd-admin bd-last"><td colspan="5"><div class="admin-actions">' +
       '<div class="aa-log"><span class="aa-label">Log a session</span>' +
-      ["ranked", "social", "drill"].map(function (f) {
+      ["ranked", "social", "drill", "gacha"].map(function (f) {
         return '<button type="button" class="btn small session-btn" data-log="' + f + '" data-id="' + id + '">+1 ' + SESSION_LABELS[f] + "</button>";
       }).join("") +
       '</div><div class="aa-manage"><button type="button" class="btn small ghost" data-edit="' + id + '">Edit</button>' +
@@ -709,7 +711,7 @@
   function cacheEls() {
     [
       "nameInput", "startDuprInput", "endDuprInput",
-      "rankedInput", "socialInput", "drillInput",
+      "rankedInput", "socialInput", "drillInput", "gachaInput",
       "scorePreview", "saveEntryBtn", "cancelEditBtn", "formMsg", "formHeading",
       "boardTitle", "boardSubtitle", "countdown", "editBoardBtn", "editPanel", "titleInput",
       "subtitleInput", "startDateInput", "endDateInput", "saveBoardBtn", "cancelBoardBtn",
@@ -744,7 +746,7 @@
     var draft = {
       duprImprovement: improvement,
       ranked: els.rankedInput.value, social: els.socialInput.value,
-      drill: els.drillInput.value,
+      drill: els.drillInput.value, gacha: els.gachaInput.value,
     };
     var c = computed(draft);
     els.scorePreview.innerHTML =
@@ -760,6 +762,7 @@
     els.rankedInput.value = 0;
     els.socialInput.value = 0;
     els.drillInput.value = 0;
+    els.gachaInput.value = 0;
     els.saveEntryBtn.textContent = "Add to leaderboard";
     els.formHeading.textContent = "Add a player";
     els.formMsg.textContent = "";
@@ -783,6 +786,7 @@
     els.rankedInput.value = e.ranked || 0;
     els.socialInput.value = e.social || 0;
     els.drillInput.value = e.drill || 0;
+    els.gachaInput.value = e.gacha || 0;
     els.saveEntryBtn.textContent = "Save changes";
     els.formHeading.textContent = "Edit player";
     els.formMsg.textContent = "";
@@ -829,6 +833,7 @@
       ranked: int(els.rankedInput.value),
       social: int(els.socialInput.value),
       drill: int(els.drillInput.value),
+      gacha: int(els.gachaInput.value),
     };
     var existed = !!editingId;
     formOpen = false;
@@ -844,7 +849,7 @@
   function findEntry(id) {
     return board.entries.find(function (x) { return x.id === id; });
   }
-  var SESSION_NAMES = { ranked: "Ranked Play", social: "Social Play", drill: "Drill Training" };
+  var SESSION_NAMES = { ranked: "Ranked Play", social: "Social Play", drill: "Drill Training", gacha: "Gachapon Draw" };
   // Adjusts the count on whatever the latest copy holds (not a value
   // computed from this device's possibly-stale copy).
   function bumpSession(id, field, delta) {
@@ -2031,13 +2036,13 @@
     var list = sortedEntries();
     var header = [
       "Rank", "Player", "Start DUPR", "End DUPR", "DUPR Improvement", "Skill Points",
-      "Ranked Sessions", "Social Sessions", "Drill Sessions", "Community Points", "Lotus Score", "Points Behind 1st",
+      "Ranked Sessions", "Social Sessions", "Drill Sessions", "Gachapon Draws", "Community Points", "Lotus Score", "Points Behind 1st",
     ];
     var rows = list.map(function (e) {
       return [
         e._rank, e.name, e.startDupr != null ? e.startDupr : "", e.endDupr != null ? e.endDupr : "",
         fmtSigned(e._c.duprPoints / 100), e._c.duprPoints,
-        int(e.ranked), int(e.social), int(e.drill),
+        int(e.ranked), int(e.social), int(e.drill), int(e.gacha),
         e._c.community, e._c.total, list[0]._c.total - e._c.total,
       ];
     });
@@ -2373,7 +2378,7 @@
     });
     [
       "startDuprInput", "endDuprInput",
-      "rankedInput", "socialInput", "drillInput",
+      "rankedInput", "socialInput", "drillInput", "gachaInput",
     ].forEach(function (id) { els[id].addEventListener("input", updatePreview); });
 
     els.saveEntryBtn.addEventListener("click", saveEntry);

@@ -642,13 +642,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .scoring[open] .scoring-title { margin-bottom: 14px; }
 .scoring[open] .scoring-title::after { transform: rotate(-135deg); }
 .scoring .info-title { margin: 0; font-size: 1rem; font-weight: 800; text-transform: none; letter-spacing: -.01em; color: var(--ink); }
-.info-win {
-  display: flex; align-items: center; gap: 10px; margin: 0 0 18px; padding: 12px 14px; border-radius: 12px;
-  background: var(--accent-bg); font-weight: 800; font-size: 1rem; color: var(--ink);
-}
-.info-win svg { width: 22px; height: 22px; flex: none; color: var(--brand); }
-.iw-txt { display: flex; flex-direction: column; gap: 2px; }
-.iw-prize { font-size: .86rem; font-weight: 700; color: var(--brand); }
 /* Preview card for the Instagram announcement post, at the end of How It Works */
 .post-card {
   display: flex; align-items: center; gap: 14px; margin: 12px 0 0; padding: 10px 14px 10px 10px; border-radius: 14px;
@@ -793,7 +786,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   tr.bd-row td.bd-name { padding-left: 44px; box-shadow: inset 30px 0 0 var(--field), inset 32px 0 0 var(--line); }
   tbody tr.bd-admin td { padding-left: 12px; padding-right: 8px; }
   .admin-actions { flex-direction: column; align-items: stretch; }
-  .aa-log { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .aa-log { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
   .aa-label { grid-column: 1 / -1; }
   .session-btn { padding: 9px 4px; font-size: .8rem; }
 }
