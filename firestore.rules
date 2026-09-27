@@ -87,7 +87,7 @@ service cloud.firestore {
         && isValidGachaSponsors(d.get('gachaSponsors', null))
         && (d.get('prizeSponsor', null) == null || (d.get('prizeSponsor', null) is string && d.prizeSponsor.size() <= 80));
     }
-    // Lotus Gachapon sponsor names, one per keychain colour: { red, yellow,
+    // Gachapon sponsor names, one per keychain colour: { red, yellow,
     // blue, green }, each optional and short.
     function isValidGachaSponsors(v) {
       return v == null
