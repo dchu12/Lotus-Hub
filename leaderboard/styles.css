@@ -139,7 +139,6 @@ body {
   font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--brand);
 }
 .prize-main { font-size: 1.02rem; font-weight: 800; color: var(--ink); line-height: 1.3; margin-top: 1px; letter-spacing: -.01em; }
-.prize-note { margin-top: 2px; font-size: .66rem; font-weight: 600; color: var(--muted); line-height: 1.3; }
 .prize-inc { margin-top: 2px; font-size: .8rem; font-weight: 600; color: var(--ink-2); line-height: 1.35; }
 .prize-meta {
   margin-left: auto; padding-left: 16px; border-left: 1px solid color-mix(in srgb, var(--brand), transparent 72%);
