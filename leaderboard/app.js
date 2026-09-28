@@ -19,6 +19,10 @@
   "use strict";
 
   var POINTS = { ranked: 1, social: 3, drill: 2, gacha: 1 };
+  // The 1st place prize, as the Story/share images and share text name it
+  // (the banner and its full-size view are in index.html).
+  var PRIZE_NAME = "Ultimate Prize Pack";
+  var PRIZE_INCLUDES = "Zocker Pro paddle + 2 hours of coaching";
   var params = new URLSearchParams(location.search);
 
   // Custom line-icon set (replaces emoji throughout the page). Plain inline
@@ -1191,7 +1195,7 @@
       ? "Congratulations, " + esc(lead.name) + "!"
       : "It's a tie: " + esc(names.slice(0, -1).join(", ")) + " &amp; " + esc(names[names.length - 1]);
     var sub = winners.length === 1
-      ? "Winner of the <b>Zocker Pro Series Control Paddle</b> with a Lotus Score of " + lead._c.total
+      ? "Winner of the <b>Ultimate Prize Pack</b> with a Lotus Score of " + lead._c.total
       : "Level on Lotus Score and Community Points (" + lead._c.total + " Lotus Score). The academy will announce the winner.";
     els.winnerCard.innerHTML =
       '<div class="win-avatars">' + winners.slice(0, 3).map(function (e) { return avatarHtml(e.name, "av-xl"); }).join("") + "</div>" +
@@ -1664,9 +1668,11 @@
         textX = 116 + pw + 34;
       }
       ctx.textAlign = "left";
-      ctx.fillStyle = "#b91c2b"; ctx.font = "800 30px " + FONT; ctx.fillText("1ST PLACE WINS", textX, 1112);
-      ctx.fillStyle = "#1c1a19"; fitText(ctx, "Zocker Pro Series Control Paddle", 1000 - textX - 40, "800", 44, FONT);
-      ctx.fillText("Zocker Pro Series Control Paddle", textX, 1168);
+      ctx.fillStyle = "#b91c2b"; ctx.font = "800 30px " + FONT; ctx.fillText("1ST PLACE WINS", textX, 1098);
+      ctx.fillStyle = "#1c1a19"; fitText(ctx, PRIZE_NAME, 1000 - textX - 40, "800", 46, FONT);
+      ctx.fillText(PRIZE_NAME, textX, 1150);
+      ctx.fillStyle = "#524c4a"; fitText(ctx, PRIZE_INCLUDES, 1000 - textX - 40, "600", 30, FONT);
+      ctx.fillText(PRIZE_INCLUDES, textX, 1192);
 
       // Footer link
       ctx.textAlign = "center"; ctx.fillStyle = "#6f6865"; fitText(ctx, playerViewLabel(), 900, "600", 32, FONT);
@@ -1784,8 +1790,8 @@
   function shareText() {
     var ph = phase();
     if (ph === "ended") return "The " + board.title + " results are in! See the final standings:";
-    if (ph === "before") return "The " + board.title + " starts " + fmtDay(challengeDates().start) + ". 1st place wins a Zocker Pro Series Control Paddle. See who's in:";
-    return "Who's leading the " + board.title + "? 1st place wins a Zocker Pro Series Control Paddle. See the live leaderboard:";
+    if (ph === "before") return "The " + board.title + " starts " + fmtDay(challengeDates().start) + ". 1st place wins the " + PRIZE_NAME + " (" + PRIZE_INCLUDES + "). See who's in:";
+    return "Who's leading the " + board.title + "? 1st place wins the " + PRIZE_NAME + " (" + PRIZE_INCLUDES + "). See the live leaderboard:";
   }
   function setShareMenu(open) {
     els.shareMenu.hidden = !open;
@@ -1935,15 +1941,17 @@
       }
 
       // Prize strip
-      var sY = pY + pH + cH + 36, sH = 150;
+      var sY = pY + pH + cH + 36, sH = 164;
       ctx.fillStyle = "#fcebed"; roundRect(ctx, X - 20, sY, W - 2 * X + 40, sH, 28); ctx.fill();
       ctx.strokeStyle = "rgba(185,28,43,.3)"; ctx.lineWidth = 3; ctx.stroke();
       var tx = X + 20;
-      if (paddle) { var ph = 122, pw = paddle.width * ph / paddle.height; ctx.drawImage(paddle, X + 14, sY + 14, pw, ph); tx = X + 14 + pw + 30; }
+      if (paddle) { var ph = 132, pw = paddle.width * ph / paddle.height; ctx.drawImage(paddle, X + 14, sY + 16, pw, ph); tx = X + 14 + pw + 30; }
       ctx.textAlign = "left";
-      ctx.fillStyle = "#b91c2b"; ctx.font = "800 28px " + FONT; ctx.fillText("1ST PLACE WINS", tx, sY + 64);
-      ctx.fillStyle = "#1c1a19"; fitText(ctx, "Zocker Pro Series Control Paddle", W - X - tx, "800", 42, FONT);
-      ctx.fillText("Zocker Pro Series Control Paddle", tx, sY + 116);
+      ctx.fillStyle = "#b91c2b"; ctx.font = "800 28px " + FONT; ctx.fillText("1ST PLACE WINS", tx, sY + 54);
+      ctx.fillStyle = "#1c1a19"; fitText(ctx, PRIZE_NAME, W - X - tx, "800", 44, FONT);
+      ctx.fillText(PRIZE_NAME, tx, sY + 104);
+      ctx.fillStyle = "#524c4a"; fitText(ctx, PRIZE_INCLUDES, W - X - tx, "600", 28, FONT);
+      ctx.fillText(PRIZE_INCLUDES, tx, sY + 144);
 
       // Link + freshness
       var fY = sY + sH + 90;
