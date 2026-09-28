@@ -5,21 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#b91c2b" />
   <title>October Challenge · Live Leaderboard</title>
-  <meta name="description" content="See who's leading the Lotus Pickleball Academy October Challenge. Skill Points + Community Points. 1st place wins a Zocker Pro Series Control Paddle." />
+  <meta name="description" content="See who's leading the Lotus Pickleball Academy October Challenge. Skill Points + Community Points. 1st place wins the Ultimate Prize Pack: a Zocker Pro paddle + 2 hours of coaching." />
   <!-- Link previews (WhatsApp, Instagram DMs, iMessage, Facebook…). Crawlers
        don't run JavaScript, so these must be static: keep them (and
        og-image.jpg) in step with the challenge name/prize. -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Lotus Pickleball Academy" />
   <meta property="og:title" content="October Challenge · Live Leaderboard" />
-  <meta property="og:description" content="See who's leading. Skill Points + Community Points. 1st place wins a Zocker Pro Series Control Paddle." />
+  <meta property="og:description" content="See who's leading. Skill Points + Community Points. 1st place wins the Ultimate Prize Pack: a Zocker Pro paddle + 2 hours of coaching." />
   <meta property="og:url" content="https://lotuspickleballacademy.com/lotusoctoberchallenge" />
-  <meta property="og:image" content="https://lots-hub.web.app/leaderboard/og-image.jpg?v=5" />
-  <meta property="og:image:secure_url" content="https://lots-hub.web.app/leaderboard/og-image.jpg?v=5" />
+  <meta property="og:image" content="https://lots-hub.web.app/leaderboard/og-image.jpg?v=6" />
+  <meta property="og:image:secure_url" content="https://lots-hub.web.app/leaderboard/og-image.jpg?v=6" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Lotus Pickleball Academy October Challenge live leaderboard. 1st place wins a Zocker Pro Series Control Paddle." />
+  <meta property="og:image:alt" content="Lotus Pickleball Academy October Challenge live leaderboard. 1st place wins the Ultimate Prize Pack: a Zocker Pro paddle + 2 hours of coaching." />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" sizes="64x64" href="/leaderboard/favicon-64.png?v=2" />
   <!-- PWA: installable + offline -->
@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=93" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=94" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -80,13 +80,14 @@
     <section class="winner" id="winnerCard" hidden aria-live="polite"></section>
 
     <section class="prize" id="prizeBanner" aria-label="Challenge prize">
-      <button type="button" class="prize-zoom" id="prizeZoomBtn" aria-haspopup="dialog" aria-label="View the prize paddle full size">
+      <button type="button" class="prize-zoom" id="prizeZoomBtn" aria-haspopup="dialog" aria-label="View the prize full size">
         <span class="pz-wrap"><img class="prize-photo" src="/leaderboard/prize-paddle.png" alt="" width="111" height="240" />
         <span class="pz-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.2-4.2M11 8.5v5M8.5 11h5"/></svg></span></span>
       </button>
       <div class="prize-txt">
         <div class="prize-top"><span class="prize-eyebrow">1st place wins</span></div>
-        <div class="prize-main">Zocker Pro Series Control Paddle</div>
+        <div class="prize-main">Ultimate Prize Pack</div>
+        <div class="prize-inc">Zocker Pro paddle + 2 hours of coaching</div>
         <div class="prize-origin" id="prizeSponsorLine" hidden><span class="prize-sponsor">Sponsored by: <b id="prizeSponsorName"></b></span></div>
       </div>
       <div class="prize-meta" id="prizeMeta" hidden></div>
@@ -428,7 +429,11 @@
   <dialog class="lightbox" id="prizeDialog" aria-labelledby="prizeDialogTitle">
     <button type="button" class="lb-close" id="prizeDialogClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <img id="prizeDialogImg" alt="Zocker Pro Series Control paddle" width="500" height="1082" />
-    <p class="lb-cap"><span class="lb-kicker">1st place wins</span><span id="prizeDialogTitle">Zocker Pro Series Control Paddle</span></p>
+    <p class="lb-cap"><span class="lb-kicker">1st place wins</span><span id="prizeDialogTitle">Ultimate Prize Pack</span></p>
+    <ul class="lb-inc">
+      <li>Zocker Pro Series Control Paddle</li>
+      <li>2 hours of drill &amp; coaching lessons</li>
+    </ul>
     <a class="btn lb-shop" href="https://zocker.ca/products/pickleball-paddle-zocker-happy-hp05-pro-series-control?variant=49136662085787" target="_blank" rel="noopener">View the paddle<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="sr-only"> on zocker.ca</span></a>
   </dialog>
 
@@ -484,6 +489,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=70"></script>
+  <script src="/leaderboard/app.js?v=71"></script>
 </body>
 </html>
