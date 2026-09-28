@@ -60,8 +60,9 @@ Community Points, Points Behind 1st — and sorts automatically.
   it.
 - **Prize banner**: right under the header, every visit, with a photo of
   the paddle (`prize-paddle.png`, a transparent cut-out so it sits directly on the banner): "1st place wins / Ultimate Prize Pack / Zocker Pro
-  paddle + 2 hours of coaching". The full-size view lists the pack (Zocker
-  Pro Series Control Paddle, 2 hours of drill & coaching lessons). The
+  paddle + 2 Lotus Passes*" with "*Redeemable for lessons/drilling
+  sessions" under it. The full-size view lists the pack (Zocker Pro Series
+  Control Paddle, 2 Lotus Passes*) with the same note. The
   banner, full-size view and meta descriptions are plain markup in
   `index.html`; the Story/share images and share text use `PRIZE_NAME` and
   `PRIZE_INCLUDES` in `app.js`; the link preview (`og-image.jpg`) is a

@@ -22,7 +22,7 @@
   // The 1st place prize, as the Story/share images and share text name it
   // (the banner and its full-size view are in index.html).
   var PRIZE_NAME = "Ultimate Prize Pack";
-  var PRIZE_INCLUDES = "Zocker Pro paddle + 2 hours of coaching";
+  var PRIZE_INCLUDES = "Zocker Pro paddle + 2 Lotus Passes";
   var params = new URLSearchParams(location.search);
 
   // Custom line-icon set (replaces emoji throughout the page). Plain inline
@@ -1790,8 +1790,8 @@
   function shareText() {
     var ph = phase();
     if (ph === "ended") return "The " + board.title + " results are in! See the final standings:";
-    if (ph === "before") return "The " + board.title + " starts " + fmtDay(challengeDates().start) + ". 1st place wins the " + PRIZE_NAME + " (" + PRIZE_INCLUDES + "). See who's in:";
-    return "Who's leading the " + board.title + "? 1st place wins the " + PRIZE_NAME + " (" + PRIZE_INCLUDES + "). See the live leaderboard:";
+    if (ph === "before") return "The " + board.title + " starts " + fmtDay(challengeDates().start) + ". 1st place wins the " + PRIZE_NAME + " (" + PRIZE_INCLUDES + ", redeemable for lessons or drilling sessions). See who's in:";
+    return "Who's leading the " + board.title + "? 1st place wins the " + PRIZE_NAME + " (" + PRIZE_INCLUDES + ", redeemable for lessons or drilling sessions). See the live leaderboard:";
   }
   function setShareMenu(open) {
     els.shareMenu.hidden = !open;
