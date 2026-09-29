@@ -560,7 +560,7 @@
   var AVAIL_TYPES = ["am", "pm", "eve", "off"];
   var DAY_TYPES = SESSION_TYPES.concat(AVAIL_TYPES);
   var DAY_LABELS = {
-    drill: "Drill Training", ranked: "Ranked Play", social: "Social Play",
+    drill: "Group Drill", ranked: "Ranked Play", social: "Social Play",
     am: "Morning only", pm: "Afternoon only", eve: "Evening only", off: "Not available all day",
   };
   var DAY_MARKS = { am: "AM", pm: "PM", eve: "EVE" }; // short labels in the grid
@@ -645,7 +645,8 @@
     var ym = monthOf(), first = isoDate(ym + "-01"), days = monthDays(), today = isoToday();
     var monthName = first.toLocaleDateString("en-US", { month: "long" });
     els.monthTitle.textContent = editable ? monthName + " Calendar" : "Book a Drill Session";
-    els.monthSub.textContent = editable ? "Tap a day to mark it" : "Pick a day in " + monthName + " that works for you";
+    els.monthSub.innerHTML = editable ? "Tap a day to mark it"
+      : '<b class="month-pts">Earn +' + POINTS.drill + " Community Points</b> &middot; pick a day in " + monthName;
     var usable = function (k) { return editable || bookable(k); };
     // The coach starts on today (or the first day); players pick a day
     // themselves ("Next openings" already offers the nearest ones).
@@ -925,7 +926,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen", "prizeSponsorInput", "prizeSponsorLine", "prizeSponsorName", "monthCard", "monthTitle", "monthSub", "monthGrid", "monthDetail", "monthAgenda",
-      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinElig", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinElig", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -1415,9 +1416,6 @@
   function renderJoin(list, ph) {
     var isIn = list.some(function (e) { return e.id === meId; });
     els.joinCard.hidden = !readOnly || ph === "ended" || isIn;
-    // The drilling-session button is for everyone on the player view, joined
-    // or not, until the challenge is over.
-    els.drillBtn.hidden = !readOnly || ph === "ended";
   }
   function pts(n) { return n + (n === 1 ? " pt" : " pts"); }
   function setMe(id) {
@@ -2492,14 +2490,6 @@
           return;
         }
       }
-    });
-    // The Drill Training card takes you to the calendar to pick a day.
-    els.drillBtn.addEventListener("click", function (ev) {
-      if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-      ev.preventDefault();
-      var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      els.monthCard.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" });
-      els.monthTitle.focus({ preventScroll: true });
     });
     els.monthDetail.addEventListener("click", function (ev) {
       var b = ev.target.closest && ev.target.closest("[data-mark]");

@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=100" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=101" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -323,14 +323,6 @@
       </div>
     </section>
 
-    <!-- Player view: Drill Training card; it scrolls to the booking calendar below -->
-    <a class="drill-btn" id="drillBtn" hidden href="#monthCard">
-      <span class="db-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span>
-      <span class="db-txt"><span class="db-title">Drill Training</span><span class="db-sub">Earn +2 Community Points</span></span>
-      <span class="db-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-      <span class="sr-only"> (pick a day in the calendar below)</span>
-    </a>
-
     <!-- Booking calendar: the challenge month. Players tap an open day (or a
          "Next openings" Book button) to book a drill session with that date in
          the message; the coach marks days in the admin view. Saved as
@@ -339,7 +331,7 @@
       <div class="events-head">
         <div>
           <h2 id="monthTitle" tabindex="-1">Book a Drill Session</h2>
-          <span class="events-sub" id="monthSub">Pick a day in October that works for you</span>
+          <span class="events-sub" id="monthSub"><b class="month-pts">Earn +2 Community Points</b> &middot; pick a day in October</span>
         </div>
       </div>
       <div class="month-grid" id="monthGrid"></div>
@@ -347,7 +339,7 @@
         <li><span class="sw sw-open"></span>Available</li>
         <li><span class="sw sw-part"></span>Limited hours</li>
         <li><span class="sw sw-off"></span>Unavailable</li>
-        <li><span class="dot dot-drill"></span>Drill</li>
+        <li><span class="dot dot-drill"></span>Group Drill</li>
         <li><span class="dot dot-ranked"></span>Ranked*</li>
         <li><span class="dot dot-social"></span>Social*</li>
       </ul>
@@ -517,6 +509,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=76"></script>
+  <script src="/leaderboard/app.js?v=77"></script>
 </body>
 </html>

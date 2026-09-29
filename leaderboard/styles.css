@@ -792,24 +792,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
   .session-btn { padding: 9px 4px; font-size: .8rem; }
 }
 
-/* Book a Drill Training session (player view): a white, red-outlined
-   button just above the Gachapon card. */
-.drill-btn {
-  display: flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 10px 14px; border-radius: 16px;
-  background: var(--card); border: 1.5px solid color-mix(in srgb, var(--brand), transparent 45%); color: var(--ink); text-decoration: none;
-  box-shadow: var(--shadow-sm); transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
-}
-.drill-btn[hidden] { display: none; }
-.drill-btn:hover { border-color: var(--brand); transform: translateY(-1px); box-shadow: var(--shadow); }
-.drill-btn:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand), transparent 55%); outline-offset: 3px; }
-.db-icon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-bg); color: var(--brand); }
-.db-icon svg { width: 30px; height: 30px; }
-.db-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
-.db-title { font-weight: 800; font-size: clamp(.88rem, 3.9vw, 1rem); line-height: 1.25; letter-spacing: -.01em; }
-.db-sub { font-size: .78rem; font-weight: 600; color: var(--muted); line-height: 1.35; }
-.db-arrow { flex: none; color: var(--brand); display: grid; place-items: center; }
-.db-arrow svg { width: 20px; height: 20px; }
-
 /* Link card (Gachapon): a tappable row like the Challenge
    information header, opening a post in a new tab. */
 .link-card {
@@ -954,8 +936,7 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 }
 .card, .prize { border-width: 1.5px; border-style: solid; border-color: var(--outline); }
 .prize { border-color: color-mix(in srgb, var(--brand), transparent 45%); }
-.drill-btn { border-color: var(--outline); }
-.info-ico, .db-icon, .lk-ico { background: var(--field); border: 1px solid var(--line); }
+.info-ico, .lk-ico { background: var(--field); border: 1px solid var(--line); }
 .launch-card { border-top: 3px solid var(--brand); }
 .btn:not(.primary):not(.danger), .icon-btn, .rank-match, .lb-close { border-color: var(--outline); }
 .btn:not(.primary):not(.danger):hover, .icon-btn:hover, .rank-match:hover { border-color: var(--brand); }
@@ -1012,7 +993,7 @@ button.mc-day:focus-visible { outline: 2px solid var(--brand); outline-offset: 2
 .ev-tag.off { color: var(--ink-2); background: var(--card); }
 .ev-tag.am, .ev-tag.pm, .ev-tag.eve { color: #7a4b00; background: #fdf1d8; border-color: #f0dcae; }
 .month-lbl { margin: 16px 0 8px; }
-.month-card { scroll-margin-top: 12px; }
+.month-pts { color: var(--brand); font-weight: 800; }
 .month-agenda { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .ag-row { display: flex; align-items: center; gap: 12px; padding: 6px 12px 6px 6px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); }
 .ag-row.is-off { background: var(--field); }
