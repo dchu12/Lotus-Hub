@@ -109,6 +109,14 @@
   // Fallback dates for a board whose doc doesn't have them saved yet; the
   // edit panel's date fields override these once saved.
   var DEFAULT_DATES = { "default": ["2026-10-01", "2026-10-31"] };
+  // The month calendar until the coach first edits it (then the board's own
+  // `schedule`, even an empty one, takes over).
+  var DEFAULT_SCHEDULE = {
+    "default": {
+      "2026-10-01": ["off"], "2026-10-04": ["pm"], "2026-10-10": ["off"], "2026-10-16": ["pm"],
+      "2026-10-17": ["am"], "2026-10-18": ["eve"], "2026-10-24": ["eve"], "2026-10-25": ["eve"],
+    },
+  };
   var lastRemoteDoc = null; // the board as last synced from the server, to roll back a failed save
 
   var editingId = null;
@@ -544,16 +552,23 @@
     els.prizeSponsorName.textContent = show ? name : "";
   }
   // ---- Month calendar ----------------------------------------------------------
-  // One month (the challenge's) as a grid. The coach marks each day with Drill
-  // Training, Ranked Play, Social Play, or Not available (which excludes the
-  // others); players tap a day to see what's on. The start and end dates are
-  // marked as key dates.
-  var DAY_TYPES = ["drill", "ranked", "social", "off"];
-  var DAY_LABELS = { drill: "Drill Training", ranked: "Ranked Play", social: "Social Play", off: "Not available" };
-  var DAY_MARKS = { drill: "D", ranked: "R", social: "S", off: "\u2715" };
+  // One month (the challenge's) as a grid. The coach marks each day with
+  // sessions (Drill Training, Ranked Play, Social Play) and availability
+  // (morning / afternoon / evening only, or Not available, which excludes
+  // everything else); players tap a day to see what's on. The start and end
+  // dates are marked as key dates.
+  var SESSION_TYPES = ["drill", "ranked", "social"];
+  var AVAIL_TYPES = ["am", "pm", "eve", "off"];
+  var DAY_TYPES = SESSION_TYPES.concat(AVAIL_TYPES);
+  var DAY_LABELS = {
+    drill: "Drill Training", ranked: "Ranked Play", social: "Social Play",
+    am: "Morning only", pm: "Afternoon only", eve: "Evening only", off: "Not available all day",
+  };
+  var DAY_MARKS = { drill: "D", ranked: "R", social: "S", am: "AM", pm: "PM", eve: "EVE", off: "\u2715" };
   var TBD_TYPES = { ranked: true, social: true }; // times still to be set (the card's footnote)
+  // null = never saved (the default calendar shows); {} = saved empty.
   function cleanSchedule(v) {
-    if (!v || typeof v !== "object") return null;
+    if (!v || typeof v !== "object" || Array.isArray(v)) return null;
     var out = {}, n = 0;
     Object.keys(v).sort().forEach(function (k) {
       if (!validIso(k) || !Array.isArray(v[k]) || n >= 62) return;
@@ -561,7 +576,10 @@
       if (types.indexOf("off") !== -1) types = ["off"];
       if (types.length) { out[k] = types; n++; }
     });
-    return n ? out : null;
+    return out;
+  }
+  function scheduleOf(doc) {
+    return doc.schedule ? doc.schedule : DEFAULT_SCHEDULE[boardId] || {};
   }
   var monthSel = null; // selected day, "YYYY-MM-DD"
   var monthEditable = false;
@@ -579,7 +597,7 @@
     if (k === d.end) return "Last day \u00b7 Final DUPR";
     return "";
   }
-  function dayTypes(k) { return (board.schedule || {})[k] || []; }
+  function dayTypes(k) { return scheduleOf(board)[k] || []; }
   function renderMonth(editable) {
     monthEditable = editable;
     var ym = monthOf(), y = +ym.slice(0, 4), m = +ym.slice(5, 7);
@@ -603,7 +621,7 @@
         (k === today ? " is-today" : "") + (k < today ? " is-past" : "") + (sel ? " is-sel" : "") +
         '" data-day="' + k + '" tabindex="' + (sel ? 0 : -1) + '" aria-pressed="' + sel + '" aria-label="' + esc(label) + '"' +
         (k === today ? ' aria-current="date"' : "") + '><span class="mc-num">' + day + '</span><span class="mc-marks">' +
-        types.map(function (t) { return '<span class="mk mk-' + t + '" aria-hidden="true">' + DAY_MARKS[t] + "</span>"; }).join("") +
+        types.map(function (t) { return '<span class="mk mk-' + t + (AVAIL_TYPES.indexOf(t) !== -1 && t !== "off" ? " mk-part" : "") + '" aria-hidden="true">' + DAY_MARKS[t] + "</span>"; }).join("") +
         "</span></button>";
     }
     // A live update redraws the grid; keep keyboard focus on the same day.
@@ -628,9 +646,13 @@
       out += '<a class="md-book" data-drill href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">Book a Drill Training session<span class="sr-only"> (opens Instagram)</span> &rarr;</a>';
     }
     if (monthEditable) {
-      out += '<div class="md-edit"><span class="aa-label">Mark this day</span>' + DAY_TYPES.map(function (t) {
-        return '<button type="button" class="btn small md-toggle" data-mark="' + t + '" aria-pressed="' + (types.indexOf(t) !== -1) + '">' + DAY_LABELS[t] + "</button>";
-      }).join("") + "</div>";
+      var toggles = function (list) {
+        return list.map(function (t) {
+          return '<button type="button" class="btn small md-toggle" data-mark="' + t + '" aria-pressed="' + (types.indexOf(t) !== -1) + '">' + DAY_LABELS[t] + "</button>";
+        }).join("");
+      };
+      out += '<div class="md-edit"><span class="aa-label">Sessions</span>' + toggles(SESSION_TYPES) +
+        '<span class="aa-label">Availability</span>' + toggles(AVAIL_TYPES) + "</div>";
     }
     var ae = document.activeElement;
     var focusedMark = ae && els.monthDetail.contains(ae) ? ae.getAttribute("data-mark") : null;
@@ -651,13 +673,13 @@
   // "Not available" clears the other marks, and any other mark clears it.
   function toggleDay(k, t) {
     commit(function (doc) {
-      var s = cleanSchedule(doc.schedule) || {};
+      var s = cleanSchedule(scheduleOf(doc)) || {};
       var cur = s[k] || [], on = cur.indexOf(t) === -1;
       var next = t === "off" ? (on ? ["off"] : [])
         : on ? cur.filter(function (x) { return x !== "off"; }).concat(t) : cur.filter(function (x) { return x !== t; });
       if (next.length) s[k] = DAY_TYPES.filter(function (x) { return next.indexOf(x) !== -1; });
       else delete s[k];
-      doc.schedule = Object.keys(s).length ? s : null;
+      doc.schedule = s; // kept even when empty, so the default calendar doesn't come back
     });
     var b = els.monthDetail.querySelector('[data-mark="' + t + '"]');
     if (b) b.focus();
