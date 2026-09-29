@@ -231,6 +231,22 @@ Community Points, Points Behind 1st — and sorts automatically.
   remembered in `localStorage` on that device only; "Not you?" clears it.
   In the admin view the same bar is "Find a player" and just jumps to that
   player's row, opened.
+- **Month calendar** (`#monthCard`, "October Calendar"): a card after the
+  leaderboard / countdown, above Drill Training, for everyone. A 7-column
+  grid of the challenge's month (from the start date) where each day shows
+  its marks: **D** Drill Training, **R** Ranked Play, **S** Social Play, **✕**
+  Not available. The start and end dates get a red date badge ("Challenge
+  starts · Starting DUPR" / "Last day · Final DUPR"), today is outlined and
+  past days fade. Tapping a day (or arrow keys, one tab stop for the grid)
+  shows its details under the grid; on an upcoming drill day players get a
+  **Book a Drill Training session** link that opens the Drill panel. A
+  legend and the note "*Ranked Play and Social Play times TBD – pending
+  group availability" sit underneath (`TBD_TYPES` in `app.js` adds the * to
+  those tags). **Editing (admin):** tap a day, then **Mark this day**:
+  Drill Training / Ranked Play / Social Play / Not available. Not available
+  clears the others and vice versa. Saved as `schedule` on the board
+  (`{ "YYYY-MM-DD": ["drill", ...] }`, up to 62 days, checked in
+  `firestore.rules`).
 - **Upcoming community events**: a card below the leaderboard listing the
   next five events, each with a date tile, time, place, a colour-coded tag
   showing the Community Points it earns (Social +3, Drill +2, Ranked +1, or
