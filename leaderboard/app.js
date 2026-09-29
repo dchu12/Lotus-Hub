@@ -566,7 +566,6 @@
     am: "Morning only", pm: "Afternoon only", eve: "Evening only", full: "Fully booked", off: "Not available all day",
   };
   var DAY_MARKS = { am: "AM", pm: "PM", eve: "EVE" }; // short labels in the grid
-  var TBD_TYPES = { ranked: true, social: true }; // times still to be set (the card's footnote)
   // null = never saved (the default calendar shows); {} = saved empty.
   function cleanSchedule(v) {
     if (!v || typeof v !== "object" || Array.isArray(v)) return null;
@@ -618,7 +617,7 @@
   function bookable(k) { return k >= isoToday() && !isClosed(dayTypes(k)); }
   function sessionTags(types) {
     return SESSION_TYPES.filter(function (t) { return has(types, t); }).map(function (t) {
-      return '<span class="ev-tag ' + t + '">' + DAY_LABELS[t] + (TBD_TYPES[t] ? "*" : "") + "</span>";
+      return '<span class="ev-tag ' + t + '">' + DAY_LABELS[t] + "</span>";
     }).join("");
   }
   function windowTag(types) {
