@@ -10,7 +10,7 @@ tallies each player's **Lotus Score** automatically:
   override — it's always Start DUPR − End DUPR). Every **+0.01 DUPR
   improvement = +1 point**.
 - **Lotus community points**, earned per session attended hosted by Lotus:
-  - Ranked Play — **+1**
+  - Rank Play — **+1**
   - Social Play — **+3**
   - Drill Training — **+2**
 - **Lotus Score = Skill Points + Community Points.**
@@ -270,7 +270,7 @@ Community Points, Points Behind 1st — and sorts automatically.
     return.
 - **Upcoming community events**: a card below the leaderboard listing the
   next five events, each with a date tile, time, place, a colour-coded tag
-  showing the Community Points it earns (Social +3, Drill +2, Ranked +1, or
+  showing the Community Points it earns (Social +3, Drill +2, Rank Play +1, or
   Special), and **Add to calendar**, which offers **Google Calendar** (opens Google
   Calendar's pre-filled "new event" page in the viewer's time zone) or
   **Apple / Outlook** (downloads an `.ics` file). The next
@@ -294,7 +294,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   accepted and reduced to the ID. Clear the ID to go back to in-page events.
   The type tag comes from words in the event's title or description:
   "social" → Social Play +3, "drill"/"clinic" → Drill Training +2,
-  "ranked" → Ranked Play +1, anything else → Special event. All-day events
+  "ranked" or "rank play" → Rank Play +1, anything else → Special event. All-day events
   show "All day"; cancelled ones are skipped. If the calendar can't be read,
   the admin sees why (key blocked, API off, not public/not found) and
   players simply don't see the card.
@@ -316,9 +316,9 @@ Community Points, Points Behind 1st — and sorts automatically.
   prize itself is on the banner above, not repeated here), a tile for
   each part (Skill Points: "Every +0.01 DUPR = +1 Skill Point", Starting DUPR
   October 1 / Final DUPR October 31, and the example "3.00 → 3.08 DUPR = +8
-  Skill Points"; Community Points: Ranked Play +1, Social Play +3, Drill
+  Skill Points"; Community Points: Rank Play +1, Social Play +3, Drill
   Training +2, Gachapon Draw +1), then under the Community Points tile the eligibility rule
-  ("DUPR Reliability Score of 90% or higher to participate in Ranked Play
+  ("DUPR Reliability Score of 90% or higher to participate in Rank Play
   matches", also shown in the Join panel, not the Drill Training one), the
   tie-break rule as a one-line note, and last a preview
   card for the challenge post on Instagram: a thumbnail of its first slide
@@ -338,7 +338,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   - **"+ Add player"** in the leaderboard header opens the add form, which
     stays hidden otherwise. Edit also opens it; saving or Cancel closes it.
   - **Log a session**: open a player (tap their row, or use "Find a
-    player") and tap **+1 Ranked / +1 Social / +1 Drill / +1 Gachapon**
+    player") and tap **+1 Rank Play / +1 Social / +1 Drill / +1 Gachapon**
     (a Gachapon Draw is worth +1 Community Point; `POINTS.gacha`, stored as
     `gacha` on the entry, also in the edit form and the CSV export). It saves
     immediately, and the confirmation has an **Undo** for about 6 seconds.
@@ -348,7 +348,7 @@ Community Points, Points Behind 1st — and sorts automatically.
 - **Points breakdown**: tap (or click, or press Enter on) any player to
   expand indented rows under them, one per scoring source, each number
   sitting in its own column: DUPR (start → end and the change) under Skill
-  Points, and Ranked / Social / Drill as `sessions × pts` under Community
+  Points, and Rank Play / Social / Drill as `sessions × pts` under Community
   Points. The player's own row above already shows the totals. Works in
   the admin and player views, one player open at a time, and stays open
   through live Firestore updates.
