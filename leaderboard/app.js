@@ -11,7 +11,7 @@
  *   +0.01 DUPR improvement = +1 point (calculated automatically from the
  *     Start/End DUPR a player enters — no manual override; shown read-only
  *     in its own field so it's clear it's not editable)
- *   Ranked Play   +1 / session
+ *   Rank Play     +1 / session
  *   Social Play   +3 / session
  *   Drill Training +2 / session
  */
@@ -181,7 +181,7 @@
   }
   // One row per scoring source, laid out in the main table's own columns so
   // each number sits directly under Skill Points or Community Points.
-  var SESSION_LABELS = { ranked: "Ranked", social: "Social", drill: "Drill", gacha: "Gachapon" };
+  var SESSION_LABELS = { ranked: "Rank Play", social: "Social", drill: "Drill", gacha: "Gachapon" };
   function breakdownRows(e, restricted) {
     var improvement = e._c.duprPoints / 100;
     var d = Math.min(3, Math.max(2, decimals(e.startDupr), decimals(e.endDupr)));
@@ -193,7 +193,7 @@
         (hasDupr(e.startDupr) && hasDupr(e.endDupr) ? '<span class="bd-detail">' + change + "</span>" : "")
       : change;
     var rows = [["DUPR", duprDetail, e._c.duprPoints, ""]];
-    [["Ranked Play", int(e.ranked), POINTS.ranked],
+    [["Rank Play", int(e.ranked), POINTS.ranked],
      ["Social Play", int(e.social), POINTS.social],
      ["Drill Training", int(e.drill), POINTS.drill],
      ["Gachapon Draw", int(e.gacha), POINTS.gacha]].forEach(function (x) {
@@ -1062,7 +1062,7 @@
   function findEntry(id) {
     return board.entries.find(function (x) { return x.id === id; });
   }
-  var SESSION_NAMES = { ranked: "Ranked Play", social: "Social Play", drill: "Drill Training", gacha: "Gachapon Draw" };
+  var SESSION_NAMES = { ranked: "Rank Play", social: "Social Play", drill: "Drill Training", gacha: "Gachapon Draw" };
   // Adjusts the count on whatever the latest copy holds (not a value
   // computed from this device's possibly-stale copy).
   function bumpSession(id, field, delta) {
@@ -1477,7 +1477,7 @@
   var EVENT_TYPES = {
     social: { label: "Social Play", pts: POINTS.social },
     drill: { label: "Drill Training", pts: POINTS.drill },
-    ranked: { label: "Ranked Play", pts: POINTS.ranked },
+    ranked: { label: "Rank Play", pts: POINTS.ranked },
     special: { label: "Special event", pts: 0 },
   };
   var eventsEditing = false;
@@ -1528,7 +1528,7 @@
     s = String(s || "").toLowerCase();
     if (/\bsocial\b/.test(s)) return "social";
     if (/\b(drill|drills|clinic)\b/.test(s)) return "drill";
-    if (/\branked\b/.test(s)) return "ranked";
+    if (/\branked\b|\brank play\b/.test(s)) return "ranked";
     return "special";
   }
   function localIso(d) {
@@ -2252,7 +2252,7 @@
     var list = sortedEntries();
     var header = [
       "Rank", "Player", "Start DUPR", "End DUPR", "DUPR Improvement", "Skill Points",
-      "Ranked Sessions", "Social Sessions", "Drill Sessions", "Gachapon Draws", "Community Points", "Lotus Score", "Points Behind 1st",
+      "Rank Play Sessions", "Social Sessions", "Drill Sessions", "Gachapon Draws", "Community Points", "Lotus Score", "Points Behind 1st",
     ];
     var rows = list.map(function (e) {
       return [
