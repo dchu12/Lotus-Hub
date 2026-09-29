@@ -255,8 +255,8 @@ Community Points, Points Behind 1st — and sorts automatically.
     message, e.g. "Hi Coach! I'd like to book a Drill Training session on
     Sunday, Oct 4, in the afternoon." (`drillMsgFor` in `app.js`); Open
     Instagram copies it and opens the DM as before.
-  - Note: "*Rank Play and Social Play times TBD – pending group
-    availability" (`TBD_TYPES` adds the * to those tags).
+  - Note: "Rank Play and Social Play times TBD – pending group
+    availability".
   - **Editing (admin):** every day is a button ("Tap a day to mark it"). The
     day panel shows its marks and toggles under **Sessions** (Drill Session
     / Rank Play / Social Play) and **Availability** (Morning only /
