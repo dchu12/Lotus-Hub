@@ -151,10 +151,12 @@ Community Points, Points Behind 1st — and sorts automatically.
   0.75s later so the burst is seen. With "reduce motion" on there's no
   confetti and the DM opens straight away. If the browser blocks the new
   tab, the DM opens in the same tab.
-- **Book a Drill Training Session**: just above the Gachapon card, an
-  outlined card "Drill Training" with "Earn +2 Community Points" (grey, like the Gachapon card's subtitle) under it. It opens the same message panel as Join, titled "Book a
-  Drill Training Session", with the message "Hi Coach! I'd like to book a Drill
-  Training session." (`DRILL_MSG` in `app.js`); Open Instagram copies it, fires
+- **Book a Drill Training Session**: an outlined card "Drill Training" with
+  "Earn +2 Community Points" (grey, like the Gachapon card's subtitle) under
+  it, just above the booking calendar; tapping it scrolls to the calendar.
+  Booking from the calendar opens the same message panel as Join, titled "Book a
+  Drill Training Session", with the chosen date in the message (see Booking
+  calendar; `DRILL_MSG` in `app.js` is the undated fallback); Open Instagram copies it, fires
   the yellow confetti and opens the academy's Instagram DM. It shows on the player
   view for everyone (joined or not) until the challenge ends.
 - **Custom domain**: a second Hosting site, `lotuspickleballacademy` (target
@@ -231,31 +233,41 @@ Community Points, Points Behind 1st — and sorts automatically.
   remembered in `localStorage` on that device only; "Not you?" clears it.
   In the admin view the same bar is "Find a player" and just jumps to that
   player's row, opened.
-- **Month calendar** (`#monthCard`, "October Calendar"): a card after the
-  leaderboard / countdown, above Drill Training, for everyone.
-  - **Grid (at a glance):** a 7-column month (from the start date). Colour
-    is availability: white = available, gold = limited hours (with AM / PM /
-    EVE, or e.g. "AM/EVE", under the date), grey stripes = unavailable. Dots
-    are sessions: blue Drill, red Ranked, green Social. The start and end
-    dates get a red date badge, today is outlined and past days fade. A
-    one-line legend sits under it. For players the grid is decorative
-    (`aria-hidden`); the list below carries the same information in words.
-  - **Coming up:** upcoming days that have something on (plus the start /
-    end dates), e.g. "Sun 4 · Afternoon only · Drill Training", with a
-    date tile. The first 6 show, with **Show all N days**. Drill days have a
-    **Book a drill session** link (opens the Drill panel).
+- **Booking calendar** (`#monthCard`): for members to find a day to book a
+  drill session. Players see it as **Book a Drill Session** ("Pick a day in
+  October that works for you"); the admin view calls it "October Calendar".
+  It sits right after the **Drill Training** card, which now scrolls to it
+  (and focuses its heading) instead of opening the DM. Hidden for players
+  after the end date.
+  - **Grid:** the challenge month (from the start date). Colour is
+    availability: white = open all day, gold = limited hours (AM / PM / EVE,
+    or e.g. "AM/EVE", under the date), grey stripes = unavailable. **Unmarked
+    days count as open all day**; the coach marks only the exceptions. Dots
+    are scheduled sessions (blue Drill, red Ranked, green Social). Start /
+    end dates get a red date badge. Past days are muted.
+  - **Picking a day (players):** open future days are buttons (one tab stop,
+    arrow keys skip unavailable days); unavailable and past days aren't.
+    Tapping one shows it under the grid ("Friday, October 16 · Afternoon
+    only") with **Book this day**.
+  - **Next openings:** the next 5 bookable days, each with its time window
+    ("All day" / "Afternoon only"), any session tags and a **Book** button.
+    Unavailable days aren't listed.
+  - **Booking:** Book buttons open the Drill panel with the date in the
+    message, e.g. "Hi Coach! I'd like to book a Drill Training session on
+    Sunday, Oct 4, in the afternoon." (`drillMsgFor` in `app.js`); Open
+    Instagram copies it and opens the DM as before.
   - Note: "*Ranked Play and Social Play times TBD – pending group
-    availability" (`TBD_TYPES` in `app.js` adds the * to those tags).
-  - **Editing (admin):** the days become buttons ("Tap a day to mark it"; one
-    tab stop, arrow keys move). The day panel shows its current marks and
-    toggles under **Sessions** (Drill Training / Ranked Play / Social Play)
-    and **Availability** (Morning only / Afternoon only / Evening only / Not
-    available all day). Not available all day clears the others and vice
-    versa. Saved as `schedule` on the board (`{ "YYYY-MM-DD": ["drill",
-    "pm", ...] }`, up to 62 days, checked in `firestore.rules`). Until the
-    first edit the calendar shows `DEFAULT_SCHEDULE` from `app.js`; the first
-    edit saves the whole calendar, and an emptied calendar is saved as `{}`
-    so the defaults don't return.
+    availability" (`TBD_TYPES` adds the * to those tags).
+  - **Editing (admin):** every day is a button ("Tap a day to mark it"). The
+    day panel shows its marks and toggles under **Sessions** (Drill Training
+    / Ranked Play / Social Play) and **Availability** (Morning only /
+    Afternoon only / Evening only / Not available all day). Not available all
+    day clears the others and vice versa. Saved as `schedule` on the board
+    (`{ "YYYY-MM-DD": ["drill", "pm", ...] }`, up to 62 days, checked in
+    `firestore.rules`). Until the first edit the calendar shows
+    `DEFAULT_SCHEDULE` from `app.js`; the first edit saves the whole
+    calendar, and an emptied calendar is saved as `{}` so the defaults don't
+    return.
 - **Upcoming community events**: a card below the leaderboard listing the
   next five events, each with a date tile, time, place, a colour-coded tag
   showing the Community Points it earns (Social +3, Drill +2, Ranked +1, or
