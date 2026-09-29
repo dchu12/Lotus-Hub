@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=97" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=98" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -339,7 +339,8 @@
         <li><span class="mk mk-drill" aria-hidden="true">D</span>Drill Training</li>
         <li><span class="mk mk-ranked" aria-hidden="true">R</span>Ranked Play*</li>
         <li><span class="mk mk-social" aria-hidden="true">S</span>Social Play*</li>
-        <li><span class="mk mk-off" aria-hidden="true">&#x2715;</span>Not available</li>
+        <li><span class="mk mk-part" aria-hidden="true">AM</span><span class="mk mk-part" aria-hidden="true">PM</span><span class="mk mk-part" aria-hidden="true">EVE</span>Available morning / afternoon / evening only</li>
+        <li><span class="mk mk-off" aria-hidden="true">&#x2715;</span>Not available all day</li>
         <li><span class="mk mk-key" aria-hidden="true"></span>Challenge starts / ends</li>
       </ul>
       <p class="month-note">*Ranked Play and Social Play times TBD &ndash; pending group availability</p>
@@ -512,6 +513,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=73"></script>
+  <script src="/leaderboard/app.js?v=74"></script>
 </body>
 </html>
