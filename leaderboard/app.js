@@ -555,8 +555,7 @@
   // One month (the challenge's) as a grid. The coach marks each day with
   // sessions (Drill Training, Ranked Play, Social Play) and availability
   // (morning / afternoon / evening only, or Not available, which excludes
-  // everything else); players tap a day to see what's on. The start and end
-  // dates are marked as key dates.
+  // everything else). The start and end dates are marked as key dates.
   var SESSION_TYPES = ["drill", "ranked", "social"];
   var AVAIL_TYPES = ["am", "pm", "eve", "off"];
   var DAY_TYPES = SESSION_TYPES.concat(AVAIL_TYPES);
@@ -564,7 +563,7 @@
     drill: "Drill Training", ranked: "Ranked Play", social: "Social Play",
     am: "Morning only", pm: "Afternoon only", eve: "Evening only", off: "Not available all day",
   };
-  var DAY_MARKS = { drill: "D", ranked: "R", social: "S", am: "AM", pm: "PM", eve: "EVE", off: "\u2715" };
+  var DAY_MARKS = { am: "AM", pm: "PM", eve: "EVE" }; // short labels in the grid
   var TBD_TYPES = { ranked: true, social: true }; // times still to be set (the card's footnote)
   // null = never saved (the default calendar shows); {} = saved empty.
   function cleanSchedule(v) {
@@ -581,8 +580,11 @@
   function scheduleOf(doc) {
     return doc.schedule ? doc.schedule : DEFAULT_SCHEDULE[boardId] || {};
   }
-  var monthSel = null; // selected day, "YYYY-MM-DD"
+  var monthSel = null; // selected day, "YYYY-MM-DD" (admin editing)
   var monthEditable = false;
+  var monthShowAll = false;
+  var AGENDA_LIMIT = 6;
+  var PART_TYPES = ["am", "pm", "eve"];
   function monthOf() {
     var d = challengeDates();
     return (d.start || isoToday()).slice(0, 7); // "YYYY-MM"
@@ -598,62 +600,104 @@
     return "";
   }
   function dayTypes(k) { return scheduleOf(board)[k] || []; }
+  function has(list, t) { return list.indexOf(t) !== -1; }
+  // "Afternoon only", "Morning & evening only", "Not available", or "".
+  function availText(types) {
+    if (types[0] === "off") return "Not available";
+    var parts = PART_TYPES.filter(function (t) { return has(types, t); });
+    var words = { am: "Morning", pm: "Afternoon", eve: "Evening" };
+    if (!parts.length) return "";
+    var w = parts.map(function (t) { return words[t]; });
+    return (w.length > 1 ? w.slice(0, -1).join(", ") + " & " + w[w.length - 1].toLowerCase() : w[0]) + " only";
+  }
+  function sessionTags(types) {
+    return SESSION_TYPES.filter(function (t) { return has(types, t); }).map(function (t) {
+      return '<span class="ev-tag ' + t + '">' + DAY_LABELS[t] + (TBD_TYPES[t] ? "*" : "") + "</span>";
+    }).join("");
+  }
+  // The grid is the at-a-glance view (colour = availability, dots = sessions);
+  // the "Coming up" list below says the same in words, so for players the grid
+  // is decorative. For the coach, days are buttons that open the editor.
   function renderMonth(editable) {
     monthEditable = editable;
     var ym = monthOf(), y = +ym.slice(0, 4), m = +ym.slice(5, 7);
     var first = new Date(y, m - 1, 1), count = new Date(y, m, 0).getDate();
     els.monthTitle.textContent = first.toLocaleDateString("en-US", { month: "long" }) + " Calendar";
+    els.monthSub.textContent = editable ? "Tap a day to mark it" : "Coach availability and sessions";
     var today = isoToday(), d = challengeDates();
     var key = function (day) { return ym + "-" + String(day).padStart(2, "0"); };
     if (!monthSel || monthSel.slice(0, 7) !== ym) {
       monthSel = today.slice(0, 7) === ym ? today : d.start && d.start.slice(0, 7) === ym ? d.start : key(1);
     }
     var html = ["S", "M", "T", "W", "T", "F", "S"].map(function (w) {
-      return '<span class="mc-wd" aria-hidden="true">' + w + "</span>";
+      return '<span class="mc-wd">' + w + "</span>";
     }).join("");
-    for (var i = 0; i < first.getDay(); i++) html += '<span class="mc-pad" aria-hidden="true"></span>';
+    for (var i = 0; i < first.getDay(); i++) html += '<span class="mc-pad"></span>';
     for (var day = 1; day <= count; day++) {
-      var k = key(day), types = dayTypes(k), note = keyDateNote(k), sel = k === monthSel;
-      var label = isoDate(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) +
-        (note ? ", " + note : "") +
-        (types.length ? ": " + types.map(function (t) { return DAY_LABELS[t]; }).join(", ") : "");
-      html += '<button type="button" class="mc-day' + (types[0] === "off" ? " is-off" : "") + (note ? " is-key" : "") +
-        (k === today ? " is-today" : "") + (k < today ? " is-past" : "") + (sel ? " is-sel" : "") +
-        '" data-day="' + k + '" tabindex="' + (sel ? 0 : -1) + '" aria-pressed="' + sel + '" aria-label="' + esc(label) + '"' +
-        (k === today ? ' aria-current="date"' : "") + '><span class="mc-num">' + day + '</span><span class="mc-marks">' +
-        types.map(function (t) { return '<span class="mk mk-' + t + (AVAIL_TYPES.indexOf(t) !== -1 && t !== "off" ? " mk-part" : "") + '" aria-hidden="true">' + DAY_MARKS[t] + "</span>"; }).join("") +
-        "</span></button>";
+      var k = key(day), types = dayTypes(k), note = keyDateNote(k), sel = editable && k === monthSel;
+      var parts = PART_TYPES.filter(function (t) { return has(types, t); });
+      var sess = SESSION_TYPES.filter(function (t) { return has(types, t); });
+      var cls = "mc-day" + (types[0] === "off" ? " is-off" : "") + (parts.length ? " is-part" : "") + (note ? " is-key" : "") +
+        (k === today ? " is-today" : "") + (k < today ? " is-past" : "") + (sel ? " is-sel" : "");
+      var inner = '<span class="mc-num">' + day + "</span>" +
+        (parts.length ? '<span class="mc-part">' + parts.map(function (t) { return DAY_MARKS[t]; }).join("/") + "</span>" : "") +
+        (sess.length ? '<span class="mc-dots">' + sess.map(function (t) { return '<span class="dot dot-' + t + '"></span>'; }).join("") + "</span>" : "");
+      if (editable) {
+        var label = isoDate(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) +
+          (note ? ", " + note : "") + (types.length ? ": " + types.map(function (t) { return DAY_LABELS[t]; }).join(", ") : "");
+        html += '<button type="button" class="' + cls + '" data-day="' + k + '" tabindex="' + (sel ? 0 : -1) + '" aria-pressed="' + sel +
+          '" aria-label="' + esc(label) + '"' + (k === today ? ' aria-current="date"' : "") + ">" + inner + "</button>";
+      } else {
+        html += '<span class="' + cls + '">' + inner + "</span>";
+      }
     }
     // A live update redraws the grid; keep keyboard focus on the same day.
     var ae = document.activeElement;
     var focusedDay = ae && els.monthGrid.contains(ae) ? ae.getAttribute("data-day") : null;
     els.monthGrid.innerHTML = html;
+    if (editable) els.monthGrid.removeAttribute("aria-hidden"); else els.monthGrid.setAttribute("aria-hidden", "true");
     if (focusedDay) { var fb = els.monthGrid.querySelector('[data-day="' + focusedDay + '"]'); if (fb) fb.focus(); }
     renderMonthDetail();
+    renderAgenda();
+  }
+  // Upcoming days that have something on (or are a key date), in words.
+  function renderAgenda() {
+    var ym = monthOf(), today = isoToday(), sched = scheduleOf(board), d = challengeDates();
+    var days = Object.keys(sched).filter(function (k) { return k.slice(0, 7) === ym; });
+    [d.start, d.end].forEach(function (k) { if (k && k.slice(0, 7) === ym && days.indexOf(k) === -1) days.push(k); });
+    days = days.filter(function (k) { return k >= today; }).sort();
+    var shown = monthShowAll ? days : days.slice(0, AGENDA_LIMIT);
+    els.monthAgenda.innerHTML = shown.length ? shown.map(function (k) {
+      var types = sched[k] || [], dt = isoDate(k), avail = availText(types), note = keyDateNote(k), tags = sessionTags(types);
+      var cls = "ag-row" + (types[0] === "off" ? " is-off" : avail ? " is-part" : "");
+      return '<li class="' + cls + '"><span class="ag-date"><span class="ag-wd">' +
+        dt.toLocaleDateString("en-US", { weekday: "short" }) + '</span><span class="ag-day">' + dt.getDate() + "</span></span>" +
+        '<span class="ag-body">' +
+        (avail ? '<span class="ag-main">' + avail + "</span>" : "") +
+        (note ? '<span class="ag-key">' + note + "</span>" : "") +
+        (tags ? '<span class="ag-tags">' + tags + "</span>" : "") +
+        (readOnly && has(types, "drill") ? '<a class="ag-book" data-drill href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">Book a drill session<span class="sr-only"> on ' + dt.toLocaleDateString("en-US", { month: "long", day: "numeric" }) + " (opens Instagram)</span> &rarr;</a>" : "") +
+        "</span></li>";
+    }).join("") : '<li class="ag-empty">Nothing scheduled yet.</li>';
+    els.monthMoreBtn.hidden = days.length <= AGENDA_LIMIT;
+    els.monthMoreBtn.textContent = monthShowAll ? "Show less" : "Show all " + days.length + " days";
+    els.monthMoreBtn.setAttribute("aria-expanded", String(monthShowAll));
   }
   function renderMonthDetail() {
-    var k = monthSel, types = dayTypes(k), note = keyDateNote(k);
+    els.monthDetail.hidden = !monthEditable;
+    if (!monthEditable) { els.monthDetail.innerHTML = ""; return; }
+    var k = monthSel, types = dayTypes(k), note = keyDateNote(k), avail = availText(types), tags = sessionTags(types);
     var out = '<div class="md-date">' + esc(isoDate(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })) + "</div>";
     if (note) out += '<div class="md-key">' + note + "</div>";
-    if (types.length) {
-      out += '<div class="md-tags">' + types.map(function (t) {
-        return '<span class="ev-tag ' + t + '">' + DAY_LABELS[t] + (TBD_TYPES[t] ? "*" : "") + "</span>";
-      }).join("") + "</div>";
-    } else if (!note) {
-      out += '<div class="md-empty">Nothing scheduled yet</div>';
-    }
-    if (readOnly && types.indexOf("drill") !== -1 && k >= isoToday()) {
-      out += '<a class="md-book" data-drill href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">Book a Drill Training session<span class="sr-only"> (opens Instagram)</span> &rarr;</a>';
-    }
-    if (monthEditable) {
-      var toggles = function (list) {
-        return list.map(function (t) {
-          return '<button type="button" class="btn small md-toggle" data-mark="' + t + '" aria-pressed="' + (types.indexOf(t) !== -1) + '">' + DAY_LABELS[t] + "</button>";
-        }).join("");
-      };
-      out += '<div class="md-edit"><span class="aa-label">Sessions</span>' + toggles(SESSION_TYPES) +
-        '<span class="aa-label">Availability</span>' + toggles(AVAIL_TYPES) + "</div>";
-    }
+    if (avail || tags) out += '<div class="md-tags">' + (avail ? '<span class="ev-tag ' + (types[0] === "off" ? "off" : "pm") + '">' + avail + "</span>" : "") + tags + "</div>";
+    else if (!note) out += '<div class="md-empty">Available all day, nothing scheduled</div>';
+    var toggles = function (list) {
+      return list.map(function (t) {
+        return '<button type="button" class="btn small md-toggle" data-mark="' + t + '" aria-pressed="' + has(types, t) + '">' + DAY_LABELS[t] + "</button>";
+      }).join("");
+    };
+    out += '<div class="md-edit"><span class="aa-label">Sessions</span>' + toggles(SESSION_TYPES) +
+      '<span class="aa-label">Availability</span>' + toggles(AVAIL_TYPES) + "</div>";
     var ae = document.activeElement;
     var focusedMark = ae && els.monthDetail.contains(ae) ? ae.getAttribute("data-mark") : null;
     els.monthDetail.innerHTML = out;
@@ -867,7 +911,7 @@
       "noScores", "duprWarn", "moveHint", "scoringCard", "prizeMeta", "eventsCard", "eventsList",
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
-      "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen", "prizeSponsorInput", "prizeSponsorLine", "prizeSponsorName", "monthCard", "monthTitle", "monthGrid", "monthDetail",
+      "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen", "prizeSponsorInput", "prizeSponsorLine", "prizeSponsorName", "monthCard", "monthTitle", "monthSub", "monthGrid", "monthDetail", "monthAgenda", "monthMoreBtn",
       "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinElig", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
@@ -2417,12 +2461,16 @@
     els.prizeZoomBtn.addEventListener("click", openPrize);
     els.monthGrid.addEventListener("click", function (ev) {
       var b = ev.target.closest && ev.target.closest("[data-day]");
-      if (b) selectDay(b.getAttribute("data-day"));
+      if (b && monthEditable) selectDay(b.getAttribute("data-day"));
+    });
+    els.monthMoreBtn.addEventListener("click", function () {
+      monthShowAll = !monthShowAll;
+      renderAgenda();
     });
     // Arrow keys move between days (one tab stop for the whole grid).
     els.monthGrid.addEventListener("keydown", function (ev) {
       var step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[ev.key];
-      if (!step || !monthSel) return;
+      if (!step || !monthSel || !monthEditable) return;
       var p = monthSel.split("-"), d = new Date(+p[0], +p[1] - 1, +p[2] + step);
       var k = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
       if (!els.monthGrid.querySelector('[data-day="' + k + '"]')) return;
