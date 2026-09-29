@@ -238,9 +238,11 @@ Community Points, Points Behind 1st — and sorts automatically.
   end date.
   - **Grid:** the challenge month (from the start date). Colour is
     availability: white = open all day, gold = limited hours (AM / PM / EVE,
-    or e.g. "AM/EVE", under the date), grey stripes = unavailable. **Unmarked
+    or e.g. "AM/EVE", under the date), solid grey with "FULL" = fully
+    booked, grey stripes = unavailable. **Unmarked
     days count as open all day**; the coach marks only the exceptions. Dots
-    are scheduled sessions (blue Group Drill, red Ranked, green Social). Start /
+    are scheduled sessions (blue Drill Session, red Rank Play, green Social
+    Play). Start /
     end dates get a red date badge. Past days are muted.
   - **Picking a day (players):** open future days are buttons (one tab stop,
     arrow keys skip unavailable days); unavailable and past days aren't.
@@ -248,18 +250,19 @@ Community Points, Points Behind 1st — and sorts automatically.
     only") with **Book this day**.
   - **Next openings:** the next 5 bookable days, each with its time window
     ("All day" / "Afternoon only"), any session tags and a **Book** button.
-    Unavailable days aren't listed.
+    Fully booked and unavailable days aren't listed or tappable.
   - **Booking:** Book buttons open the Drill panel with the date in the
     message, e.g. "Hi Coach! I'd like to book a Drill Training session on
     Sunday, Oct 4, in the afternoon." (`drillMsgFor` in `app.js`); Open
     Instagram copies it and opens the DM as before.
-  - Note: "*Ranked Play and Social Play times TBD – pending group
+  - Note: "*Rank Play and Social Play times TBD – pending group
     availability" (`TBD_TYPES` adds the * to those tags).
   - **Editing (admin):** every day is a button ("Tap a day to mark it"). The
-    day panel shows its marks and toggles under **Sessions** (Group Drill /
-    Ranked Play / Social Play) and **Availability** (Morning only /
-    Afternoon only / Evening only / Not available all day). Not available all
-    day clears the others and vice versa. Saved as `schedule` on the board
+    day panel shows its marks and toggles under **Sessions** (Drill Session
+    / Rank Play / Social Play) and **Availability** (Morning only /
+    Afternoon only / Evening only / Fully booked / Not available all day).
+    Fully booked and Not available all day each clear the others, and vice
+    versa (stored as `["full"]` / `["off"]`). Saved as `schedule` on the board
     (`{ "YYYY-MM-DD": ["drill", "pm", ...] }`, up to 62 days, checked in
     `firestore.rules`). Until the first edit the calendar shows
     `DEFAULT_SCHEDULE` from `app.js`; the first edit saves the whole

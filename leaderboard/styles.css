@@ -970,6 +970,8 @@ button.mc-day:focus-visible { outline: 2px solid var(--brand); outline-offset: 2
   background: repeating-linear-gradient(135deg, #f4f1ef 0 5px, #e9e4e1 5px 7px);
 }
 /* Past days: muted rather than transparent, so the date stays readable */
+.mc-day.is-full { background: #ece7e4; border-color: #ddd6d2; color: var(--ink-2); }
+.mc-full { color: var(--ink-2); letter-spacing: .04em; }
 .mc-day.is-past { color: var(--muted); background: var(--field); border-color: var(--line); }
 .mc-day.is-past .mc-part { color: var(--muted); }
 .mc-day.is-past .dot { opacity: .45; }
@@ -981,6 +983,7 @@ button.mc-day:focus-visible { outline: 2px solid var(--brand); outline-offset: 2
 .month-legend li { display: inline-flex; align-items: center; gap: 5px; }
 .sw { display: inline-block; width: 13px; height: 13px; border-radius: 4px; border: 1px solid var(--line); background: var(--card); }
 .sw-part { background: #fdf1d8; border-color: #efd9a6; }
+.sw-full { background: #ddd6d2; border-color: #cfc7c3; }
 .sw-off { background: repeating-linear-gradient(135deg, #f4f1ef 0 3px, #d9d2ce 3px 4.5px); border-color: #e2dcd9; }
 .month-detail { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--field); border: 1px solid var(--line); }
 .md-date { font-weight: 800; font-size: .95rem; }

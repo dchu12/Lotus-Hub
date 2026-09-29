@@ -104,7 +104,7 @@
     calendarKey: null, // optional API key for it (defaults to the site's Firebase key)
     gachaSponsors: null, // { red, yellow, blue, green }: Gachapon sponsor per keychain colour
     prizeSponsor: null, // sponsor of the 1st place prize; null = the academy (line hidden)
-    schedule: null, // { "YYYY-MM-DD": ["drill" | "ranked" | "social"] or ["off"] }, for the month calendar
+    schedule: null, // { "YYYY-MM-DD": [sessions + am/pm/eve] or ["off"] or ["full"] }, for the month calendar
   };
   // Fallback dates for a board whose doc doesn't have them saved yet; the
   // edit panel's date fields override these once saved.
@@ -553,15 +553,17 @@
   }
   // ---- Month calendar ----------------------------------------------------------
   // One month (the challenge's) as a grid. The coach marks each day with
-  // sessions (Drill Training, Ranked Play, Social Play) and availability
-  // (morning / afternoon / evening only, or Not available, which excludes
-  // everything else). The start and end dates are marked as key dates.
+  // sessions (Drill Session, Rank Play, Social Play) and availability
+  // (morning / afternoon / evening only; or Fully booked / Not available,
+  // which each exclude everything else). The start and end dates are marked
+  // as key dates.
   var SESSION_TYPES = ["drill", "ranked", "social"];
-  var AVAIL_TYPES = ["am", "pm", "eve", "off"];
+  var AVAIL_TYPES = ["am", "pm", "eve", "full", "off"];
+  var WHOLE_DAY = ["full", "off"]; // statuses that stand alone and close the day
   var DAY_TYPES = SESSION_TYPES.concat(AVAIL_TYPES);
   var DAY_LABELS = {
-    drill: "Group Drill", ranked: "Ranked Play", social: "Social Play",
-    am: "Morning only", pm: "Afternoon only", eve: "Evening only", off: "Not available all day",
+    drill: "Drill Session", ranked: "Rank Play", social: "Social Play",
+    am: "Morning only", pm: "Afternoon only", eve: "Evening only", full: "Fully booked", off: "Not available all day",
   };
   var DAY_MARKS = { am: "AM", pm: "PM", eve: "EVE" }; // short labels in the grid
   var TBD_TYPES = { ranked: true, social: true }; // times still to be set (the card's footnote)
@@ -572,7 +574,8 @@
     Object.keys(v).sort().forEach(function (k) {
       if (!validIso(k) || !Array.isArray(v[k]) || n >= 62) return;
       var types = DAY_TYPES.filter(function (t) { return v[k].indexOf(t) !== -1; });
-      if (types.indexOf("off") !== -1) types = ["off"];
+      var whole = WHOLE_DAY.filter(function (t) { return types.indexOf(t) !== -1; });
+      if (whole.length) types = [whole[whole.length - 1]]; // "off" wins over "full"
       if (types.length) { out[k] = types; n++; }
     });
     return out;
@@ -605,12 +608,14 @@
   // "Afternoon only", "Morning & evening only", "Not available", or "".
   function availText(types) {
     if (types[0] === "off") return "Not available";
+    if (types[0] === "full") return "Fully booked";
     var w = partsOf(types).map(function (t) { return { am: "Morning", pm: "Afternoon", eve: "Evening" }[t]; });
     if (!w.length) return "";
     return (w.length > 1 ? w.slice(0, -1).join(", ") + " & " + w[w.length - 1].toLowerCase() : w[0]) + " only";
   }
   // Unmarked days are open all day; only the exceptions get marked.
-  function bookable(k) { return k >= isoToday() && dayTypes(k)[0] !== "off"; }
+  function isClosed(types) { return WHOLE_DAY.indexOf(types[0]) !== -1; }
+  function bookable(k) { return k >= isoToday() && !isClosed(dayTypes(k)); }
   function sessionTags(types) {
     return SESSION_TYPES.filter(function (t) { return has(types, t); }).map(function (t) {
       return '<span class="ev-tag ' + t + '">' + DAY_LABELS[t] + (TBD_TYPES[t] ? "*" : "") + "</span>";
@@ -618,7 +623,7 @@
   }
   function windowTag(types) {
     var a = availText(types);
-    return '<span class="ev-tag ' + (types[0] === "off" ? "off" : a ? "pm" : "open") + '">' + (a || "All day") + "</span>";
+    return '<span class="ev-tag ' + (isClosed(types) ? "off" : a ? "pm" : "open") + '">' + (a || "All day") + "</span>";
   }
   // The message a Book button pre-fills, e.g. "...session on Sunday, Oct 4, in the afternoon."
   function drillMsgFor(k) {
@@ -660,9 +665,10 @@
     days.forEach(function (k) {
       var types = dayTypes(k), note = keyDateNote(k), sel = k === monthSel, parts = partsOf(types);
       var sess = SESSION_TYPES.filter(function (t) { return has(types, t); });
-      var cls = "mc-day" + (types[0] === "off" ? " is-off" : "") + (parts.length ? " is-part" : "") + (note ? " is-key" : "") +
+      var cls = "mc-day" + (types[0] === "off" ? " is-off" : "") + (types[0] === "full" ? " is-full" : "") + (parts.length ? " is-part" : "") + (note ? " is-key" : "") +
         (k === today ? " is-today" : "") + (k < today ? " is-past" : "") + (sel ? " is-sel" : "");
       var inner = '<span class="mc-num">' + isoDate(k).getDate() + "</span>" +
+        (types[0] === "full" ? '<span class="mc-part mc-full">FULL</span>' : "") +
         (parts.length ? '<span class="mc-part">' + parts.map(function (t) { return DAY_MARKS[t]; }).join("/") + "</span>" : "") +
         (sess.length ? '<span class="mc-dots">' + sess.map(function (t) { return '<span class="dot dot-' + t + '"></span>'; }).join("") + "</span>" : "");
       if (usable(k)) {
@@ -728,13 +734,14 @@
     });
     renderMonthDetail();
   }
-  // "Not available" clears the other marks, and any other mark clears it.
+  // "Fully booked" and "Not available" each clear the other marks, and any
+  // other mark clears them.
   function toggleDay(k, t) {
     commit(function (doc) {
       var s = cleanSchedule(scheduleOf(doc)) || {};
       var cur = s[k] || [], on = cur.indexOf(t) === -1;
-      var next = t === "off" ? (on ? ["off"] : [])
-        : on ? cur.filter(function (x) { return x !== "off"; }).concat(t) : cur.filter(function (x) { return x !== t; });
+      var next = WHOLE_DAY.indexOf(t) !== -1 ? (on ? [t] : [])
+        : on ? cur.filter(function (x) { return WHOLE_DAY.indexOf(x) === -1; }).concat(t) : cur.filter(function (x) { return x !== t; });
       if (next.length) s[k] = DAY_TYPES.filter(function (x) { return next.indexOf(x) !== -1; });
       else delete s[k];
       doc.schedule = s; // kept even when empty, so the default calendar doesn't come back

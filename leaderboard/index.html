@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=101" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=102" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -338,15 +338,16 @@
       <ul class="month-legend" aria-hidden="true">
         <li><span class="sw sw-open"></span>Available</li>
         <li><span class="sw sw-part"></span>Limited hours</li>
+        <li><span class="sw sw-full"></span>Fully booked</li>
         <li><span class="sw sw-off"></span>Unavailable</li>
-        <li><span class="dot dot-drill"></span>Group Drill</li>
-        <li><span class="dot dot-ranked"></span>Ranked*</li>
-        <li><span class="dot dot-social"></span>Social*</li>
+        <li><span class="dot dot-drill"></span>Drill Session</li>
+        <li><span class="dot dot-ranked"></span>Rank Play*</li>
+        <li><span class="dot dot-social"></span>Social Play*</li>
       </ul>
       <div class="month-detail" id="monthDetail" aria-live="polite"></div>
       <h3 class="section-lbl month-lbl">Next openings</h3>
       <ol class="month-agenda" id="monthAgenda"></ol>
-      <p class="month-note">*Ranked Play and Social Play times TBD &ndash; pending group availability</p>
+      <p class="month-note">*Rank Play and Social Play times TBD &ndash; pending group availability</p>
     </section>
 
 
@@ -509,6 +510,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=77"></script>
+  <script src="/leaderboard/app.js?v=78"></script>
 </body>
 </html>
