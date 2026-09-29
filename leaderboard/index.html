@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=99" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=100" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -323,14 +323,23 @@
       </div>
     </section>
 
-    <!-- Month calendar: what's on each day of the challenge month. The coach
-         marks days in the admin view (tap a day, then its type); saved as
+    <!-- Player view: Drill Training card; it scrolls to the booking calendar below -->
+    <a class="drill-btn" id="drillBtn" hidden href="#monthCard">
+      <span class="db-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span>
+      <span class="db-txt"><span class="db-title">Drill Training</span><span class="db-sub">Earn +2 Community Points</span></span>
+      <span class="db-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+      <span class="sr-only"> (pick a day in the calendar below)</span>
+    </a>
+
+    <!-- Booking calendar: the challenge month. Players tap an open day (or a
+         "Next openings" Book button) to book a drill session with that date in
+         the message; the coach marks days in the admin view. Saved as
          board.schedule. -->
     <section class="card month-card" id="monthCard" aria-labelledby="monthTitle">
       <div class="events-head">
         <div>
-          <h2 id="monthTitle">October Calendar</h2>
-          <span class="events-sub" id="monthSub">Coach availability and sessions</span>
+          <h2 id="monthTitle" tabindex="-1">Book a Drill Session</h2>
+          <span class="events-sub" id="monthSub">Pick a day in October that works for you</span>
         </div>
       </div>
       <div class="month-grid" id="monthGrid"></div>
@@ -342,20 +351,12 @@
         <li><span class="dot dot-ranked"></span>Ranked*</li>
         <li><span class="dot dot-social"></span>Social*</li>
       </ul>
-      <div class="month-detail" id="monthDetail" aria-live="polite" hidden></div>
-      <h3 class="section-lbl month-lbl">Coming up</h3>
+      <div class="month-detail" id="monthDetail" aria-live="polite"></div>
+      <h3 class="section-lbl month-lbl">Next openings</h3>
       <ol class="month-agenda" id="monthAgenda"></ol>
-      <button type="button" class="btn small ghost month-more" id="monthMoreBtn" aria-expanded="false" hidden>Show all</button>
       <p class="month-note">*Ranked Play and Social Play times TBD &ndash; pending group availability</p>
     </section>
 
-    <!-- Player view: book a Drill Training session (Instagram DM) -->
-    <a class="drill-btn" id="drillBtn" data-drill hidden href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">
-      <span class="db-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span>
-      <span class="db-txt"><span class="db-title">Drill Training</span><span class="db-sub">Earn +2 Community Points</span></span>
-      <span class="db-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-      <span class="sr-only"> (opens Instagram)</span>
-    </a>
 
     <!-- Gachapon: opens the keychain rewards board (#gachaDialog); the
          link still goes to its Instagram post without JS -->
@@ -516,6 +517,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=75"></script>
+  <script src="/leaderboard/app.js?v=76"></script>
 </body>
 </html>

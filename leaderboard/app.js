@@ -580,10 +580,9 @@
   function scheduleOf(doc) {
     return doc.schedule ? doc.schedule : DEFAULT_SCHEDULE[boardId] || {};
   }
-  var monthSel = null; // selected day, "YYYY-MM-DD" (admin editing)
+  var monthSel = null; // selected day, "YYYY-MM-DD"
   var monthEditable = false;
-  var monthShowAll = false;
-  var AGENDA_LIMIT = 6;
+  var OPENINGS_LIMIT = 5;
   var PART_TYPES = ["am", "pm", "eve"];
   function monthOf() {
     var d = challengeDates();
@@ -593,111 +592,125 @@
     var p = k.split("-");
     return new Date(+p[0], +p[1] - 1, +p[2]);
   }
+  function longDay(k) { return isoDate(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }); }
   function keyDateNote(k) {
     var d = challengeDates();
-    if (k === d.start) return "Challenge starts \u00b7 Starting DUPR";
-    if (k === d.end) return "Last day \u00b7 Final DUPR";
+    if (k === d.start) return "Challenge starts · Starting DUPR";
+    if (k === d.end) return "Last day · Final DUPR";
     return "";
   }
   function dayTypes(k) { return scheduleOf(board)[k] || []; }
   function has(list, t) { return list.indexOf(t) !== -1; }
+  function partsOf(types) { return PART_TYPES.filter(function (t) { return has(types, t); }); }
   // "Afternoon only", "Morning & evening only", "Not available", or "".
   function availText(types) {
     if (types[0] === "off") return "Not available";
-    var parts = PART_TYPES.filter(function (t) { return has(types, t); });
-    var words = { am: "Morning", pm: "Afternoon", eve: "Evening" };
-    if (!parts.length) return "";
-    var w = parts.map(function (t) { return words[t]; });
+    var w = partsOf(types).map(function (t) { return { am: "Morning", pm: "Afternoon", eve: "Evening" }[t]; });
+    if (!w.length) return "";
     return (w.length > 1 ? w.slice(0, -1).join(", ") + " & " + w[w.length - 1].toLowerCase() : w[0]) + " only";
   }
+  // Unmarked days are open all day; only the exceptions get marked.
+  function bookable(k) { return k >= isoToday() && dayTypes(k)[0] !== "off"; }
   function sessionTags(types) {
     return SESSION_TYPES.filter(function (t) { return has(types, t); }).map(function (t) {
       return '<span class="ev-tag ' + t + '">' + DAY_LABELS[t] + (TBD_TYPES[t] ? "*" : "") + "</span>";
     }).join("");
   }
-  // The grid is the at-a-glance view (colour = availability, dots = sessions);
-  // the "Coming up" list below says the same in words, so for players the grid
-  // is decorative. For the coach, days are buttons that open the editor.
+  function windowTag(types) {
+    var a = availText(types);
+    return '<span class="ev-tag ' + (types[0] === "off" ? "off" : a ? "pm" : "open") + '">' + (a || "All day") + "</span>";
+  }
+  // The message a Book button pre-fills, e.g. "...session on Sunday, Oct 4, in the afternoon."
+  function drillMsgFor(k) {
+    var parts = partsOf(dayTypes(k)).map(function (t) { return { am: "morning", pm: "afternoon", eve: "evening" }[t]; });
+    var when = isoDate(k).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+    return "Hi Coach! I'd like to book a Drill Training session on " + when +
+      (parts.length ? ", in the " + (parts.length > 1 ? parts.slice(0, -1).join(", ") + " or " + parts[parts.length - 1] : parts[0]) : "") + ".";
+  }
+  function bookLink(k, cls, text) {
+    return '<a class="' + cls + '" data-drill data-date="' + k + '" href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">' +
+      text + '<span class="sr-only"> on ' + esc(longDay(k)) + " (opens Instagram)</span></a>";
+  }
+  function monthDays() {
+    var ym = monthOf(), count = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate(), out = [];
+    for (var day = 1; day <= count; day++) out.push(ym + "-" + String(day).padStart(2, "0"));
+    return out;
+  }
+  // Players see a booking view: open days are buttons (tap one to book it),
+  // unavailable and past days are greyed out, and "Next openings" lists the
+  // next few bookable days. The coach sees every day as a button that opens
+  // the editor.
   function renderMonth(editable) {
     monthEditable = editable;
-    var ym = monthOf(), y = +ym.slice(0, 4), m = +ym.slice(5, 7);
-    var first = new Date(y, m - 1, 1), count = new Date(y, m, 0).getDate();
-    els.monthTitle.textContent = first.toLocaleDateString("en-US", { month: "long" }) + " Calendar";
-    els.monthSub.textContent = editable ? "Tap a day to mark it" : "Coach availability and sessions";
-    var today = isoToday(), d = challengeDates();
-    var key = function (day) { return ym + "-" + String(day).padStart(2, "0"); };
-    if (!monthSel || monthSel.slice(0, 7) !== ym) {
-      monthSel = today.slice(0, 7) === ym ? today : d.start && d.start.slice(0, 7) === ym ? d.start : key(1);
-    }
+    var ym = monthOf(), first = isoDate(ym + "-01"), days = monthDays(), today = isoToday();
+    var monthName = first.toLocaleDateString("en-US", { month: "long" });
+    els.monthTitle.textContent = editable ? monthName + " Calendar" : "Book a Drill Session";
+    els.monthSub.textContent = editable ? "Tap a day to mark it" : "Pick a day in " + monthName + " that works for you";
+    var usable = function (k) { return editable || bookable(k); };
+    // The coach starts on today (or the first day); players pick a day
+    // themselves ("Next openings" already offers the nearest ones).
+    if (monthSel && (monthSel.slice(0, 7) !== ym || !usable(monthSel))) monthSel = null;
+    if (!monthSel && editable) monthSel = days.filter(function (k) { return k >= today; })[0] || days[0];
+    var tabDay = monthSel || days.filter(usable)[0]; // the grid's one tab stop
     var html = ["S", "M", "T", "W", "T", "F", "S"].map(function (w) {
-      return '<span class="mc-wd">' + w + "</span>";
+      return '<span class="mc-wd" aria-hidden="true">' + w + "</span>";
     }).join("");
-    for (var i = 0; i < first.getDay(); i++) html += '<span class="mc-pad"></span>';
-    for (var day = 1; day <= count; day++) {
-      var k = key(day), types = dayTypes(k), note = keyDateNote(k), sel = editable && k === monthSel;
-      var parts = PART_TYPES.filter(function (t) { return has(types, t); });
+    for (var i = 0; i < first.getDay(); i++) html += '<span class="mc-pad" aria-hidden="true"></span>';
+    days.forEach(function (k) {
+      var types = dayTypes(k), note = keyDateNote(k), sel = k === monthSel, parts = partsOf(types);
       var sess = SESSION_TYPES.filter(function (t) { return has(types, t); });
       var cls = "mc-day" + (types[0] === "off" ? " is-off" : "") + (parts.length ? " is-part" : "") + (note ? " is-key" : "") +
         (k === today ? " is-today" : "") + (k < today ? " is-past" : "") + (sel ? " is-sel" : "");
-      var inner = '<span class="mc-num">' + day + "</span>" +
+      var inner = '<span class="mc-num">' + isoDate(k).getDate() + "</span>" +
         (parts.length ? '<span class="mc-part">' + parts.map(function (t) { return DAY_MARKS[t]; }).join("/") + "</span>" : "") +
         (sess.length ? '<span class="mc-dots">' + sess.map(function (t) { return '<span class="dot dot-' + t + '"></span>'; }).join("") + "</span>" : "");
-      if (editable) {
-        var label = isoDate(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) +
-          (note ? ", " + note : "") + (types.length ? ": " + types.map(function (t) { return DAY_LABELS[t]; }).join(", ") : "");
-        html += '<button type="button" class="' + cls + '" data-day="' + k + '" tabindex="' + (sel ? 0 : -1) + '" aria-pressed="' + sel +
+      if (usable(k)) {
+        var label = longDay(k) + (note ? ", " + note : "") + ": " + (availText(types) || "open all day") +
+          (sess.length ? ", " + sess.map(function (t) { return DAY_LABELS[t]; }).join(", ") : "");
+        html += '<button type="button" class="' + cls + '" data-day="' + k + '" tabindex="' + (k === tabDay ? 0 : -1) + '" aria-pressed="' + sel +
           '" aria-label="' + esc(label) + '"' + (k === today ? ' aria-current="date"' : "") + ">" + inner + "</button>";
       } else {
-        html += '<span class="' + cls + '">' + inner + "</span>";
+        html += '<span class="' + cls + '" aria-hidden="true">' + inner + "</span>";
       }
-    }
+    });
     // A live update redraws the grid; keep keyboard focus on the same day.
     var ae = document.activeElement;
     var focusedDay = ae && els.monthGrid.contains(ae) ? ae.getAttribute("data-day") : null;
     els.monthGrid.innerHTML = html;
-    if (editable) els.monthGrid.removeAttribute("aria-hidden"); else els.monthGrid.setAttribute("aria-hidden", "true");
     if (focusedDay) { var fb = els.monthGrid.querySelector('[data-day="' + focusedDay + '"]'); if (fb) fb.focus(); }
     renderMonthDetail();
-    renderAgenda();
+    renderOpenings();
   }
-  // Upcoming days that have something on (or are a key date), in words.
-  function renderAgenda() {
-    var ym = monthOf(), today = isoToday(), sched = scheduleOf(board), d = challengeDates();
-    var days = Object.keys(sched).filter(function (k) { return k.slice(0, 7) === ym; });
-    [d.start, d.end].forEach(function (k) { if (k && k.slice(0, 7) === ym && days.indexOf(k) === -1) days.push(k); });
-    days = days.filter(function (k) { return k >= today; }).sort();
-    var shown = monthShowAll ? days : days.slice(0, AGENDA_LIMIT);
-    els.monthAgenda.innerHTML = shown.length ? shown.map(function (k) {
-      var types = sched[k] || [], dt = isoDate(k), avail = availText(types), note = keyDateNote(k), tags = sessionTags(types);
-      var cls = "ag-row" + (types[0] === "off" ? " is-off" : avail ? " is-part" : "");
-      return '<li class="' + cls + '"><span class="ag-date"><span class="ag-wd">' +
+  // The next few days a member can book, in words, each with a Book button.
+  function renderOpenings() {
+    var list = monthDays().filter(bookable).slice(0, OPENINGS_LIMIT);
+    els.monthAgenda.innerHTML = list.length ? list.map(function (k) {
+      var types = dayTypes(k), dt = isoDate(k), note = keyDateNote(k), tags = sessionTags(types);
+      return '<li class="ag-row' + (partsOf(types).length ? " is-part" : "") + '"><span class="ag-date"><span class="ag-wd">' +
         dt.toLocaleDateString("en-US", { weekday: "short" }) + '</span><span class="ag-day">' + dt.getDate() + "</span></span>" +
-        '<span class="ag-body">' +
-        (avail ? '<span class="ag-main">' + avail + "</span>" : "") +
-        (note ? '<span class="ag-key">' + note + "</span>" : "") +
-        (tags ? '<span class="ag-tags">' + tags + "</span>" : "") +
-        (readOnly && has(types, "drill") ? '<a class="ag-book" data-drill href="https://ig.me/m/lotuspickleballacademy_to" target="_blank" rel="noopener">Book a drill session<span class="sr-only"> on ' + dt.toLocaleDateString("en-US", { month: "long", day: "numeric" }) + " (opens Instagram)</span> &rarr;</a>" : "") +
-        "</span></li>";
-    }).join("") : '<li class="ag-empty">Nothing scheduled yet.</li>';
-    els.monthMoreBtn.hidden = days.length <= AGENDA_LIMIT;
-    els.monthMoreBtn.textContent = monthShowAll ? "Show less" : "Show all " + days.length + " days";
-    els.monthMoreBtn.setAttribute("aria-expanded", String(monthShowAll));
+        '<span class="ag-body"><span class="ag-main">' + (availText(types) || "All day") + "</span>" + tags +
+        (note ? '<span class="ag-key">' + note + "</span>" : "") + "</span>" +
+        (monthEditable ? "" : bookLink(k, "btn small ag-book", "Book")) + "</li>";
+    }).join("") : '<li class="ag-empty">No openings left this month.</li>';
   }
   function renderMonthDetail() {
-    els.monthDetail.hidden = !monthEditable;
-    if (!monthEditable) { els.monthDetail.innerHTML = ""; return; }
-    var k = monthSel, types = dayTypes(k), note = keyDateNote(k), avail = availText(types), tags = sessionTags(types);
-    var out = '<div class="md-date">' + esc(isoDate(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })) + "</div>";
+    var k = monthSel;
+    els.monthDetail.hidden = !k;
+    if (!k) { els.monthDetail.innerHTML = ""; return; }
+    var types = dayTypes(k), note = keyDateNote(k);
+    var out = '<div class="md-date">' + esc(longDay(k)) + "</div>";
     if (note) out += '<div class="md-key">' + note + "</div>";
-    if (avail || tags) out += '<div class="md-tags">' + (avail ? '<span class="ev-tag ' + (types[0] === "off" ? "off" : "pm") + '">' + avail + "</span>" : "") + tags + "</div>";
-    else if (!note) out += '<div class="md-empty">Available all day, nothing scheduled</div>';
-    var toggles = function (list) {
-      return list.map(function (t) {
-        return '<button type="button" class="btn small md-toggle" data-mark="' + t + '" aria-pressed="' + has(types, t) + '">' + DAY_LABELS[t] + "</button>";
-      }).join("");
-    };
-    out += '<div class="md-edit"><span class="aa-label">Sessions</span>' + toggles(SESSION_TYPES) +
-      '<span class="aa-label">Availability</span>' + toggles(AVAIL_TYPES) + "</div>";
+    out += '<div class="md-tags">' + windowTag(types) + sessionTags(types) + "</div>";
+    if (!monthEditable && bookable(k)) out += bookLink(k, "btn primary md-book", "Book this day");
+    if (monthEditable) {
+      var toggles = function (list) {
+        return list.map(function (t) {
+          return '<button type="button" class="btn small md-toggle" data-mark="' + t + '" aria-pressed="' + has(types, t) + '">' + DAY_LABELS[t] + "</button>";
+        }).join("");
+      };
+      out += '<div class="md-edit"><span class="aa-label">Sessions</span>' + toggles(SESSION_TYPES) +
+        '<span class="aa-label">Availability</span>' + toggles(AVAIL_TYPES) + "</div>";
+    }
     var ae = document.activeElement;
     var focusedMark = ae && els.monthDetail.contains(ae) ? ae.getAttribute("data-mark") : null;
     els.monthDetail.innerHTML = out;
@@ -705,7 +718,7 @@
   }
   function selectDay(k, focus) {
     monthSel = k;
-    Array.prototype.forEach.call(els.monthGrid.querySelectorAll("[data-day]"), function (b) {
+    Array.prototype.forEach.call(els.monthGrid.querySelectorAll("button[data-day]"), function (b) {
       var on = b.getAttribute("data-day") === k;
       b.classList.toggle("is-sel", on);
       b.setAttribute("aria-pressed", String(on));
@@ -911,7 +924,7 @@
       "noScores", "duprWarn", "moveHint", "scoringCard", "prizeMeta", "eventsCard", "eventsList",
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
-      "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen", "prizeSponsorInput", "prizeSponsorLine", "prizeSponsorName", "monthCard", "monthTitle", "monthSub", "monthGrid", "monthDetail", "monthAgenda", "monthMoreBtn",
+      "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen", "prizeSponsorInput", "prizeSponsorLine", "prizeSponsorName", "monthCard", "monthTitle", "monthSub", "monthGrid", "monthDetail", "monthAgenda",
       "winnerCard", "prizeBanner", "joinCard", "joinBtn", "drillBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinElig", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
@@ -1204,6 +1217,7 @@
     renderRank(list, scored);
     renderEvents(!restricted);
     renderMonth(!restricted);
+    els.monthCard.hidden = restricted && phase() === "ended";
     renderLaunch(list, preLaunch);
     renderWinner(list, ph === "ended" && scored);
     renderPodium(list, scored && ph !== "before");
@@ -2391,7 +2405,8 @@
     drill: { kicker: "Earn +2 Community Points", title: "Book a Drill Training Session", msg: DRILL_MSG, scheme: "yellow" },
   };
   var panelMode = "join";
-  function openJoin(ev, mode) {
+  var panelMsg = JOIN_MSG; // the message being shown (a drill booking can name a day)
+  function openJoin(ev, mode, msg) {
     if (ev && (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey)) return;
     if (ev) ev.preventDefault();
     if (els.joinDialog.open) return;
@@ -2399,7 +2414,8 @@
     var cfg = PANELS[panelMode];
     els.joinDialogKicker.textContent = cfg.kicker;
     els.joinDialogTitle.textContent = cfg.title;
-    els.joinMsg.textContent = cfg.msg;
+    panelMsg = msg || cfg.msg;
+    els.joinMsg.textContent = panelMsg;
     els.joinElig.hidden = !cfg.elig;
     els.joinCopyFail.hidden = true;
     if (typeof els.joinDialog.showModal === "function") els.joinDialog.showModal();
@@ -2422,7 +2438,7 @@
   // Resolves true once the message is on the clipboard, false if the
   // browser wouldn't allow it.
   function copyJoinMsg() {
-    var text = PANELS[panelMode].msg;
+    var text = panelMsg;
     var legacy = function () {
       try { return selectJoinMsg() && document.execCommand("copy"); } catch (err) { return false; }
     };
@@ -2460,22 +2476,30 @@
     });
     els.prizeZoomBtn.addEventListener("click", openPrize);
     els.monthGrid.addEventListener("click", function (ev) {
-      var b = ev.target.closest && ev.target.closest("[data-day]");
-      if (b && monthEditable) selectDay(b.getAttribute("data-day"));
+      var b = ev.target.closest && ev.target.closest("button[data-day]");
+      if (b) selectDay(b.getAttribute("data-day"));
     });
-    els.monthMoreBtn.addEventListener("click", function () {
-      monthShowAll = !monthShowAll;
-      renderAgenda();
-    });
-    // Arrow keys move between days (one tab stop for the whole grid).
+    // Arrow keys move between the days you can pick (one tab stop for the grid).
     els.monthGrid.addEventListener("keydown", function (ev) {
       var step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[ev.key];
-      if (!step || !monthSel || !monthEditable) return;
-      var p = monthSel.split("-"), d = new Date(+p[0], +p[1] - 1, +p[2] + step);
-      var k = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-      if (!els.monthGrid.querySelector('[data-day="' + k + '"]')) return;
+      var from = ev.target.getAttribute && ev.target.getAttribute("data-day");
+      if (!step || !from) return;
+      var days = monthDays(), i = days.indexOf(from);
+      for (var j = i + step; j >= 0 && j < days.length; j += step) {
+        if (els.monthGrid.querySelector('button[data-day="' + days[j] + '"]')) {
+          ev.preventDefault();
+          selectDay(days[j], true);
+          return;
+        }
+      }
+    });
+    // The Drill Training card takes you to the calendar to pick a day.
+    els.drillBtn.addEventListener("click", function (ev) {
+      if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
       ev.preventDefault();
-      selectDay(k, true);
+      var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      els.monthCard.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" });
+      els.monthTitle.focus({ preventScroll: true });
     });
     els.monthDetail.addEventListener("click", function (ev) {
       var b = ev.target.closest && ev.target.closest("[data-mark]");
@@ -2483,7 +2507,9 @@
     });
     document.addEventListener("click", function (ev) {
       var a = ev.target.closest && ev.target.closest("a[data-join], a[data-drill]");
-      if (a) openJoin(ev, a.hasAttribute("data-drill") ? "drill" : "join");
+      if (!a) return;
+      var date = a.getAttribute("data-date");
+      openJoin(ev, a.hasAttribute("data-drill") ? "drill" : "join", date ? drillMsgFor(date) : null);
     });
     var panelGo = { red: celebrate("red"), yellow: celebrate("yellow") };
     els.joinOpenBtn.addEventListener("click", function (ev) {
