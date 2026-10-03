@@ -337,16 +337,21 @@
     return next;
   }
   // The player who climbed the most spots between two standings, then most
-  // points gained. Only players who were on the board at the start and have
-  // gained points since count, so being added mid-week isn't a "climb".
+  // points gained. Players added after the starting record count from 0
+  // points (everyone starts the challenge on 0), ranked where a 0 stood then;
+  // skipping them used to hand the title to whoever happened to be on the
+  // board early. Only players who gained points count.
   function bestClimber(base, end, byId) {
+    var bt = base.t || {}, br = base.r || {};
+    var zeroRank = 1 + Object.keys(bt).filter(function (id) { return bt[id] > 0; }).length;
     var picks = [];
     Object.keys(end.t || {}).forEach(function (id) {
       var e = byId[id];
-      if (!e || typeof base.t[id] !== "number" || typeof base.r[id] !== "number") return; // removed since, or added mid-week
-      var pts = end.t[id] - base.t[id];
+      if (!e) return; // removed since
+      var known = typeof bt[id] === "number" && typeof br[id] === "number";
+      var pts = end.t[id] - (known ? bt[id] : 0);
       if (pts <= 0) return;
-      var up = base.r[id] - end.r[id];
+      var up = (known ? br[id] : zeroRank) - end.r[id];
       picks.push({ e: e, up: up, pts: pts, rank: end.r[id] });
     });
     picks.sort(function (a, b) { return b.up - a.up || b.pts - a.pts || a.rank - b.rank || a.e.name.localeCompare(b.e.name); });

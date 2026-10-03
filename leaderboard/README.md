@@ -96,7 +96,9 @@ Community Points, Points Behind 1st — and sorts automatically.
   player who climbed the most spots in the last full week (Monday to
   Sunday), with "▲4 spots · +12 pts". Ties go to more points gained. In the
   first week, before a full week exists, it shows the climber "so far this
-  week". Only players who were on the board when the week began count.
+  week". Only players who gained points that week count; anyone added
+  after the week began counts from 0 points (everyone starts the challenge
+  on 0), ranked where a 0 stood at the start of the week.
   Tapping it opens that player's breakdown, and the Instagram Story image
   includes it. How it works: the first admin save each week stores the
   standings as they were before that save (the `weeks` field, keeping the
