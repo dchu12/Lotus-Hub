@@ -21,7 +21,7 @@
   --shadow-sm:  0 1px 3px rgba(28, 20, 20, .06);
   --danger:     #b3261e;
   --gold:       #c8860d;
-  --silver:     #8b93a0;
+  --silver:     #6e7787; /* darkened from #8b93a0 so white numbers pass contrast */
   --bronze:     #a35d28;
   --zebra:      rgba(28, 20, 20, .015);
 }

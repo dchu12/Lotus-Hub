@@ -18,7 +18,7 @@ tallies each player's **Lotus Score** automatically:
 The table itself stays minimal — Rank, Player, Lotus Score, Skill Points,
 Community Points, Points Behind 1st — and sorts automatically.
 
-- **Ranks and ties**: players level on Lotus Score share a rank (1, 1, 3…),
+- **Ranks and ties**: players level on Lotus Score share a rank and the next score takes the next number (1, 1, 2, 3…, no gaps),
   and "Points Behind 1st" shows "—" for everyone in 1st. Gold/silver/bronze
   medals and the highlighted leader row only appear once someone has
   scored; before that, a note says scores update after each session (or
