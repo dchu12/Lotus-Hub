@@ -221,7 +221,7 @@
       '<button type="button" class="btn small danger" data-del="' + id + '">Delete</button></div>' +
       "</div></td></tr>";
   }
-  // Players level on Lotus Score share a rank (1, 1, 3, ...). Within a tie
+  // Players level on Lotus Score share a rank (1, 1, 2, ...). Within a tie
   // the display order is Community Points then name, which matches the
   // published tie-break for 1st, but the rank number stays shared.
   function sortedEntries(entries) {
@@ -232,10 +232,17 @@
       .sort(function (a, b) {
         return b._c.total - a._c.total || b._c.community - a._c.community || a.name.localeCompare(b.name);
       });
+    // Dense ranks: ties share a rank and the next score takes the next number
+    // (1, 1, 2, 3...), so no rank is skipped.
     list.forEach(function (e, i) {
-      e._rank = i > 0 && e._c.total === list[i - 1]._c.total ? list[i - 1]._rank : i + 1;
+      e._rank = i === 0 ? 1 : e._c.total === list[i - 1]._c.total ? list[i - 1]._rank : list[i - 1]._rank + 1;
     });
     return list;
+  }
+  // Gold / silver / bronze for ranks 1-3, but only for players with points
+  // (with dense ranks, everyone still on 0 can be "3rd").
+  function medalOf(e) {
+    return e._c.total > 0 ? { 1: "gold", 2: "silver", 3: "bronze" }[e._rank] || "" : "";
   }
   function anyScored(list) {
     return list.some(function (e) { return e._c.total !== 0; });
@@ -343,7 +350,10 @@
   // board early. Only players who gained points count.
   function bestClimber(base, end, byId) {
     var bt = base.t || {}, br = base.r || {};
-    var zeroRank = 1 + Object.keys(bt).filter(function (id) { return bt[id] > 0; }).length;
+    // Dense ranks: a 0 sat one below the lowest positive score.
+    var positive = {};
+    Object.keys(bt).forEach(function (id) { if (bt[id] > 0) positive[bt[id]] = true; });
+    var zeroRank = 1 + Object.keys(positive).length;
     var picks = [];
     Object.keys(end.t || {}).forEach(function (id) {
       var e = byId[id];
@@ -1263,10 +1273,9 @@
     var moved = scored && snap && validIso(snap.at) && list.some(function (e) { return movementHtml(e) !== ""; });
     els.moveHint.textContent = moved ? " Arrows show rank changes since " + fmtDay(snap.at) + "." : "";
 
-    var MEDALS = { 1: "gold", 2: "silver", 3: "bronze" };
     els.boardBody.innerHTML = list
       .map(function (e, i) {
-        var medal = scored && MEDALS[e._rank] ? " " + MEDALS[e._rank] : "";
+        var medal = scored && medalOf(e) ? " " + medalOf(e) : "";
         var tied = (list[i - 1] && list[i - 1]._rank === e._rank) || (list[i + 1] && list[i + 1]._rank === e._rank);
         var rankBadge = '<span class="rank-badge' + medal + '"' + (tied ? ' title="Tied for ' + ordinal(e._rank) + '"' : "") + ">" + e._rank + "</span>";
         var open = e.id === expandedId;
@@ -1382,11 +1391,10 @@
     if (!show) return;
     var top = list.slice(0, 3);
     var order = top.length === 3 ? [top[1], top[0], top[2]] : top.length === 2 ? [top[1], top[0]] : [top[0]];
-    var MEDAL = { 1: "gold", 2: "silver", 3: "bronze" };
     els.podium.innerHTML = order.map(function (e) {
       var place = list.indexOf(e) + 1; // podium step by position; the badge shows the (possibly shared) rank
       return (
-        '<button type="button" class="pod pod-' + place + " " + (MEDAL[e._rank] || "") + '" data-pod="' + esc(e.id) + '" aria-label="' +
+        '<button type="button" class="pod pod-' + place + " " + medalOf(e) + '" data-pod="' + esc(e.id) + '" aria-label="' +
         esc(ordinal(e._rank) + " place: " + e.name + ", Lotus Score " + e._c.total) + '">' +
         avatarHtml(e.name, "av-lg") +
         '<span class="pod-name">' + esc(e.name) + "</span>" +
@@ -1446,7 +1454,7 @@
     els.rankMatches.innerHTML = "";
 
     var status = standingText(me, list, scored);
-    var medal = scored ? MEDAL_BY_RANK[me._rank] || "" : "none";
+    var medal = scored ? medalOf(me) : "none";
     els.rankMe.innerHTML =
       '<span class="rank-big ' + medal + '">' + (scored ? "#" + me._rank : "&ndash;") + "</span>" +
       '<div class="me-txt"><div class="me-name">' + esc(me.name) + ' <span class="me-pts">' + me._c.total + " Lotus Score</span></div>" +
@@ -1458,7 +1466,6 @@
     if (scored) prepareShareCard(me, list, status);
   }
 
-  var MEDAL_BY_RANK = { 1: "gold", 2: "silver", 3: "bronze" };
   function isTied(me, list) {
     return list.filter(function (e) { return e._rank === me._rank; }).length > 1;
   }
@@ -1859,7 +1866,7 @@
       ctx.fillStyle = "#6f6865"; fitText(ctx, board.subtitle, 740, "600", 34, FONT); ctx.fillText(board.subtitle, 262, 202);
 
       // Rank medallion
-      var color = { 1: "#c8860d", 2: "#8b93a0", 3: "#a35d28" }[me._rank] || "#b91c2b";
+      var color = { gold: "#c8860d", silver: "#8b93a0", bronze: "#a35d28" }[medalOf(me)] || "#b91c2b";
       ctx.fillStyle = color; ctx.beginPath(); ctx.arc(540, 520, 170, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(540, 520, 148, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -2109,7 +2116,7 @@
         if (i > 0) { ctx.fillStyle = "#efe9e8"; ctx.fillRect(X, y, W - 2 * X, 2); }
         var cy = y + rowH / 2;
         if (scored) {
-          var medal = MEDAL_FILL[e._rank];
+          var medal = e._c.total > 0 ? MEDAL_FILL[e._rank] : null;
           ctx.beginPath(); ctx.arc(X + 44, cy, 27, 0, Math.PI * 2);
           ctx.fillStyle = medal || "#f6f2f1"; ctx.fill();
           if (!medal) { ctx.strokeStyle = "#e2dbd9"; ctx.lineWidth = 2; ctx.stroke(); }
