@@ -26,6 +26,11 @@ Community Points, Points Behind 1st — and sorts automatically.
   "How scoring works" under Tiebreaker rules, is **most Community Points
   wins**, and that's also the
   display order within a tie.
+  Within a tie the list shows more Community Points first, then whoever
+  reached that score first: every save that raises a player's score stamps
+  `scoredAt` (ms) on their entry. Scores saved before the stamp existed get
+  their order recorded once, from the last weekly snapshot, on the next
+  admin save.
 - **Phones** show just Score and Behind 1st (tapping a player shows the
   Skill/Community split), so the table fits without sideways scrolling.
   The CSV export has every column.
@@ -96,7 +101,8 @@ Community Points, Points Behind 1st — and sorts automatically.
   player who climbed the most spots in the last full week (Monday to
   Sunday), with "▲4 spots · +12 pts". Ties go to more points gained. In the
   first week, before a full week exists, it shows the climber "so far this
-  week". Only players who gained points that week count; anyone added
+  week". A full tie (same spots and points) goes to whoever reached their
+  score first. Only players who gained points that week count; anyone added
   after the week began counts from 0 points (everyone starts the challenge
   on 0), ranked where a 0 stood at the start of the week.
   Tapping it opens that player's breakdown, and the Instagram Story image

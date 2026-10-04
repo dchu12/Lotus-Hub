@@ -222,15 +222,27 @@
       "</div></td></tr>";
   }
   // Players level on Lotus Score share a rank (1, 1, 2, ...). Within a tie
-  // the display order is Community Points then name, which matches the
-  // published tie-break for 1st, but the rank number stays shared.
+  // the display order is Community Points, then who got there first, then
+  // name; the rank number stays shared.
+  // When a player reached their current score (ms), stamped by commit() on any
+  // save that raises it. Ties go to whoever got there first.
+  function reachedAt(e) { return typeof e.scoredAt === "number" ? e.scoredAt : Infinity; }
+  function byFirst(a, b) {
+    var ta = reachedAt(a), tb = reachedAt(b);
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    // Scores saved before the stamp existed: whoever was ahead in the last
+    // weekly snapshot got there first.
+    var s = (board.snapshot && board.snapshot.ranks) || {};
+    var ra = typeof s[a.id] === "number" ? s[a.id] : Infinity, rb = typeof s[b.id] === "number" ? s[b.id] : Infinity;
+    return ra === rb ? 0 : ra < rb ? -1 : 1;
+  }
   function sortedEntries(entries) {
     var list = (entries || board.entries)
       .map(function (e) {
         return Object.assign({}, e, { _c: computed(e) });
       })
       .sort(function (a, b) {
-        return b._c.total - a._c.total || b._c.community - a._c.community || a.name.localeCompare(b.name);
+        return b._c.total - a._c.total || b._c.community - a._c.community || byFirst(a, b) || a.name.localeCompare(b.name);
       });
     // Dense ranks: ties share a rank and the next score takes the next number
     // (1, 1, 2, 3...), so no rank is skipped.
@@ -364,7 +376,7 @@
       var up = (known ? br[id] : zeroRank) - end.r[id];
       picks.push({ e: e, up: up, pts: pts, rank: end.r[id] });
     });
-    picks.sort(function (a, b) { return b.up - a.up || b.pts - a.pts || a.rank - b.rank || a.e.name.localeCompare(b.e.name); });
+    picks.sort(function (a, b) { return b.up - a.up || b.pts - a.pts || a.rank - b.rank || byFirst(a.e, b.e) || a.e.name.localeCompare(b.e.name); });
     return picks[0] || null;
   }
   // Last full week's climber, which stays up all week (ready for a weekly
@@ -798,7 +810,23 @@
       schedule: cleanSchedule(src.schedule),
     };
   }
-  function commit(mutate) {
+  // Every save goes through here; it also stamps scoredAt on each player whose
+  // score went up (see reachedAt).
+  function commit(change) {
+    var mutate = function (doc) {
+      // Scores from before the stamp existed: record their order once (1, 2,
+      // ... so they sort before any real time), from the last weekly snapshot.
+      doc.entries.filter(function (e) { return typeof e.scoredAt !== "number" && computed(e).total > 0; })
+        .sort(byFirst).forEach(function (e, i) { e.scoredAt = i + 1; });
+      var before = {};
+      doc.entries.forEach(function (e) { before[e.id] = computed(e).total; });
+      change(doc);
+      var now = Date.now();
+      doc.entries.forEach(function (e) {
+        var t = computed(e).total;
+        if (t > 0 && t > (before[e.id] || 0)) e.scoredAt = now;
+      });
+    };
     mutate(board);
     saveLocal();
     render();
