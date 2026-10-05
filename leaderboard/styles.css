@@ -145,41 +145,6 @@ body {
   max-width: 230px; font-size: .84rem; font-weight: 600; color: var(--ink-2); line-height: 1.4; text-align: right;
 }
 
-/* Join CTA (player view): one full-width button under the challenge
-   information. Icon badge, label, and an arrow that nudges on hover. */
-.join { margin: 0 0 16px; }
-.join-btn {
-  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px;
-  padding: 10px 14px; border-radius: 16px; text-decoration: none; color: #fff;
-  background: linear-gradient(180deg, #c8283a 0%, var(--brand) 55%, #a8182a 100%);
-  border: 1.5px solid #a01626;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 6px 16px -6px rgba(185, 28, 43, .55), 0 1px 2px rgba(28, 20, 20, .08);
-  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
-}
-.join-btn:hover {
-  transform: translateY(-1px); filter: brightness(1.04);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 10px 22px -8px rgba(185, 28, 43, .6), 0 1px 2px rgba(28, 20, 20, .08);
-}
-.join-btn:active { transform: translateY(0); filter: brightness(.97); }
-.join-btn:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand), transparent 55%); outline-offset: 3px; }
-.jb-icon {
-  flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
-  background: #fff; color: var(--brand); box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
-}
-.jb-icon svg { width: 22px; height: 22px; }
-.jb-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
-.jb-txt b { font-size: clamp(.94rem, 4.3vw, 1.08rem); font-weight: 800; letter-spacing: -.005em; }
-.jb-sub { font-size: .84rem; font-weight: 600; color: rgba(255, 255, 255, .86); margin-top: 1px; }
-.jb-arrow {
-  flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
-  background: rgba(255, 255, 255, .16); transition: transform .15s ease, background .15s ease;
-}
-.jb-arrow svg { width: 18px; height: 18px; }
-.join-btn:hover .jb-arrow { transform: translateX(3px); background: rgba(255, 255, 255, .24); }
-@media (max-width: 420px) {
-  .join-btn { gap: 12px; }
-  .jb-arrow { display: none; }
-}
 .rank-none a { color: var(--brand); font-weight: 700; }
 
 .card {
@@ -831,27 +796,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 .sk-line.short { width: 70%; }
 @keyframes sk-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 
-/* Sticky DM bar (phones only) */
-.join-sticky { display: none; }
-@media (max-width: 640px) {
-  .join-sticky {
-    position: fixed; z-index: 25; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 8px; border-radius: 14px; color: #fff; text-decoration: none;
-    background: linear-gradient(180deg, #c8283a 0%, var(--brand) 55%, #a8182a 100%); border: 1px solid #a01626;
-    box-shadow: 0 10px 28px -8px rgba(185, 28, 43, .6), 0 2px 6px rgba(28, 20, 20, .15);
-    animation: js-in .22s ease-out;
-  }
-  .join-sticky[hidden] { display: none; }
-  .js-icon { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #fff; color: var(--brand); }
-  .js-icon svg { width: 19px; height: 19px; }
-  .js-txt { flex: 1; min-width: 0; font-size: .9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .js-txt b { font-weight: 800; }
-  .js-arrow { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .16); }
-  .js-arrow svg { width: 16px; height: 16px; }
-  body.sticky-on .site-foot { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
-  body.sticky-on .toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
-}
-@keyframes js-in { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
 
 /* Prize photo, full size */
 .lightbox {
@@ -923,7 +867,6 @@ tbody tr.bd-admin td { padding: 6px 8px 14px 52px; text-align: left; white-space
 
 @media (prefers-reduced-motion: reduce) {
   .sk { animation: none; }
-  .join-sticky { animation: none; }
 }
 
 /* One outline system. Cards and secondary buttons share one warm neutral

@@ -47,10 +47,6 @@ Community Points, Points Behind 1st — and sorts automatically.
   shimmering placeholder card stands in for the countdown/leaderboard, so a
   slow connection doesn't flash "Be the first" or an empty table. If nothing
   arrives within 10 seconds, the page shows its normal empty state.
-- **Sticky DM bar (phones)**: once the main Join the Challenge button scrolls out of
-  view, a slim version is pinned to the bottom of the screen. It only shows
-  when the main button would (player view, not ended, visitor not on the
-  board), and never on desktop.
 - **Sponsor line**: "Sponsored by: …" under the paddle name, only when a
   sponsor other than Lotus Pickleball Academy is set in "⋯" → Edit challenge
   details → **Prize sponsor** (saved as `prizeSponsor` on the board, up to 80
@@ -150,9 +146,9 @@ Community Points, Points Behind 1st — and sorts automatically.
   Challenge" (`newTitle`), and the old "October 1 – October 31" as
   "Oct 1 – 31" (`shortSubtitle` in `app.js`) and rewritten to it on the
   next admin save.
-- **Button celebrations**: tapping Join the October Challenge (or the pinned
-  bar) fires a red-and-white confetti burst from the button; Book a Drill Training
-  Session fires yellow and white; Gachapon fires blue and white. Each
+- **Button celebrations**: Open Instagram in the Join panel fires a
+  red-and-white confetti burst; Book a Drill Training Session fires yellow
+  and white; Gachapon fires blue and white. Each
   also gives a haptic buzz
   (vibration on Android; a light haptic tick on iPhone with iOS 18+, since
   iPhones don't let websites vibrate), then opens its Instagram link about
@@ -189,17 +185,14 @@ Community Points, Points Behind 1st — and sorts automatically.
   confetti and opens the Instagram post (`https://www.instagram.com/p/Ddk2QlsEc5f/`). It shows on both the player and
   admin views.
 - **Colour**: cards and secondary buttons use a neutral outline (`--outline`
-  in `styles.css`). Red is kept for the Join button, the prize banner, links,
+  in `styles.css`). Red is kept for the prize banner, links,
   scores, icons and arrows.
-- **Join the challenge**: the player view shows a full-width **Join the October Challenge**
-  button under the How It Works card that leads to an
-  Instagram DM to `@lotuspickleballacademy_to`
-  (`https://ig.me/m/lotuspickleballacademy_to`, set in `JOIN_URL` in
-  `app.js` and the `#joinBtn` link in `index.html`). It's hidden in the admin view,
-  once the challenge has ended, and once a visitor has picked their own name.
-  The "Find your name" search links to the same DM when a name isn't found.
-  Every Join link (the button, the sticky bar, "+ You?" and that search
-  link) first opens a short panel, **Join the October Challenge**, showing
+- **Join the challenge**: the big Join the October Challenge button and the
+  phone sticky bar were removed once the challenge was under way. Two small
+  join links remain: the "+ You?" chip in the pre-launch roster and the
+  "Find your name" search's "DM us on Instagram" link when a name isn't
+  found (both to `JOIN_URL`, `https://ig.me/m/lotuspickleballacademy_to`).
+  Each first opens a short panel, **Join the October Challenge**, showing
   the message they'll send as a chat bubble: "Hi Coach! I'd like to join the
   October Challenge." (`JOIN_MSG` in `app.js`). There's nothing to fill in;
   the coach looks players up. **Open Instagram** copies the message, fires
@@ -335,8 +328,7 @@ Community Points, Points Behind 1st — and sorts automatically.
   full rules" and "View on Instagram". The post link
   (`https://www.instagram.com/p/DdZCGGOkYlW/`) is set in `index.html`; to
   change the thumbnail, replace `challenge-post.jpg` and bump the sw cache.
-  Sits right under the prize banner, above the Join the October Challenge
-  button, collapsed by default (one tap to open) so the leaderboard stays
+  Sits right under the prize banner, above the leaderboard, collapsed by default (one tap to open) so the leaderboard stays
   near the top.
 
 - **Admin tools** (admin link only):
