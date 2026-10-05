@@ -975,7 +975,7 @@
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen", "prizeSponsorInput", "prizeSponsorLine", "prizeSponsorName", "monthCard", "monthTitle", "monthSub", "monthGrid", "monthDetail", "monthAgenda",
-      "winnerCard", "prizeBanner", "joinCard", "joinBtn", "joinSticky", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinElig", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
+      "winnerCard", "prizeBanner", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinElig", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
       "statsCard", "statsRefreshBtn", "statsTotal", "statsBars", "statsLinks",
       "shareWrap", "shareBoardBtn", "shareMenu", "shareWhatsApp", "shareCopyBtn", "menuShareBtn", "storyBtn",
@@ -1271,7 +1271,6 @@
     renderLaunch(list, preLaunch);
     renderWinner(list, ph === "ended" && scored);
     renderPodium(list, scored && ph !== "before");
-    renderJoin(list, ph);
     renderClimber(list, scored && ph === "live");
     renderStats(!restricted && !!(window.LH && LH.ready));
     // Until the board first loads, a placeholder stands in for the countdown /
@@ -1283,7 +1282,6 @@
     // coach keeps the table to add players and log sessions.
     els.boardCard.hidden = preLaunch && restricted;
     if (loading) { els.launchCard.hidden = true; els.boardCard.hidden = true; }
-    updateSticky();
     els.boardHeading.textContent = ph === "ended" ? "Final standings" : "Lotus Leaderboard";
 
     els.playerCount.textContent = list.length ? list.length + (list.length === 1 ? " player" : " players") : "";
@@ -1457,13 +1455,6 @@
       '<img class="win-paddle" src="/leaderboard/prize-paddle.png" alt="" width="111" height="240" />';
   }
 
-  // Player view: the Instagram sign-up button for visitors. Hidden in the
-  // admin view, once the challenge is over, and once a visitor has picked
-  // their own name (they're already in).
-  function renderJoin(list, ph) {
-    var isIn = list.some(function (e) { return e.id === meId; });
-    els.joinCard.hidden = !readOnly || ph === "ended" || isIn;
-  }
   function pts(n) { return n + (n === 1 ? " pt" : " pts"); }
   function setMe(id) {
     meId = id;
@@ -2320,25 +2311,6 @@
     els.lastUpdatedText.textContent = lastUpdated ? "Updated " + formatRelativeTime(lastUpdated) : "";
   }
 
-  // ---- sticky DM bar (phones) ----------------------------------------------------
-  // Shown once the main Join the Challenge button has scrolled out of view, and only
-  // while that button itself would be shown (player view, not ended, not
-  // already on the board). CSS keeps it to phone widths.
-  var joinAbove = false;
-  function updateSticky() {
-    var show = joinAbove && !els.joinCard.hidden;
-    els.joinSticky.hidden = !show;
-    document.body.classList.toggle("sticky-on", show);
-  }
-  function watchJoinButton() {
-    if (!("IntersectionObserver" in window)) return;
-    new IntersectionObserver(function (entries) {
-      var e = entries[entries.length - 1];
-      joinAbove = !e.isIntersecting && e.boundingClientRect.bottom < 0;
-      updateSticky();
-    }).observe(els.joinBtn);
-  }
-
   // ---- Confetti + haptic on the Join, Drilling and Gachapon buttons ---------------
   // Tapping one fires a short confetti burst from the button (red and white
   // for Join, yellow and white for Drilling, blue and white for Gachapon) and
@@ -2598,7 +2570,6 @@
       var r = els.prizeDialog.getBoundingClientRect();
       if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closePrize();
     });
-    watchJoinButton();
     els.duprWarn.addEventListener("click", function (ev) {
       var b = ev.target.closest("[data-edit]");
       if (b) editEntryById(b.getAttribute("data-edit"));
