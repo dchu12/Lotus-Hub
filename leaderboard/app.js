@@ -359,7 +359,9 @@
   // points gained. Players added after the starting record count from 0
   // points (everyone starts the challenge on 0), ranked where a 0 stood then;
   // skipping them used to hand the title to whoever happened to be on the
-  // board early. Only players who gained points count.
+  // board early. Only players who gained points count. Remaining ties go to
+  // the current board order (byId[id].order), never to today's scoredAt
+  // stamps, which say nothing about who was first in a past week.
   function bestClimber(base, end, byId) {
     var bt = base.t || {}, br = base.r || {};
     // Dense ranks: a 0 sat one below the lowest positive score.
@@ -374,29 +376,53 @@
       var pts = end.t[id] - (known ? bt[id] : 0);
       if (pts <= 0) return;
       var up = (known ? br[id] : zeroRank) - end.r[id];
-      picks.push({ e: e, up: up, pts: pts, rank: end.r[id] });
+      picks.push({ e: e.e, up: up, pts: pts, rank: end.r[id], order: e.order });
     });
-    picks.sort(function (a, b) { return b.up - a.up || b.pts - a.pts || a.rank - b.rank || byFirst(a.e, b.e) || a.e.name.localeCompare(b.e.name); });
+    picks.sort(function (a, b) { return b.up - a.up || b.pts - a.pts || a.rank - b.rank || a.order - b.order; });
     return picks[0] || null;
+  }
+  // "Oct 1–4", or "Sep 29 – Oct 4" across months.
+  function fmtSpan(a, b) {
+    var short = function (iso) {
+      var p = iso.split("-");
+      return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    };
+    if (a === b) return short(a);
+    var fa = short(a), fb = short(b);
+    return a.slice(0, 7) === b.slice(0, 7) ? fa + "\u2013" + fb.split(" ")[1] : fa + " \u2013 " + fb;
+  }
+  // "Week 1 · Oct 1–4": the week's days that fall inside the challenge,
+  // numbered from the challenge's first week. Null for a week wholly outside.
+  function weekLabel(monday) {
+    var d = challengeDates();
+    var a = monday, b = isoFromDayNum(dayNum(monday) + 6);
+    if (d.start && b < d.start) return null;
+    if (d.end && a > d.end) return null;
+    if (d.start && a < d.start) a = d.start;
+    if (d.end && b > d.end) b = d.end;
+    var n = d.start ? Math.floor((dayNum(monday) - dayNum(weekStartIso(d.start))) / 7) + 1 : 0;
+    return (n > 0 ? "Week " + n + " \u00B7 " : "") + fmtSpan(a, b);
   }
   // Last full week's climber, which stays up all week (ready for a weekly
   // post); in the first week, before there is one, the climber so far.
+  // Weeks from before the challenge started are skipped.
   function climberOfWeek(list) {
     var weeks = board.weeks;
     if (!weeks || typeof weeks !== "object") return null;
     var keys = Object.keys(weeks).filter(validIso).sort();
     if (!keys.length) return null;
     var byId = {};
-    list.forEach(function (e) { byId[e.id] = e; });
+    list.forEach(function (e, i) { byId[e.id] = { e: e, order: i }; });
     var now = standingsMap(list);
     var cur = weekStartIso(isoToday());
     var i = keys.indexOf(cur);
     // Every change between one record and the next happened in the earlier
     // record's week, even if weeks with no saves sit in between.
     var from = i > 0 ? keys[i - 1] : i === -1 && keys[keys.length - 1] < cur ? keys[keys.length - 1] : null;
-    if (from) {
+    var label = from && weekLabel(from);
+    if (label) {
       var pick = bestClimber(weeks[from], i > 0 ? weeks[cur] : now, byId);
-      if (pick) { pick.when = "Week of " + fmtDay(from); return pick; }
+      if (pick) { pick.when = label; return pick; }
     }
     if (i !== -1) {
       var live = bestClimber(weeks[cur], now, byId);
