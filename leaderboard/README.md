@@ -94,15 +94,16 @@ Community Points, Points Behind 1st — and sorts automatically.
   eyebrow and "Oct 1 – 31"; the source is `og.html`, rendered at 1200×630). WhatsApp caches a preview
   per link for a while.
 - **Climber of the week**: a green card under the podium showing the
-  player who climbed the most spots in the last full week (Monday to
-  Sunday), with "▲4 spots · +12 pts". Ties go to more points gained. In the
-  first week, before a full week exists, it shows the climber "so far this
-  week". The card names the week by its challenge days ("Week 1 · Oct
-  1–4"); weeks wholly before the start date are skipped. A full tie (same
-  spots, points and rank at the week's end) goes to whoever is higher on the
-  board now. Only players who gained points that week count; anyone added
-  after the week began counts from 0 points (everyone starts the challenge
-  on 0), ranked where a 0 stood at the start of the week.
+  player who gained the most Lotus Score this week (Monday to Sunday), with
+  "+12 Lotus Score · ▲4 spots". Ties go to more spots climbed (the leader
+  can't climb, so spots come second), then rank at the week's end, then
+  whoever is higher on the board now. It shows the current week as soon as
+  anyone has scored in it; until then (e.g. Monday morning) it keeps last
+  week's climber up. The card names the week by its challenge days ("Week 3
+  · Oct 12–18"); weeks wholly before the start date are skipped. Only
+  players who gained points count; anyone added after the week began
+  counts from 0 points (everyone starts the challenge on 0), ranked where a
+  0 stood at the start of the week.
   Tapping it opens that player's breakdown, and the Instagram Story image
   includes it. How it works: the first admin save each week stores the
   standings as they were before that save (the `weeks` field, keeping the

@@ -355,8 +355,9 @@
     next[wk] = standingsMap(before);
     return next;
   }
-  // The player who climbed the most spots between two standings, then most
-  // points gained. Players added after the starting record count from 0
+  // The player who gained the most points between two standings, then
+  // climbed the most spots (a leader can't climb, so spots alone would never
+  // pick them however much they scored). Players added after the starting record count from 0
   // points (everyone starts the challenge on 0), ranked where a 0 stood then;
   // skipping them used to hand the title to whoever happened to be on the
   // board early. Only players who gained points count. Remaining ties go to
@@ -378,7 +379,7 @@
       var up = (known ? br[id] : zeroRank) - end.r[id];
       picks.push({ e: e.e, up: up, pts: pts, rank: end.r[id], order: e.order });
     });
-    picks.sort(function (a, b) { return b.up - a.up || b.pts - a.pts || a.rank - b.rank || a.order - b.order; });
+    picks.sort(function (a, b) { return b.pts - a.pts || b.up - a.up || a.rank - b.rank || a.order - b.order; });
     return picks[0] || null;
   }
   // "Oct 1–4", or "Sep 29 – Oct 4" across months.
@@ -403,9 +404,9 @@
     var n = d.start ? Math.floor((dayNum(monday) - dayNum(weekStartIso(d.start))) / 7) + 1 : 0;
     return (n > 0 ? "Week " + n + " \u00B7 " : "") + fmtSpan(a, b);
   }
-  // Last full week's climber, which stays up all week (ready for a weekly
-  // post); in the first week, before there is one, the climber so far.
-  // Weeks from before the challenge started are skipped.
+  // This week's climber so far, once anyone has scored this week; until then
+  // (e.g. Monday morning) last week's. Weeks from before the challenge
+  // started are skipped.
   function climberOfWeek(list) {
     var weeks = board.weeks;
     if (!weeks || typeof weeks !== "object") return null;
@@ -416,6 +417,11 @@
     var now = standingsMap(list);
     var cur = weekStartIso(isoToday());
     var i = keys.indexOf(cur);
+    var curLabel = i !== -1 && weekLabel(cur);
+    if (curLabel) {
+      var live = bestClimber(weeks[cur], now, byId);
+      if (live) { live.when = curLabel; return live; }
+    }
     // Every change between one record and the next happened in the earlier
     // record's week, even if weeks with no saves sit in between.
     var from = i > 0 ? keys[i - 1] : i === -1 && keys[keys.length - 1] < cur ? keys[keys.length - 1] : null;
@@ -423,10 +429,6 @@
     if (label) {
       var pick = bestClimber(weeks[from], i > 0 ? weeks[cur] : now, byId);
       if (pick) { pick.when = label; return pick; }
-    }
-    if (i !== -1) {
-      var live = bestClimber(weeks[cur], now, byId);
-      if (live) { live.when = "So far this week"; return live; }
     }
     return null;
   }
