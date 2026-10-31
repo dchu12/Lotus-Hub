@@ -1002,6 +1002,7 @@
       "noScores", "duprWarn", "moveHint", "scoringCard", "prizeMeta", "eventsCard", "eventsList",
       "eventsEditBtn", "eventsSub", "eventsEmpty", "eventForm", "evFormTitle", "evDate", "evStart", "evEnd",
       "evTitle", "evType", "evPlace", "evSaveBtn", "evCancelBtn", "evMsg", "menuEventsBtn",
+      "menuFinalDuprBtn", "finalDuprCard", "fdList", "fdMsg", "fdSaveBtn", "fdCancelBtn",
       "eventsManageLink", "calError", "eventsSubscribe", "subGoogle", "subApple", "calendarIdInput", "calendarKeyInput", "gkSponsorRed", "gkSponsorYellow", "gkSponsorBlue", "gkSponsorGreen", "prizeSponsorInput", "prizeSponsorLine", "prizeSponsorName", "monthCard", "monthTitle", "monthSub", "monthGrid", "monthDetail", "monthAgenda",
       "winnerCard", "prizeBanner", "skelCard", "prizeZoomBtn", "prizeDialog", "prizeDialogImg", "prizeDialogClose", "gachaDialog", "gachaDialogClose", "gachaPostBtn", "joinDialog", "joinDialogClose", "joinDialogKicker", "joinDialogTitle", "joinElig", "joinMsg", "joinCopyFail", "joinOpenBtn", "launchCard", "launchCount", "launchRosterCount", "launchRoster",
       "boardCard", "boardHeading", "podium", "climber",
@@ -1157,6 +1158,73 @@
     if (e) fillFormForEdit(e);
   }
 
+  // ---- Final DUPR: everyone's end-of-challenge rating in one list ----------------
+  function fdRow(li) {
+    var e = board.entries.find(function (x) { return x.id === li.getAttribute("data-id"); });
+    var input = li.querySelector("input"), out = li.querySelector(".fd-pts");
+    var v = input.value.trim(), bad = input.validity && input.validity.badInput;
+    var ok = v !== "" && num(v) >= 1 && num(v) <= 8;
+    input.setAttribute("aria-invalid", String(bad || (v !== "" && !ok)));
+    out.className = "fd-pts";
+    if (bad || (v !== "" && !ok)) { out.textContent = "?"; return { bad: true }; }
+    if (v === "") { out.textContent = ""; return { end: null }; }
+    if (!e || !hasDupr(e.startDupr)) { out.textContent = "\u2013"; return { end: num(v) }; }
+    var pts = Math.round((num(v) - num(e.startDupr)) * 100);
+    out.textContent = pts > 0 ? "+" + pts : pts < 0 ? "\u2212" + -pts : "0";
+    if (pts) out.classList.add(pts > 0 ? "up" : "down");
+    return { end: num(v) };
+  }
+  function openFinalDupr() {
+    var list = board.entries.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    els.fdList.innerHTML = list.map(function (e) {
+      var start = hasDupr(e.startDupr) ? String(e.startDupr) : "\u2013";
+      return '<li class="fd-row" data-id="' + esc(e.id) + '">' +
+        '<span class="fd-name">' + esc(e.name) + '<span class="fd-start">Start ' + esc(start) + "</span></span>" +
+        '<input type="number" inputmode="decimal" step="0.001" min="1" max="8" placeholder="End" aria-label="' +
+        esc(e.name + " end DUPR, start " + start) + '" value="' + (hasDupr(e.endDupr) ? esc(String(e.endDupr)) : "") + '" />' +
+        '<span class="fd-pts" title="Skill Points"></span></li>';
+    }).join("");
+    els.fdList.querySelectorAll(".fd-row").forEach(fdRow);
+    els.fdMsg.textContent = "";
+    els.fdMsg.className = "form-msg";
+    els.finalDuprCard.hidden = false;
+    els.finalDuprCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    var first = Array.prototype.find.call(els.fdList.querySelectorAll("input"), function (i) { return !i.value; });
+    if (first) first.focus({ preventScroll: true });
+  }
+  function saveFinalDupr() {
+    var vals = {}, bad = 0, firstBad = null;
+    els.fdList.querySelectorAll(".fd-row").forEach(function (li) {
+      var r = fdRow(li);
+      if (r.bad) { bad++; if (!firstBad) firstBad = li.querySelector("input"); return; }
+      vals[li.getAttribute("data-id")] = r.end;
+    });
+    if (bad) {
+      els.fdMsg.className = "form-msg err";
+      els.fdMsg.textContent = bad === 1 ? "One rating doesn\u2019t look like a DUPR (1.000\u20138.000)." : bad + " ratings don\u2019t look like a DUPR (1.000\u20138.000).";
+      firstBad.focus();
+      return;
+    }
+    var endOf = function (e) { return hasDupr(e.endDupr) ? num(e.endDupr) : null; };
+    var changed = board.entries.filter(function (e) { return e.id in vals && endOf(e) !== vals[e.id]; }).length;
+    els.finalDuprCard.hidden = true;
+    if (!changed) { toast("No DUPR changes to save"); return; }
+    commit(function (doc) {
+      doc.entries.forEach(function (e) {
+        if (!(e.id in vals) || endOf(e) === vals[e.id]) return; // added since, or unchanged
+        e.mode = "range";
+        e.endDupr = vals[e.id];
+        e.duprImprovement = hasDupr(e.startDupr) && vals[e.id] != null ? vals[e.id] - num(e.startDupr) : 0;
+      });
+    });
+    toast("Saved final DUPR" + (changed === 1 ? " for 1 player" : "s for " + changed + " players"));
+  }
+  // From the last day on, until everyone's final rating is in.
+  function finalDuprDue() {
+    var end = challengeDates().end;
+    return !!end && isoToday() >= end;
+  }
+
   function deleteEntryById(id) {
     var e = board.entries.find(function (x) { return x.id === id; });
     if (!e) return;
@@ -1282,7 +1350,8 @@
     els.qrBtn.hidden = readOnly;
     els.exportCsvBtn.hidden = restricted;
     els.menuEventsBtn.hidden = restricted;
-    if (restricted) { els.qrCard.hidden = true; els.editPanel.hidden = true; }
+    els.menuFinalDuprBtn.hidden = restricted;
+    if (restricted) { els.qrCard.hidden = true; els.editPanel.hidden = true; els.finalDuprCard.hidden = true; }
     updateLastUpdatedText();
     renderGachaSponsors();
     renderPrizeSponsor();
@@ -1318,7 +1387,7 @@
     els.boardHint.hidden = !list.length;
     var cd = countdown();
     els.noScores.hidden = !list.length || scored;
-    renderDuprWarn(list, !restricted && ph !== "ended");
+    renderDuprWarn(list, !restricted && ph !== "ended", !restricted && finalDuprDue());
     els.boardEmpty.textContent = restricted ? "No players yet." : "No players yet. Tap \u201c+ Add player\u201d to add the first one.";
     els.noScores.textContent = cd && cd.phase === "before"
       ? "The challenge starts " + fmtDay(challengeDates().start) + ". Scores update after each session."
@@ -1427,10 +1496,19 @@
   // ---- admin: players still missing a starting DUPR ------------------------------
   // Skill Points count from the Oct 1 rating, so everyone needs one on file
   // before launch. Each name opens that player's edit form.
-  function renderDuprWarn(list, show) {
+  // From the last day, players with a Start but no End DUPR get a prompt that
+  // opens the Final DUPR list.
+  function renderDuprWarn(list, show, finalDue) {
     var missing = show ? list.filter(function (e) { return e.mode === "range" && !hasDupr(e.startDupr); }) : [];
-    els.duprWarn.hidden = !missing.length;
-    if (!missing.length) return;
+    var noEnd = finalDue ? list.filter(function (e) { return e.mode === "range" && hasDupr(e.startDupr) && !hasDupr(e.endDupr); }) : [];
+    els.duprWarn.hidden = !missing.length && !noEnd.length;
+    if (!missing.length) {
+      if (noEnd.length) els.duprWarn.innerHTML =
+        "<b>" + noEnd.length + (noEnd.length === 1 ? " player needs" : " players need") + " a final DUPR</b> " +
+        '<span class="dw-why">Skill Points count once both Start and End are in.</span>' +
+        '<button type="button" class="btn small primary dw-go" data-final>Enter final DUPRs</button>';
+      return;
+    }
     els.duprWarn.innerHTML =
       "<b>" + missing.length + (missing.length === 1 ? " player needs" : " players need") + " a Start DUPR</b> " +
       '<span class="dw-why">Skill Points stay at 0 until it&rsquo;s in. Tap a name to add it.</span>' +
@@ -2599,6 +2677,7 @@
       if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closePrize();
     });
     els.duprWarn.addEventListener("click", function (ev) {
+      if (ev.target.closest("[data-final]")) { openFinalDupr(); return; }
       var b = ev.target.closest("[data-edit]");
       if (b) editEntryById(b.getAttribute("data-edit"));
     });
@@ -2749,6 +2828,21 @@
     els.qrCloseBtn.addEventListener("click", function () { els.qrCard.hidden = true; });
     els.qrCopyBtn.addEventListener("click", copyPlayerLink);
     els.exportCsvBtn.addEventListener("click", exportCsv);
+    els.menuFinalDuprBtn.addEventListener("click", openFinalDupr);
+    els.fdSaveBtn.addEventListener("click", saveFinalDupr);
+    els.fdCancelBtn.addEventListener("click", function () { els.finalDuprCard.hidden = true; });
+    els.fdList.addEventListener("input", function (ev) {
+      var li = ev.target.closest(".fd-row");
+      if (li) fdRow(li);
+    });
+    // Enter moves down the list; on the last box it saves.
+    els.fdList.addEventListener("keydown", function (ev) {
+      if (ev.key !== "Enter" || ev.target.tagName !== "INPUT") return;
+      ev.preventDefault();
+      var inputs = Array.prototype.slice.call(els.fdList.querySelectorAll("input"));
+      var next = inputs[inputs.indexOf(ev.target) + 1];
+      if (next) next.focus(); else saveFinalDupr();
+    });
     els.saveBoardBtn.addEventListener("click", saveBoardMeta);
     els.cancelBoardBtn.addEventListener("click", function () { els.editPanel.hidden = true; });
 
