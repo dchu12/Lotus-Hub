@@ -98,7 +98,10 @@ Community Points, Points Behind 1st — and sorts automatically.
   Skill Points it gives ((End − Start) × 100), saved in one go. Enter moves
   to the next box. Ratings outside 1–8 are flagged before saving; a blank
   box means "not in yet". From the end date on, the admin board also shows
-  "N players need a final DUPR" with a button to the list.
+  "N players need a final DUPR" with a button to the list. A link like
+  `/lotus?fd=<player id>:3.605,<player id>:3.017` opens the list already
+  filled in (once signed in), so ratings read off screenshots can be checked
+  and saved with one tap; nothing saves until Save all.
 - **Climber of the week**: a green card under the podium showing the
   player who gained the most Lotus Score this week (Monday to Sunday), with
   "+12 Lotus Score · ▲4 spots". Ties go to more spots climbed (the leader
