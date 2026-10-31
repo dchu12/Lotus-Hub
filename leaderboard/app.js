@@ -118,6 +118,7 @@
     },
   };
   var lastRemoteDoc = null; // the board as last synced from the server, to roll back a failed save
+  var pendingFinal = params.get("fd"); // see applyFinalLink
 
   var editingId = null;
   var expandedId = null;
@@ -1219,6 +1220,31 @@
     });
     toast("Saved final DUPR" + (changed === 1 ? " for 1 player" : "s for " + changed + " players"));
   }
+  // ?fd=<player id>:<DUPR>,... opens the Final DUPR list pre-filled, once the
+  // coach is signed in and the board has loaded (a link prepared for them
+  // from the players' DUPR screenshots). Nothing saves until Save all.
+  function applyFinalLink() {
+    var raw = String(pendingFinal);
+    pendingFinal = null;
+    params.delete("fd");
+    try {
+      var q = params.toString();
+      history.replaceState(history.state, "", location.pathname + (q ? "?" + q : "") + location.hash);
+    } catch (e) { /* the list still opens */ }
+    openFinalDupr();
+    var filled = 0;
+    els.fdList.querySelectorAll(".fd-row").forEach(function (li) {
+      raw.split(",").forEach(function (pair) {
+        var p = pair.split(":");
+        if (p[0] !== li.getAttribute("data-id") || !/^\d(\.\d{1,3})?$/.test(p[1] || "")) return;
+        li.querySelector("input").value = p[1];
+        fdRow(li);
+        filled++;
+      });
+    });
+    els.fdMsg.className = "form-msg ok";
+    els.fdMsg.textContent = filled + (filled === 1 ? " rating" : " ratings") + " filled in from the link. Check them, then tap Save all.";
+  }
   // From the last day on, until everyone's final rating is in.
   function finalDuprDue() {
     var end = challengeDates().end;
@@ -1388,6 +1414,7 @@
     var cd = countdown();
     els.noScores.hidden = !list.length || scored;
     renderDuprWarn(list, !restricted && ph !== "ended", !restricted && finalDuprDue());
+    if (pendingFinal && !restricted && lastRemoteDoc) applyFinalLink();
     els.boardEmpty.textContent = restricted ? "No players yet." : "No players yet. Tap \u201c+ Add player\u201d to add the first one.";
     els.noScores.textContent = cd && cd.phase === "before"
       ? "The challenge starts " + fmtDay(challengeDates().start) + ". Scores update after each session."
