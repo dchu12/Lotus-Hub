@@ -93,6 +93,12 @@ Community Points, Points Behind 1st — and sorts automatically.
   regenerate `og-image.jpg`** (bump its `?v=`; now `?v=5`, with the academy
   eyebrow and "Oct 1 – 31"; the source is `og.html`, rendered at 1200×630). WhatsApp caches a preview
   per link for a while.
+- **Final DUPR (admin)**: "Enter final DUPRs" in the "..." menu opens one
+  list of every player with their Start DUPR, an End DUPR box and the
+  Skill Points it gives ((End − Start) × 100), saved in one go. Enter moves
+  to the next box. Ratings outside 1–8 are flagged before saving; a blank
+  box means "not in yet". From the end date on, the admin board also shows
+  "N players need a final DUPR" with a button to the list.
 - **Climber of the week**: a green card under the podium showing the
   player who gained the most Lotus Score this week (Monday to Sunday), with
   "+12 Lotus Score · ▲4 spots". Ties go to more spots climbed (the leader

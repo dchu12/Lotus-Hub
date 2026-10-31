@@ -34,7 +34,7 @@
        that aren't literally under /leaderboard/ (e.g. the short alias
        /lotusoctoberchallenge), and relative paths would resolve wrong there.
        ?v= is a cache-buster: bump it whenever styles.css or app.js change. -->
-  <link rel="stylesheet" href="/leaderboard/styles.css?v=104" />
+  <link rel="stylesheet" href="/leaderboard/styles.css?v=105" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -68,6 +68,7 @@
           <button type="button" role="menuitem" id="qrBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M14 20h3"/><path d="M20 14v3"/><path d="M20 20h.01"/></svg>Player link QR code</button>
           <button type="button" role="menuitem" id="editBoardBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit challenge details</button>
           <button type="button" role="menuitem" id="menuEventsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Edit events</button>
+          <button type="button" role="menuitem" id="menuFinalDuprBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Enter final DUPRs</button>
           <button type="button" role="menuitem" id="exportCsvBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Export CSV</button>
           <button type="button" role="menuitem" id="menuSignOutBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</button>
         </div>
@@ -198,6 +199,18 @@
       <div class="form-actions">
         <button type="button" class="btn primary" id="saveBoardBtn">Save</button>
         <button type="button" class="btn ghost" id="cancelBoardBtn">Cancel</button>
+      </div>
+    </section>
+
+    <!-- End-of-challenge DUPRs for everyone at once -->
+    <section class="card fd-card" id="finalDuprCard" hidden aria-labelledby="fdTitle">
+      <h2 id="fdTitle">Final DUPR</h2>
+      <p class="hint hint-tight">Each player&rsquo;s DUPR at the end of the challenge. Skill Points = (End &minus; Start) &times; 100. Leave a box blank if you don&rsquo;t have it yet.</p>
+      <ul class="fd-list" id="fdList"></ul>
+      <p class="form-msg" id="fdMsg" role="status"></p>
+      <div class="form-actions">
+        <button type="button" class="btn primary" id="fdSaveBtn">Save all</button>
+        <button type="button" class="btn ghost" id="fdCancelBtn">Cancel</button>
       </div>
     </section>
 
@@ -490,6 +503,6 @@
        global qrcode() function; app.js checks it's actually loaded before
        using it and falls back to just the plain link if not. -->
   <script async src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="/leaderboard/app.js?v=86"></script>
+  <script src="/leaderboard/app.js?v=87"></script>
 </body>
 </html>
